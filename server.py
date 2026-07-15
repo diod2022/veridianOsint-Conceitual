@@ -3192,6 +3192,18 @@ def _custom_quote(string, safe='/', encoding=None, errors=None):
     return _orig_quote(string, safe=safe, encoding=encoding, errors=errors)
 mcp_sse.quote = _custom_quote
 
+class ForceHTTPSMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket"):
+            headers = dict(scope.get("headers", []))
+            host = headers.get(b"host", b"").decode("utf-8")
+            if "localhost" not in host and "127.0.0.1" not in host and "0.0.0.0" not in host:
+                scope["scheme"] = "https"
+        await self.app(scope, receive, send)
+
 sessao_corrente: ContextVar[UUID] = ContextVar("sessao_corrente")
 sessoes_autorizadas = set()
 sessoes_ativas = {} # session_id -> {"usuario": "...", "permissoes": [...], "token": "..."}
@@ -3692,6 +3704,7 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Mount("/messages", app=handle_messages),
             ],
             middleware=[
+                Middleware(ForceHTTPSMiddleware),
                 Middleware(
                     CORSMiddleware,
                     allow_origin_regex="https?://.*",
@@ -3712,6 +3725,7 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Mount("/admin", app=serve_admin_page),
             ],
             middleware=[
+                Middleware(ForceHTTPSMiddleware),
                 Middleware(
                     CORSMiddleware,
                     allow_origin_regex="https?://.*",
@@ -3762,6 +3776,7 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Mount("/admin", app=serve_admin_page),
             ],
             middleware=[
+                Middleware(ForceHTTPSMiddleware),
                 Middleware(
                     CORSMiddleware,
                     allow_origin_regex="https?://.*",
