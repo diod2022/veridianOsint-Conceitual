@@ -3181,6 +3181,16 @@ from starlette.middleware.cors import CORSMiddleware
 from mcp.server.sse import SseServerTransport
 import uvicorn
 import anyio
+import mcp.server.sse
+
+# Monkeypatch quote no mcp.server.sse para não corromper URLs absolutas
+_orig_quote = mcp.server.sse.quote
+def _custom_quote(string, safe='/', encoding=None, errors=None):
+    if string.startswith("http://") or string.startswith("https://"):
+        parts = string.split("://", 1)
+        return parts[0] + "://" + _orig_quote(parts[1], safe=safe, encoding=encoding, errors=errors)
+    return _orig_quote(string, safe=safe, encoding=encoding, errors=errors)
+mcp.server.sse.quote = _custom_quote
 
 sessao_corrente: ContextVar[UUID] = ContextVar("sessao_corrente")
 sessoes_autorizadas = set()
@@ -3413,6 +3423,12 @@ async def run_sse_with_auth(self_mcp) -> None:
     async def handle_sse(scope, receive, send):
         from starlette.requests import Request
         request = Request(scope, receive)
+        
+        # Constrói a URL absoluta para o endpoint de POST /messages/
+        proto = request.headers.get("x-forwarded-proto") or request.url.scheme
+        host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+        base_url = f"{proto}://{host}"
+        sse._endpoint = f"{base_url}/messages/"
         
         token = extrair_token(request)
         if not verificar_token(token):
