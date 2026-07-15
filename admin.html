@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle — veridianOsint-Conceitual</title>
+    <!-- Fonte Outfit moderna -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0b0e;
+            --panel-bg: rgba(18, 18, 24, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-primary: #6366f1; /* Indigo */
+            --accent-hover: #4f46e5;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            padding: 20px;
+        }
+
+        /* Container Principal */
+        .admin-container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            display: none; /* Exibido após login */
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Login Container */
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        /* Formulários */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 15px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        input[type="password"]:focus, input[type="text"]:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        button {
+            width: 100%;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+
+        /* Seções do Painel */
+        .section-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        /* Switches Globais */
+        .source-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .source-item:last-child {
+            border-bottom: none;
+        }
+
+        .source-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .source-name {
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .source-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Switch Deslizante */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .3s;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #fff;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--success);
+            border-color: transparent;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Gestão de Chaves/Usuários */
+        .btn-add {
+            background: transparent;
+            border: 1px dashed var(--accent-primary);
+            color: var(--accent-primary);
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px;
+        }
+
+        .btn-add:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .user-table-container {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .key-badge {
+            font-family: monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            color: #a5b4fc;
+        }
+
+        .permissions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .permission-badge {
+            font-size: 11px;
+            font-weight: 500;
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            padding: 2px 8px;
+            border-radius: 12px;
+            text-transform: capitalize;
+        }
+
+        .permission-badge.all {
+            background: rgba(16, 185, 129, 0.15);
+            color: #a7f3d0;
+        }
+
+        .btn-delete {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            width: auto;
+            display: inline-flex;
+        }
+
+        .btn-delete:hover {
+            color: var(--error);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Modal / Form Adicionar */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #121218;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            transform: scale(0.95);
+            transition: transform 0.25s ease;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            width: auto;
+            padding: 0;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .checkbox-item input {
+            cursor: pointer;
+            accent-color: var(--accent-primary);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Notificações (Toast) */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: rgba(18, 18, 24, 0.9);
+            border: 1px solid var(--border-color);
+            padding: 14px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 250px;
+            animation: slideIn 0.3s ease-out;
+            border-left: 4px solid var(--accent-primary);
+        }
+
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--error); }
+        .toast.warning { border-left-color: var(--warning); }
+
+        @keyframes slideIn {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Header do Painel Principal */
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-secondary);
+            width: auto;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.05);
+            border-color: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        /* Estilos do Acordeão de Consultas Globais */
+        .source-group {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            margin-bottom: 4px;
+        }
+        .source-group:last-child {
+            border-bottom: none;
+        }
+        .btn-collapse {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            font-size: 9px;
+            width: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+        .btn-collapse.open {
+            transform: rotate(90deg);
+        }
+        .query-list {
+            padding-left: 24px;
+            border-left: 2px solid rgba(99, 102, 241, 0.3);
+            margin-bottom: 12px;
+            margin-top: -4px;
+            display: none;
+            animation: slideDown 0.2s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .query-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.01);
+        }
+        .query-item:last-child {
+            border-bottom: none;
+        }
+        .query-name {
+            font-size: 12px;
+            font-family: monospace;
+            color: var(--text-secondary);
+        }
+        .switch.small {
+            width: 36px;
+            height: 20px;
+        }
+        .switch.small .slider:before {
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+        }
+        .switch.small input:checked + .slider:before {
+            transform: translateX(16px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CONTAINER LOGIN -->
+    <div id="loginSection" class="login-container">
+        <h1>Acesso Administrativo</h1>
+        <p class="subtitle">veridianOsint-Conceitual</p>
+        
+        <div class="form-group">
+            <label for="adminKeyInput">Chave Administrativa</label>
+            <input type="password" id="adminKeyInput" placeholder="Insira a chave do Admin">
+        </div>
+        
+        <button id="loginBtn">
+            Entrar no Painel
+        </button>
+    </div>
+
+    <!-- CONTAINER PAINEL -->
+    <div id="adminPanel" class="admin-container">
+        <div class="panel-header">
+            <div>
+                <h1>Painel de Controle MCP</h1>
+                <p class="subtitle" style="margin-bottom: 0;">veridianOsint-Conceitual · Gestão de Segurança</p>
+            </div>
+            <button id="logoutBtn" class="btn-logout">Sair</button>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Coluna Esquerda: Status Global -->
+            <div class="section-card">
+                <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Ativação Global
+                </h2>
+                
+                <div id="globalToggles">
+                    <!-- Gerado dinamicamente -->
+                    <div style="color: var(--text-secondary); text-align: center; padding: 20px;">Carregando fontes...</div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Usuários -->
+            <div class="section-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                    <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Gestão de Usuários
+                    </h2>
+                    <button id="openAddModalBtn" class="btn-add" style="width: auto; padding: 6px 12px; margin-bottom: 0;">+ Novo Usuário</button>
+                </div>
+
+                <div class="user-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Chave de Acesso</th>
+                                <th>Permissões</th>
+                                <th style="text-align: right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <!-- Gerado dinamicamente -->
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 40px;">Carregando usuários...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ADICIONAR USUÁRIO -->
+    <div id="addModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 style="font-size: 18px; font-weight: 600;">Novo Usuário</h2>
+                <button id="closeAddModalBtn" class="modal-close">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="newUsername">Identificação / Nome</label>
+                <input type="text" id="newUsername" placeholder="Ex: Investigador Alpha">
+            </div>
+
+            <div class="form-group">
+                <label for="newUserKey">Chave de API (Deixe em branco para autogerar)</label>
+                <input type="text" id="newUserKey" placeholder="Chave customizada (opcional)">
+            </div>
+
+            <label>Fontes Permitidas</label>
+            <div class="checkbox-grid" id="permissionGrid">
+                <!-- Gerado dinamicamente com base nas fontes -->
+            </div>
+
+            <button id="saveUserBtn">
+                Criar Usuário
+            </button>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+        // Configuração das Fontes
+        const FONTES_DISPONIVEIS = {
+            "bigdata": "BigDataCorp (CPF/CNPJ/Jurídico)",
+            "csint": "CSINT.pro (Breachs/SEON/Reputação)",
+            "unitfour": "UnitFour (Cadastro/Mandados/Veículos)",
+            "instagram": "HikerAPI (Instagram OSINT)",
+            "linkedin": "Harvest API (LinkedIn OSINT)",
+            "lighthouse": "Lighthouse (Facebook/Darknet/Imagens)",
+            "whois": "WhoisXML API (Domínios & DNS)"
+        };
+
+        const CONSULTAS_POR_FONTE = {
+            "bigdata": [
+                "bigdata_consultar_cpf",
+                "bigdata_ver_categoria",
+                "bigdata_consultar_cnpj",
+                "bigdata_ver_categoria_cnpj",
+                "bigdata_consultar_processo",
+                "bigdata_cnpj_alteracoes"
+            ],
+            "csint": [
+                "csint_consultar_ip",
+                "csint_busca_universal",
+                "csint_consultar_telefone",
+                "csint_consultar_email"
+            ],
+            "unitfour": [
+                "unitfour_consultar_cpf",
+                "unitfour_pessoas_ligadas",
+                "unitfour_mandados_prisao",
+                "unitfour_antecedentes_criminais",
+                "unitfour_consulta_pep",
+                "unitfour_consultar_cnpj",
+                "unitfour_tomadores_decisao",
+                "unitfour_empresas_ligadas",
+                "unitfour_proprietario_veiculo_placa",
+                "unitfour_busca_avancada_nome",
+                "unitfour_busca_avancada_telefone",
+                "unitfour_busca_avancada_email",
+                "unitfour_busca_avancada_cep"
+            ],
+            "instagram": [
+                "instagram_buscar_usuario",
+                "instagram_ver_seguidores",
+                "instagram_ver_posts",
+                "instagram_ver_stories",
+                "tiktok_buscar_perfil",
+                "tiktok_listar_videos",
+                "tiktok_listar_comentarios",
+                "tiktok_listar_respostas_comentario",
+                "tiktok_listar_seguindo",
+                "tiktok_listar_seguidores",
+                "tiktok_buscar_usuarios"
+            ],
+            "linkedin": [
+                "linkedin_buscar_perfil",
+                "linkedin_consultar_endpoint",
+                "linkedin_buscar_pessoas_por_nome",
+                "linkedin_ver_comentarios_post",
+                "linkedin_ver_reacoes_post",
+                "linkedin_buscar_posts",
+                "linkedin_ver_posts_usuario",
+                "linkedin_buscar_email_perfil"
+            ],
+            "lighthouse": [
+                "lighthouse_fb_uid_info",
+                "lighthouse_fb_uid_wall",
+                "lighthouse_fb_uid_reposts",
+                "lighthouse_fb_uid_likes",
+                "lighthouse_fb_uid_comments",
+                "lighthouse_fb_uid_friends",
+                "lighthouse_fb_uid_full_friends",
+                "lighthouse_fb_phone_restore",
+                "lighthouse_fb_email_restore",
+                "lighthouse_fb_username_restore",
+                "lighthouse_fb_phone_darknet",
+                "lighthouse_fb_email_darknet",
+                "lighthouse_fb_uid_darknet",
+                "lighthouse_image_facecheck",
+                "lighthouse_image_geolocation",
+                "lighthouse_image_search4faces"
+            ],
+            "whois": [
+                "whois_consultar"
+            ]
+        };
+
+        // Estado Global
+        let adminKey = localStorage.getItem('mcp_admin_key') || '';
+
+        // Elementos
+        const loginSection = document.getElementById('loginSection');
+        const adminPanel = document.getElementById('adminPanel');
+        const adminKeyInput = document.getElementById('adminKeyInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const globalToggles = document.getElementById('globalToggles');
+        const userTableBody = document.getElementById('userTableBody');
+        const addModal = document.getElementById('addModal');
+        const openAddModalBtn = document.getElementById('openAddModalBtn');
+        const closeAddModalBtn = document.getElementById('closeAddModalBtn');
+        const permissionGrid = document.getElementById('permissionGrid');
+        const newUsername = document.getElementById('newUsername');
+        const newUserKey = document.getElementById('newUserKey');
+        const saveUserBtn = document.getElementById('saveUserBtn');
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            if (adminKey) {
+                adminKeyInput.value = adminKey;
+                verificarLogin(true);
+            }
+            renderizarCheckboxPermissoes();
+        });
+
+        // Eventos
+        loginBtn.addEventListener('click', () => verificarLogin());
+        adminKeyInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') verificarLogin(); });
+        logoutBtn.addEventListener('click', efetuarLogout);
+        openAddModalBtn.addEventListener('click', () => addModal.classList.add('active'));
+        closeAddModalBtn.addEventListener('click', fecharModal);
+        saveUserBtn.addEventListener('click', criarUsuario);
+
+        // Notificações Toast
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Renderizar Checkboxes
+        function renderizarCheckboxPermissoes() {
+            permissionGrid.innerHTML = '';
+            // Opção de acesso total
+            const allItem = document.createElement('label');
+            allItem.className = 'checkbox-item';
+            allItem.innerHTML = `<input type="checkbox" value="*" id="perm_all" checked> <strong>Acesso Total (*)</strong>`;
+            allItem.querySelector('input').addEventListener('change', (e) => {
+                const inputs = permissionGrid.querySelectorAll('input:not(#perm_all)');
+                inputs.forEach(i => i.disabled = e.target.checked);
+            });
+            permissionGrid.appendChild(allItem);
+
+            Object.entries(FONTES_DISPONIVEIS).forEach(([key, label]) => {
+                const item = document.createElement('label');
+                item.className = 'checkbox-item';
+                item.innerHTML = `<input type="checkbox" value="${key}" disabled> ${key.toUpperCase()}`;
+                permissionGrid.appendChild(item);
+            });
+        }
+
+        // Login
+        async function verificarLogin(silencioso = false) {
+            const key = adminKeyInput.value.trim();
+            if (!key) {
+                if (!silencioso) showToast('Chave administrativa requerida!', 'error');
+                return;
+            }
+
+            try {
+                const r = await fetch('/admin/api/status', {
+                    headers: { 'X-Admin-Key': key }
+                });
+
+                if (r.ok) {
+                    adminKey = key;
+                    localStorage.setItem('mcp_admin_key', key);
+                    loginSection.style.display = 'none';
+                    adminPanel.style.display = 'block';
+                    if (!silencioso) showToast('Autenticado com sucesso!');
+                    carregarPainel();
+                } else {
+                    localStorage.removeItem('mcp_admin_key');
+                    if (!silencioso) showToast('Chave administrativa inválida.', 'error');
+                }
+            } catch (e) {
+                if (!silencioso) showToast('Erro de conexão com o servidor.', 'error');
+            }
+        }
+
+        function efetuarLogout() {
+            localStorage.removeItem('mcp_admin_key');
+            adminKey = '';
+            adminKeyInput.value = '';
+            adminPanel.style.display = 'none';
+            loginSection.style.display = 'block';
+            showToast('Logout efetuado.');
+        }
+
+        function fecharModal() {
+            addModal.classList.remove('active');
+            newUsername.value = '';
+            newUserKey.value = '';
+            const checkboxes = permissionGrid.querySelectorAll('input');
+            checkboxes.forEach(c => {
+                if (c.id === 'perm_all') {
+                    c.checked = true;
+                } else {
+                    c.checked = false;
+                    c.disabled = true;
+                }
+            });
+        }
+
+        // Carregar dados
+        async function carregarPainel() {
+            try {
+                const r = await fetch('/admin/api/status', {
+                    headers: { 'X-Admin-Key': adminKey }
+                });
+                
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+
+                renderizarTogglesGlobais(data.fontes_ativas, data.consultas_ativas);
+                renderizarTabelaUsuarios(data.chaves);
+            } catch (e) {
+                showToast('Falha ao carregar configurações.', 'error');
+            }
+        }
+
+        // Renderizar status global
+        function renderizarTogglesGlobais(fontesAtivas, consultasAtivas) {
+            consultasAtivas = consultasAtivas || {};
+            globalToggles.innerHTML = '';
+            
+            Object.entries(FONTES_DISPONIVEIS).forEach(([sourceKey, sourceLabel]) => {
+                const isSourceChecked = fontesAtivas[sourceKey] !== false;
+                
+                // Cria a div do grupo da fonte
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'source-group';
+                
+                // Lista de consultas da fonte
+                const queries = CONSULTAS_POR_FONTE[sourceKey] || [];
+                const hasQueries = queries.length > 0;
+                
+                // HTML do cabeçalho da fonte e lista de sub-consultas
+                groupDiv.innerHTML = `
+                    <div class="source-item">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            ${hasQueries ? `<button class="btn-collapse" title="Expandir consultas">▶</button>` : '<span style="width:20px"></span>'}
+                            <div class="source-info">
+                                <span class="source-name">${sourceKey}</span>
+                                <span class="source-desc">${sourceLabel}</span>
+                            </div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" ${isSourceChecked ? 'checked' : ''} data-source="${sourceKey}">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    ${hasQueries ? `
+                        <div class="query-list">
+                            ${queries.map(qName => {
+                                const isQueryChecked = consultasAtivas[qName] !== false;
+                                return `
+                                    <div class="query-item">
+                                        <span class="query-name">${qName}</span>
+                                        <label class="switch small">
+                                            <input type="checkbox" ${isQueryChecked ? 'checked' : ''} data-query="${qName}">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                `;
+                
+                // Eventos do cabeçalho da fonte
+                const sourceCheckbox = groupDiv.querySelector(`input[data-source="${sourceKey}"]`);
+                sourceCheckbox.addEventListener('change', async (e) => {
+                    await atualizarConfigGlobal(sourceKey, e.target.checked, 'source');
+                });
+                
+                if (hasQueries) {
+                    const collapseBtn = groupDiv.querySelector('.btn-collapse');
+                    const queryListDiv = groupDiv.querySelector('.query-list');
+                    
+                    collapseBtn.addEventListener('click', () => {
+                        const isOpen = collapseBtn.classList.toggle('open');
+                        queryListDiv.style.display = isOpen ? 'block' : 'none';
+                    });
+                    
+                    // Eventos para as consultas individuais
+                    queries.forEach(qName => {
+                        const queryCheckbox = groupDiv.querySelector(`input[data-query="${qName}"]`);
+                        queryCheckbox.addEventListener('change', async (e) => {
+                            await atualizarConfigGlobal(qName, e.target.checked, 'query');
+                        });
+                    });
+                }
+                
+                globalToggles.appendChild(groupDiv);
+            });
+        }
+
+        // Renderizar tabela de chaves
+        function renderizarTabelaUsuarios(chaves) {
+            userTableBody.innerHTML = '';
+            if (Object.keys(chaves).length === 0) {
+                userTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhum usuário cadastrado.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            Object.entries(chaves).forEach(([keyToken, info]) => {
+                const tr = document.createElement('tr');
+                const pList = info.permissoes || ["*"];
+                
+                let permBadges = '';
+                if (pList.includes('*')) {
+                    permBadges = `<span class="permission-badge all">Acesso Total (*)</span>`;
+                } else {
+                    permBadges = pList.map(p => `<span class="permission-badge">${p}</span>`).join(' ');
+                }
+
+                // Oculta chave parcialmente
+                const keyOcultada = keyToken.length > 15 
+                    ? `${keyToken.slice(0, 10)}...${keyToken.slice(-6)}` 
+                    : keyToken;
+
+                tr.innerHTML = `
+                    <td style="font-weight: 500;">${info.usuario}</td>
+                    <td>
+                        <span class="key-badge" title="Clique para copiar" style="cursor: pointer;">${keyOcultada}</span>
+                    </td>
+                    <td><div class="permissions-list">${permBadges}</div></td>
+                    <td style="text-align: right;">
+                        <button class="btn-delete" title="Excluir Chave">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                    </td>
+                `;
+
+                // Copiar chave completa ao clicar
+                tr.querySelector('.key-badge').addEventListener('click', () => {
+                    navigator.clipboard.writeText(keyToken);
+                    showToast('Chave de API copiada para o clipboard!');
+                });
+
+                // Deletar usuário
+                tr.querySelector('.btn-delete').addEventListener('click', () => {
+                    if (confirm(`Deseja realmente revogar a chave de "${info.usuario}"?`)) {
+                        deletarUsuario(keyToken);
+                    }
+                });
+
+                userTableBody.appendChild(tr);
+            });
+        }
+
+        // Ações da API Config Global
+        async function atualizarConfigGlobal(name, active, type = 'source') {
+            try {
+                const r = await fetch('/admin/api/config', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Key': adminKey
+                    },
+                    body: JSON.stringify({ type, name, active })
+                });
+
+                if (r.ok) {
+                    showToast(`${type === 'source' ? 'Fonte' : 'Consulta'} '${name}' ${active ? 'ativada' : 'desativada'} globalmente.`);
+                } else {
+                    showToast('Falha ao salvar configuração.', 'error');
+                }
+            } catch (e) {
+                showToast('Erro de rede.', 'error');
+            }
+        }
+
+        // Criar usuário
+        async function criarUsuario() {
+            const username = newUsername.value.trim();
+            if (!username) {
+                showToast('Identificação do usuário é obrigatória.', 'error');
+                return;
+            }
+
+            const customKey = newUserKey.value.trim();
+            
+            // Permissões selecionadas
+            const permissions = [];
+            const permAll = document.getElementById('perm_all').checked;
+            if (permAll) {
+                permissions.push('*');
+            } else {
+                const checkboxes = permissionGrid.querySelectorAll('input:checked:not(#perm_all)');
+                checkboxes.forEach(c => permissions.push(c.value));
+                if (permissions.length === 0) {
+                    showToast('Selecione pelo menos uma permissão ou marque Acesso Total.', 'error');
+                    return;
+                }
+            }
+
+            try {
+                const r = await fetch('/admin/api/keys', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Key': adminKey
+                    },
+                    body: JSON.stringify({
+                        usuario: username,
+                        token: customKey || null,
+                        permissoes: permissions
+                    })
+                });
+
+                if (r.ok) {
+                    const resData = await r.json();
+                    showToast(`Usuário "${username}" criado com sucesso!`);
+                    fecharModal();
+                    carregarPainel();
+                } else {
+                    showToast('Erro ao criar usuário.', 'error');
+                }
+            } catch (e) {
+                showToast('Erro de rede ao salvar usuário.', 'error');
+            }
+        }
+
+        // Deletar usuário
+        async function deletarUsuario(token) {
+            try {
+                const r = await fetch('/admin/api/keys', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Key': adminKey
+                    },
+                    body: JSON.stringify({ token })
+                });
+
+                if (r.ok) {
+                    showToast('Chave revogada com sucesso!');
+                    carregarPainel();
+                } else {
+                    showToast('Erro ao revogar chave.', 'error');
+                }
+            } catch (e) {
+                showToast('Erro de rede ao excluir.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

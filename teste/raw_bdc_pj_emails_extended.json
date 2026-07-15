@@ -1,0 +1,84 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "ExtendedEmails": {
+                "TotalEmails": 1,
+                "TotalActiveEmails": 1,
+                "TotalWorkEmails": 0,
+                "TotalPersonalEmails": 1,
+                "TotalUniqueEmails": 1,
+                "TotalEmailPassages": 1,
+                "TotalBadEmailPassages": 0,
+                "TotalLast3MonthsPassages": 0,
+                "TotalLast6MonthsPassages": 0,
+                "TotalLast12MonthsPassages": 0,
+                "TotalLast18MonthsPassages": 0,
+                "OldestEmailPassageDate": "2026-02-11T00:00:00Z",
+                "NewestEmailPassageDate": "2026-02-11T00:00:00Z",
+                "Emails": [
+                    {
+                        "EmailAddress": "marcella.seguro@gmail.com",
+                        "Domain": "gmail.com",
+                        "UserName": "marcella.seguro",
+                        "Type": "PERSONAL",
+                        "EmailEntityAge": 1,
+                        "EmailCurrentlyInRFSite": false,
+                        "UserNameTotalPassages": 0,
+                        "UserNameBadPassages": 0,
+                        "UserNameCrawlingPassages": 0,
+                        "UserNameValidationPassages": 0,
+                        "UserNameQueryPassages": 0,
+                        "EmailEntityTotalPassages": 1,
+                        "EmailEntityBadPassages": 0,
+                        "EmailEntityCrawlingPassages": 1,
+                        "EmailEntityValidationPassages": 0,
+                        "EmailEntityQueryPassages": 0,
+                        "EmailEntityMonthAveragePassages": 1,
+                        "EmailGlobalAge": 1,
+                        "EmailGlobalTotalPassages": 1,
+                        "EmailGlobalBadPassages": 0,
+                        "EmailGlobalCrawlingPassages": 1,
+                        "EmailGlobalValidationPassages": 0,
+                        "EmailGlobalQueryPassages": 0,
+                        "EmailGlobalMonthAveragePassages": 1,
+                        "Last3MonthsPassages": 0,
+                        "Last6MonthsPassages": 0,
+                        "Last12MonthsPassages": 0,
+                        "Last18MonthsPassages": 0,
+                        "EmailNumberOfEntities": 1,
+                        "EmailNumberOfFamilyRelatedEntities": 0,
+                        "EmailNumberOfRelatedEntities": 0,
+                        "Priority": 1,
+                        "IsMainForEntity": true,
+                        "IsRecentForEntity": true,
+                        "IsMainForOtherEntity": false,
+                        "IsRecentForOtherEntity": true,
+                        "IsActive": true,
+                        "IsLikelyFromAccountant": false,
+                        "ValidationStatus": "",
+                        "LastValidationDate": "0001-01-01T00:00:00Z",
+                        "EntityFirstPassageDate": "2026-02-11T00:00:00Z",
+                        "EntityLastPassageDate": "2026-02-11T00:00:00Z",
+                        "GlobalFirstPassageDate": "2026-02-11T00:00:00Z",
+                        "GlobalLastPassageDate": "2026-02-11T00:00:00Z",
+                        "CreationDate": "2026-02-11T00:00:00Z",
+                        "LastUpdateDate": "2026-05-09T00:00:00Z"
+                    }
+                ]
+            }
+        }
+    ],
+    "QueryId": "7dd155f5-4f50-447c-b85c-5187839ed0c2",
+    "ElapsedMilliseconds": 78,
+    "QueryDate": "2026-06-19T18:03:42.4779424Z",
+    "Status": {
+        "emails_extended": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

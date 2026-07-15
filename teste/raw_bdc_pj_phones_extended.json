@@ -1,0 +1,84 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "ExtendedPhones": {
+                "TotalPhones": 1,
+                "TotalActivePhones": 0,
+                "TotalWorkPhones": 0,
+                "TotalPersonalPhones": 1,
+                "TotalUniquePhones": 1,
+                "TotalPhonePassages": 4,
+                "TotalBadPhonePassages": 0,
+                "TotalLast3MonthsPassages": 0,
+                "TotalLast6MonthsPassages": 0,
+                "TotalLast12MonthsPassages": 0,
+                "TotalLast18MonthsPassages": 0,
+                "OldestPhonePassageDate": "2011-09-19T06:35:00",
+                "NewestPhonePassageDate": "2013-03-01T09:23:00",
+                "Phones": [
+                    {
+                        "Number": "974386018",
+                        "AreaCode": "11",
+                        "CountryCode": "55",
+                        "Complement": "",
+                        "Type": "MOBILE",
+                        "PhoneCurrentlyInRFSite": true,
+                        "PhoneEntityAge": 529,
+                        "PhoneEntityTotalPassages": 4,
+                        "PhoneEntityBadPassages": 0,
+                        "PhoneEntityCrawlingPassages": 4,
+                        "PhoneEntityValidationPassages": 0,
+                        "PhoneEntityQueryPassages": 0,
+                        "PhoneEntityMonthAveragePassages": 0.2300189,
+                        "PhoneGlobalAge": 529,
+                        "PhoneGlobalTotalPassages": 8,
+                        "PhoneGlobalBadPassages": 0,
+                        "PhoneGlobalCrawlingPassages": 8,
+                        "PhoneGlobalValidationPassages": 0,
+                        "PhoneGlobalQueryPassages": 0,
+                        "PhoneGlobalMonthAveragePassages": 0.46003781,
+                        "Last3MonthsPassages": 0,
+                        "Last6MonthsPassages": 0,
+                        "Last12MonthsPassages": 0,
+                        "Last18MonthsPassages": 0,
+                        "PhoneNumberOfEntities": 2,
+                        "PhoneNumberOfFamilyRelatedEntities": 0,
+                        "PhoneNumberOfRelatedEntities": 0,
+                        "Priority": 1,
+                        "IsMainForEntity": true,
+                        "IsRecentForEntity": false,
+                        "IsMainForOtherEntity": false,
+                        "IsRecentForOtherEntity": false,
+                        "IsActive": false,
+                        "IsLikelyFromAccountant": false,
+                        "IsInDoNotCallList": false,
+                        "CurrentCarrier": "VIVO",
+                        "PlanType": "",
+                        "LastValidationDate": "0001-01-01T00:00:00",
+                        "EntityFirstPassageDate": "2011-09-19T06:35:00",
+                        "EntityLastPassageDate": "2013-03-01T09:23:00",
+                        "GlobalFirstPassageDate": "2011-09-19T06:35:00",
+                        "GlobalLastPassageDate": "2013-03-01T09:23:00",
+                        "CreationDate": "2026-02-12T00:00:00Z",
+                        "LastUpdateDate": "2026-05-09T00:00:00Z",
+                        "PortabilityHistory": [],
+                        "HasOptIn": false
+                    }
+                ]
+            }
+        }
+    ],
+    "QueryId": "f21a649c-4be1-474a-a6f9-a3cc875daf9d",
+    "ElapsedMilliseconds": 94,
+    "QueryDate": "2026-06-19T18:03:41.9352714Z",
+    "Status": {
+        "phones_extended": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

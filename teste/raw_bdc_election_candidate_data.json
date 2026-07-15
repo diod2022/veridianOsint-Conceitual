@@ -1,0 +1,20 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "ElectionCandidateData": {}
+        }
+    ],
+    "QueryId": "614d31bc-8a8f-4969-983e-42520dfc653f",
+    "ElapsedMilliseconds": 37,
+    "QueryDate": "2026-06-19T16:54:48.7309418Z",
+    "Status": {
+        "election_candidate_data": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

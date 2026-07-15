@@ -1,0 +1,34 @@
+# Ambientes virtuais e dependências
+.venv/
+venv/
+ENV/
+env/
+dist/
+build/
+*.egg-info/
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+mcp_keys.json
+mcp_keys.json.bak
+
+# Configurações dinâmicas locais
+mcp_config.json
+
+# Cache e dados confidenciais de OSINT (LGPD)
+cache_consultas/
+dossie_*_enriquecido.json
+dossie_*_enriquecido.md
+
+# Sistema e caches do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
+
+# Logs e relatórios temporários
+*.log
+npx_out.log

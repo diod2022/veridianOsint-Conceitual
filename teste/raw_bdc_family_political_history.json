@@ -1,0 +1,37 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "FamilyPoliticalHistory": {
+                "TotalMembers": 2,
+                "PolicalMembers": 0,
+                "CurrentlyElectedMembers": 0,
+                "TotalDisputedElections": 0,
+                "TotalWonElections": 0,
+                "RelationshipTypeWithMoreWonElections": "",
+                "RelationshipTypeWithMoreDisputedElections": "",
+                "HighestDisputedPolicalPosition": "",
+                "HighestHeldPolicalPosition": "",
+                "ElectionsTimeline": [],
+                "DisputedPoliticalPositionsDistribution": {},
+                "HeldPoliticalPositionsDistribution": {},
+                "TotalDisputedElectionsByRelationshipType": {},
+                "TotalWonElectionsByRelationshipType": {},
+                "TotalDisputedElectionsByPartyAcronym": {},
+                "TotalDisputedElectionsByRegion": {}
+            }
+        }
+    ],
+    "QueryId": "4f003e9e-8344-4534-8fb1-59b874e34ed8",
+    "ElapsedMilliseconds": 67,
+    "QueryDate": "2026-06-19T16:54:51.7756296Z",
+    "Status": {
+        "family_political_history": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

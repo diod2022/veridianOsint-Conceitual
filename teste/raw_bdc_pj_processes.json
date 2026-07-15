@@ -1,0 +1,30 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "Lawsuits": {
+                "Lawsuits": [],
+                "TotalLawsuits": 0,
+                "TotalLawsuitsAsAuthor": 0,
+                "TotalLawsuitsAsDefendant": 0,
+                "TotalLawsuitsAsOther": 0,
+                "Last30DaysLawsuits": 0,
+                "Last90DaysLawsuits": 0,
+                "Last180DaysLawsuits": 0,
+                "Last365DaysLawsuits": 0
+            }
+        }
+    ],
+    "QueryId": "e016a3d1-8bdf-423a-8141-149907620aaa",
+    "ElapsedMilliseconds": 223,
+    "QueryDate": "2026-06-19T18:03:44.5795106Z",
+    "Status": {
+        "processes": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

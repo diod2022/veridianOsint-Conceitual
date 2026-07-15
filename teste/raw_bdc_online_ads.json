@@ -1,0 +1,47 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "OnlineAds": [
+                {
+                    "Phone": "11974386018",
+                    "FirstAdDate": "2017-08-26T11:13:00Z",
+                    "LastAdDate": "2017-08-26T11:13:00Z",
+                    "TotalAds": 1,
+                    "ActiveAds": 1,
+                    "MaxActiveAds": 1,
+                    "AdsLast30Days": 1,
+                    "AdsLast90Days": 1,
+                    "AdsLast180Days": 1,
+                    "AdsLast365Days": 1,
+                    "AdsInMainAdPortal": 1,
+                    "AdsInMainAdCategory": 1,
+                    "AdMaxValue": 450,
+                    "AdMinValue": 450,
+                    "AdAvgValue": 450,
+                    "MainAdPortal": "olx",
+                    "MainAdCategory": "varios_Beb\u00eas e crian\u00e7as_Outros",
+                    "AdPortals": [
+                        "olx"
+                    ],
+                    "AdCategories": [
+                        "varios_Beb\u00eas e crian\u00e7as_Outros"
+                    ],
+                    "CreationDate": "2017-08-26T11:42:34.787Z"
+                }
+            ]
+        }
+    ],
+    "QueryId": "f8ede0cd-da14-4040-961f-f44785e1b592",
+    "ElapsedMilliseconds": 76,
+    "QueryDate": "2026-06-19T16:54:49.7179304Z",
+    "Status": {
+        "online_ads": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

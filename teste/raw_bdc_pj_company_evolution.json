@@ -1,0 +1,138 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "CompanyEvolutionData": {
+                "MaxCapital": 10000,
+                "MinCapital": 10000,
+                "AverageCapital": 10000,
+                "MaxQtyEmployees": 0,
+                "MinQtyEmployees": 0,
+                "AverageQtyEmployees": 0,
+                "MaxQtySubsidiaries": 0,
+                "MinQtySubsidiaries": 0,
+                "AverageQtySubsidiaries": 0,
+                "MaxQtyQSA": 2,
+                "MinQtyQSA": 2,
+                "AverageQtyQSA": 2,
+                "DistinctQtyEmployees": 0,
+                "DistinctQtyQSA": 2,
+                "AverageCapital1YearAgo": 0,
+                "AverageCapital3YearsAgo": 0,
+                "AverageCapital5YearsAgo": 0,
+                "AverageQtyEmployees1YearAgo": 0,
+                "AverageQtyEmployees3YearsAgo": 0,
+                "AverageQtyEmployees5YearsAgo": 0,
+                "AverageQtySubsidiaries1YearAgo": 0,
+                "AverageQtySubsidiaries3YearsAgo": 0,
+                "AverageQtySubsidiaries5YearsAgo": 0,
+                "AverageQtyQSA1YearAgo": 0,
+                "AverageQtyQSA3YearsAgo": 0,
+                "AverageQtyQSA5YearsAgo": 0,
+                "HasQSAChangedAnytime": false,
+                "MaxActivityLevel": 0.84375,
+                "MinActivityLevel": 0.37037037,
+                "AverageActivityLevel": 0.56112269,
+                "MaxEShoperLevel": "H",
+                "MinEShoperLevel": "H",
+                "AverageEShoperLevel": "H",
+                "MaxESellerLevel": "H",
+                "MinESellerLevel": "H",
+                "AverageESellerLevel": "H",
+                "YearOverYearGrowthRateStatus1YearAgo": "GROW UP",
+                "YearOverYearGrowthRateStatus3YearsAgo": "GROW UP",
+                "YearOverYearGrowthRateStatus5YearsAgo": "GROW UP",
+                "DataHistoryOverTime": [
+                    {
+                        "Reference": "2026-02-01T00:00:00",
+                        "MainActivityCode": "6201501",
+                        "MainActivityDescription": "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA",
+                        "Activities": {
+                            "6202300": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR CUSTOMIZAVEIS",
+                            "6203100": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR NAO CUSTOMIZAVEIS"
+                        },
+                        "IncomeRange": "SEM INFORMACAO",
+                        "EmployeesRange": "SEM INFORMACAO",
+                        "SubsidiariesEmployeesRange": "SEM INFORMACAO",
+                        "QtyEmployees": 0,
+                        "QtySubsidiaries": 0,
+                        "QtyQSA": 2,
+                        "ActivityLevel": "0.84375",
+                        "EShoperLevel": "H",
+                        "ESellerLevel": "H",
+                        "Capital": 10000
+                    },
+                    {
+                        "Reference": "2026-03-01T00:00:00",
+                        "MainActivityCode": "6201501",
+                        "MainActivityDescription": "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA",
+                        "Activities": {
+                            "6202300": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR CUSTOMIZAVEIS",
+                            "6203100": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR NAO CUSTOMIZAVEIS"
+                        },
+                        "IncomeRange": "SEM INFORMACAO",
+                        "EmployeesRange": "SEM INFORMACAO",
+                        "SubsidiariesEmployeesRange": "SEM INFORMACAO",
+                        "QtyEmployees": 0,
+                        "QtySubsidiaries": 0,
+                        "QtyQSA": 2,
+                        "ActivityLevel": "0.66",
+                        "EShoperLevel": "H",
+                        "ESellerLevel": "H",
+                        "Capital": 10000
+                    },
+                    {
+                        "Reference": "2026-04-01T00:00:00",
+                        "MainActivityCode": "6201501",
+                        "MainActivityDescription": "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA",
+                        "Activities": {
+                            "6202300": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR CUSTOMIZAVEIS",
+                            "6203100": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR NAO CUSTOMIZAVEIS"
+                        },
+                        "IncomeRange": "SEM INFORMACAO",
+                        "EmployeesRange": "SEM INFORMACAO",
+                        "SubsidiariesEmployeesRange": "SEM INFORMACAO",
+                        "QtyEmployees": 0,
+                        "QtySubsidiaries": 0,
+                        "QtyQSA": 2,
+                        "ActivityLevel": "0.37037037037037",
+                        "EShoperLevel": "H",
+                        "ESellerLevel": "H",
+                        "Capital": 10000
+                    },
+                    {
+                        "Reference": "2026-05-01T00:00:00",
+                        "MainActivityCode": "6201501",
+                        "MainActivityDescription": "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA",
+                        "Activities": {
+                            "6202300": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR CUSTOMIZAVEIS",
+                            "6203100": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR NAO CUSTOMIZAVEIS"
+                        },
+                        "IncomeRange": "SEM INFORMACAO",
+                        "EmployeesRange": "SEM INFORMACAO",
+                        "SubsidiariesEmployeesRange": "SEM INFORMACAO",
+                        "QtyEmployees": 0,
+                        "QtySubsidiaries": 0,
+                        "QtyQSA": 2,
+                        "ActivityLevel": "0.37037037037037",
+                        "EShoperLevel": "H",
+                        "ESellerLevel": "H",
+                        "Capital": 10000
+                    }
+                ]
+            }
+        }
+    ],
+    "QueryId": "e5076a43-9406-41ef-8f41-e70b11eefa27",
+    "ElapsedMilliseconds": 118,
+    "QueryDate": "2026-06-19T18:03:43.5217498Z",
+    "Status": {
+        "company_evolution": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

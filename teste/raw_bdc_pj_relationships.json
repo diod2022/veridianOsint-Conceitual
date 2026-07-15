@@ -1,0 +1,89 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "Relationships": {
+                "Relationships": [
+                    {
+                        "RelatedEntityTaxIdNumber": "02754691073",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "ROBERT WILLIAN SOUZA PEREIRA",
+                        "RelationshipType": "QSA",
+                        "RelationshipName": "SOCIO",
+                        "RelationshipLevel": "Direct",
+                        "RelationshipDataOrigin": "RECEITA FEDERAL",
+                        "CreationDate": "2026-02-11T00:00:00Z",
+                        "LastUpdateDate": "2026-05-09T00:00:00Z",
+                        "RelationshipStartDate": "2026-02-10T00:00:00Z",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999"
+                    },
+                    {
+                        "RelatedEntityTaxIdNumber": "10624079708",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "MARCELLA SIQUEIRA SEGURO LEAL",
+                        "RelationshipType": "QSA",
+                        "RelationshipName": "SOCIO-ADMINISTRADOR",
+                        "RelationshipLevel": "Direct",
+                        "RelationshipDataOrigin": "RECEITA FEDERAL",
+                        "CreationDate": "2026-02-11T00:00:00Z",
+                        "LastUpdateDate": "2026-05-09T00:00:00Z",
+                        "RelationshipStartDate": "2026-02-10T00:00:00Z",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999"
+                    }
+                ],
+                "CurrentRelationships": [
+                    {
+                        "RelatedEntityTaxIdNumber": "02754691073",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "ROBERT WILLIAN SOUZA PEREIRA",
+                        "RelationshipType": "QSA",
+                        "RelationshipName": "SOCIO",
+                        "RelationshipLevel": "Direct",
+                        "RelationshipDataOrigin": "RECEITA FEDERAL",
+                        "CreationDate": "2026-02-11T00:00:00Z",
+                        "LastUpdateDate": "2026-05-09T00:00:00Z",
+                        "RelationshipStartDate": "2026-02-10T00:00:00Z",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999"
+                    },
+                    {
+                        "RelatedEntityTaxIdNumber": "10624079708",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "MARCELLA SIQUEIRA SEGURO LEAL",
+                        "RelationshipType": "QSA",
+                        "RelationshipName": "SOCIO-ADMINISTRADOR",
+                        "RelationshipLevel": "Direct",
+                        "RelationshipDataOrigin": "RECEITA FEDERAL",
+                        "CreationDate": "2026-02-11T00:00:00Z",
+                        "LastUpdateDate": "2026-05-09T00:00:00Z",
+                        "RelationshipStartDate": "2026-02-10T00:00:00Z",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999"
+                    }
+                ],
+                "HistoricalRelationships": [],
+                "IsFamilyCompany": false,
+                "IsFamilyOperated": false,
+                "TotalRelationships": 3,
+                "TotalOwners": 2,
+                "TotalEmployees": 0,
+                "TotalOwned": 0,
+                "IsFromHeadQuartersData": false
+            }
+        }
+    ],
+    "QueryId": "8de57559-3225-4a53-b462-e5faca000ea4",
+    "ElapsedMilliseconds": 78,
+    "QueryDate": "2026-06-19T18:03:45.2415578Z",
+    "Status": {
+        "relationships": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

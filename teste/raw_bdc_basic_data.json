@@ -1,0 +1,56 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "BasicData": {
+                "TaxIdNumber": "10624079708",
+                "TaxIdCountry": "BRAZIL",
+                "AlternativeIdNumbers": {
+                    "VoterId": "0114727980388",
+                    "SocialSecurityNumber": "20327310094"
+                },
+                "Name": "MARCELLA SIQUEIRA SEGURO LEAL",
+                "Aliases": {
+                    "CommonName": "MARCELLA LEAL",
+                    "StandardizedName": "MARSELA SIQUEIRA SEGURO LEAL"
+                },
+                "Gender": "F",
+                "NameWordCount": 4,
+                "NumberOfFullNameNamesakes": 1,
+                "NameUniquenessScore": 1,
+                "FirstNameUniquenessScore": 0.001,
+                "FirstAndLastNameUniquenessScore": 0.03703704,
+                "BirthDate": "1985-01-08T00:00:00Z",
+                "CapturedBirthDateFromRFSource": "1985-01-08",
+                "IsValidBirthDateInRFSource": true,
+                "Age": 41,
+                "ZodiacSign": "CAPRICORNIO",
+                "ChineseSign": "Ox",
+                "BirthCountry": "BRASILEIRA",
+                "MotherName": "MARIA DE FATIMA SIQUEIRA",
+                "FatherName": "",
+                "MaritalStatusData": {},
+                "TaxIdStatus": "REGULAR",
+                "TaxIdOrigin": "RECEITA FEDERAL",
+                "TaxIdFiscalRegion": "ES-RJ",
+                "HasObitIndication": false,
+                "TaxIdStatusDate": "2016-08-23T00:00:00Z",
+                "TaxIdStatusRegistrationDate": "2002-04-03T00:00:00Z",
+                "CreationDate": "2016-08-23T00:00:00Z",
+                "LastUpdateDate": "2026-04-06T00:00:00Z"
+            }
+        }
+    ],
+    "QueryId": "0e3cd83d-ccf4-4bdf-949a-43f7be083b53",
+    "ElapsedMilliseconds": 45,
+    "QueryDate": "2026-06-19T16:54:22.6132796Z",
+    "Status": {
+        "basic_data": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

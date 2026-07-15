@@ -1,0 +1,85 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "ExtendedAddresses": {
+                "TotalAddresses": 1,
+                "TotalActiveAddresses": 1,
+                "TotalWorkAddresses": 0,
+                "TotalPersonalAddresses": 1,
+                "TotalUniqueAddresses": 0,
+                "TotalAddressPassages": 2,
+                "TotalBadAddressPassages": 0,
+                "OldestAddressPassageDate": "2026-02-11T00:00:00Z",
+                "NewestAddressPassageDate": "2026-05-09T00:00:00Z",
+                "Addresses": [
+                    {
+                        "OwnHeadquarters": false,
+                        "Typology": "R",
+                        "Title": "",
+                        "AddressMain": "RESTINGA",
+                        "Number": "113",
+                        "Complement": "CJ 1203",
+                        "Neighborhood": "TATUAPE",
+                        "ZipCode": "03065020",
+                        "City": "SAO PAULO",
+                        "State": "SP",
+                        "Country": "BRASIL",
+                        "Type": "OFFICIAL REGISTRATION",
+                        "AddressCurrentlyInRFSite": true,
+                        "ComplementType": "",
+                        "BuildCode": "FBEEC47591933DE3FA7D19E271FB82984D76537407EC206210DE5EBE68139D34",
+                        "BuildingCode": "FBEEC47591933DE3FA7D19E271FB82984D76537407EC206210DE5EBE68139D34",
+                        "HouseholdCode": "6DB5BB2E69738EA3700D0D535F935811229A6FDD173E8049FA1BD7C2C0CFC01F",
+                        "AddressEntityAge": 87,
+                        "AddressEntityTotalPassages": 2,
+                        "AddressEntityBadPassages": 0,
+                        "AddressEntityCrawlingPassages": 2,
+                        "AddressEntityValidationPassages": 0,
+                        "AddressEntityQueryPassages": -1,
+                        "AddressEntityMonthAveragePassages": 0.7,
+                        "AddressGlobalAge": 2362,
+                        "AddressGlobalTotalPassages": 6,
+                        "AddressGlobalBadPassages": 0,
+                        "AddressGlobalCrawlingPassages": 6,
+                        "AddressGlobalValidationPassages": 0,
+                        "AddressGlobalQueryPassages": -1,
+                        "AddressGlobalMonthAveragePassages": 0.08,
+                        "AddressNumberOfEntities": 3,
+                        "Priority": 1,
+                        "IsMainForEntity": true,
+                        "IsIndirectAssociation": false,
+                        "IsRecentForEntity": true,
+                        "IsMainForOtherEntity": true,
+                        "IsRecentForOtherEntity": true,
+                        "IsActive": true,
+                        "IsRatified": true,
+                        "IsLikelyFromAccountant": false,
+                        "LastValidationDate": "0001-01-01T00:00:00",
+                        "EntityFirstPassageDate": "2026-02-11T00:00:00Z",
+                        "EntityLastPassageDate": "2026-05-09T00:00:00Z",
+                        "GlobalFirstPassageDate": "2019-11-20T00:00:00Z",
+                        "GlobalLastPassageDate": "2026-05-09T00:00:00Z",
+                        "CreationDate": "2026-02-11T00:00:00Z",
+                        "LastUpdateDate": "2026-05-09T00:00:00Z",
+                        "HasOptIn": false,
+                        "Latitude": -23.53989,
+                        "Longitude": -46.5799499
+                    }
+                ]
+            }
+        }
+    ],
+    "QueryId": "b198c4c1-bfef-412e-acd1-9ee66b386924",
+    "ElapsedMilliseconds": 70,
+    "QueryDate": "2026-06-19T18:03:43.0036203Z",
+    "Status": {
+        "addresses_extended": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

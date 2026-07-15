@@ -1,0 +1,115 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "BasicData": {
+                "TaxIdNumber": "65064260000176",
+                "TaxIdCountry": "Brazil",
+                "AlternativeIdNumbers": {},
+                "OfficialName": "OSINT BRASIL - VERIDIAN DESENVOLVIMENTO DE SOFTWARES LTDA",
+                "TradeName": "OSINT BRASIL - VERIDIAN",
+                "Aliases": {
+                    "UnstandardizedRFOfficialName": "OSINT BRASIL - VERIDIAN DESENVOLVIMENTO DE SOFTWARES LTDA",
+                    "UnstandardizedRFTradeName": "OSINT BRASIL - VERIDIAN"
+                },
+                "NameUniquenessScore": 1,
+                "OfficialNameUniquenessScore": 1,
+                "TradeNameUniquenessScore": 1,
+                "FoundedDate": "2026-02-10T00:00:00Z",
+                "Age": 0,
+                "IsHeadquarter": true,
+                "HeadquarterState": "SP",
+                "IsConglomerate": false,
+                "TaxIdStatus": "ATIVA",
+                "TaxIdStatusReason": "",
+                "TaxIdOrigin": "Receita Federal",
+                "TaxIdStatusDate": "2026-05-09T00:00:00Z",
+                "TaxIdStatusRegistrationDate": "2026-02-10T00:00:00Z",
+                "TaxRegime": "SIMPLES",
+                "CompanyType_ReceitaFederal": "ME",
+                "TaxRegimes": {
+                    "Simples": true
+                },
+                "Activities": [
+                    {
+                        "IsMain": true,
+                        "Code": "6201501",
+                        "Activity": "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA",
+                        "ActivityDivision": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "ActivityGroup": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "ActivityClass": "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA"
+                    },
+                    {
+                        "IsMain": false,
+                        "Code": "6202300",
+                        "Activity": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR CUSTOMIZAVEIS",
+                        "ActivityDivision": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "ActivityGroup": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "ActivityClass": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR CUSTOMIZAVEIS"
+                    },
+                    {
+                        "IsMain": false,
+                        "Code": "6203100",
+                        "Activity": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR NAO CUSTOMIZAVEIS",
+                        "ActivityDivision": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "ActivityGroup": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "ActivityClass": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR NAO CUSTOMIZAVEIS"
+                    }
+                ],
+                "LegalNature": {
+                    "Code": "2062",
+                    "Activity": "SOCIEDADE EMPRESARIA LIMITADA"
+                },
+                "SpecialSituation": "",
+                "CreationDate": "2026-02-11T00:00:00Z",
+                "LastUpdateDate": "2026-05-09T00:00:00Z",
+                "AdditionalOutputData": {
+                    "Capital": "DEZ MIL REAIS",
+                    "CapitalRS": "10000.00",
+                    "NIRE": "",
+                    "NIRECompanySize": "",
+                    "NIREHeadquartersType": "",
+                    "NIREHeadquartersCapital": "0",
+                    "NIRELastCaptureDate": "0001-01-01T12:00:00Z",
+                    "COMEX": "",
+                    "COMEXLastUpdate": "0001-01-01T12:00:00Z"
+                },
+                "HistoricalData": {
+                    "HasChangedTradeName": false,
+                    "HasChangedTaxRegime": true,
+                    "HistoricalDataEvolution": {
+                        "TradeName": [
+                            {
+                                "Value": "OSINT BRASIL - VERIDIAN",
+                                "StartDate": "2026-02-11T00:00:00Z"
+                            }
+                        ],
+                        "TaxRegime": [
+                            {
+                                "Value": "SIMPLES",
+                                "StartDate": "2026-02-01T00:00:00Z"
+                            },
+                            {
+                                "Value": "LTDA",
+                                "StartDate": "2026-02-11T00:00:00Z",
+                                "EndDate": "2026-02-01T00:00:00Z"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "QueryId": "72a4ef7d-d076-4d29-93ca-15667383ae2a",
+    "ElapsedMilliseconds": 103,
+    "QueryDate": "2026-06-19T18:03:41.3727246Z",
+    "Status": {
+        "basic_data": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

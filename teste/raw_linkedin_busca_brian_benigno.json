@@ -1,0 +1,94 @@
+{
+    "pagination": {
+        "totalElements": 9,
+        "totalPages": 1,
+        "pageNumber": 1,
+        "previousElements": 0,
+        "pageSize": 10,
+        "totalResultCount": 9
+    },
+    "elements": [
+        {
+            "id": "ACoAABakcxABjlAAyxSic-PBjqZefuMoBudttT4",
+            "name": "Brian Sánchez Benigno",
+            "position": "Commercial Visual Merchandising en ZARA SA",
+            "location": {"linkedinText": "Greater Valencia Metropolitan Area"},
+            "linkedinUrl": "https://www.linkedin.com/in/brian-s%C3%A1nchez-benigno-868277a7",
+            "publicIdentifier": "brian-sánchez-benigno-868277a7"
+        },
+        {
+            "id": "ACoAAFInXWcBWg84NZGZU5XQZOxDKrsT4EX7SUE",
+            "name": "Brian Benigno",
+            "position": "Crew Member at Dot & Dough",
+            "photo": "https://media.licdn.com/dms/image/v2/D4E03AQFHfP23TFXM2A/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1724886880855?e=1783555200&v=beta&t=HfKxPESv6kk1nhTbw7qo7iipTZ_DLFTR8OTirnds8BI",
+            "location": {"linkedinText": "Ontario, CA"},
+            "linkedinUrl": "https://www.linkedin.com/in/brian-benigno-b9b715325",
+            "publicIdentifier": "brian-benigno-b9b715325"
+        },
+        {
+            "id": "ACoAAFT9VZEBFyLkcC9pZ8SJY0dVbGI2Kw59EHM",
+            "name": "Brian Benigno",
+            "position": "--",
+            "photo": "https://media.licdn.com/dms/image/v2/D4D03AQGlnnKhxociHA/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1731940409118?e=1783555200&v=beta&t=e8R9NMtCNDna4El88dRSs1X0pIifnOPawHHeY5-npzY",
+            "location": {"linkedinText": "São Paulo, SP"},
+            "linkedinUrl": "https://www.linkedin.com/in/brian-benigno-06963b339",
+            "publicIdentifier": "brian-benigno-06963b339"
+        },
+        {
+            "id": "ACoAAB4Yn_4BXo1NgAD6wdRpBB7jkIMsnEBHFnE",
+            "name": "Brian Benigno",
+            "position": "Student at Diablo Valley College",
+            "location": {"linkedinText": "Antioch, CA"},
+            "linkedinUrl": "https://www.linkedin.com/in/brian-benigno-052125121",
+            "publicIdentifier": "brian-benigno-052125121"
+        },
+        {
+            "id": "ACoAAEhOSUsB9-aTBfOse6SneB6G4HOwsOeRfzk",
+            "name": "Brian Benigno",
+            "position": "Help Desk Technician at Brazosport College",
+            "location": {"linkedinText": "Clute, TX"},
+            "linkedinUrl": "https://www.linkedin.com/in/brian-benigno-8b731729a",
+            "publicIdentifier": "brian-benigno-8b731729a"
+        },
+        {
+            "id": "ACoAACF2g-MBzPmcMNb-P8KWxzXTFX2mRzh3gy8",
+            "name": "Brian Benigno",
+            "position": "Software Engineer at Cole Engineering Services, Inc.",
+            "location": {"linkedinText": "DeBary, FL"},
+            "linkedinUrl": "https://www.linkedin.com/in/brian-benigno-02b025138",
+            "publicIdentifier": "brian-benigno-02b025138"
+        },
+        {
+            "id": "ACoAAAYfuCQBKC17gG1sycBFSxbX130kb2GsVHo",
+            "name": "Brian Benigno",
+            "position": "CCO & COO at Infinity Safe | TSCM | Counter Measures | Consultor | Management | Project and Product Manager| Master in Adminstration e Marketing",
+            "photo": "https://media.licdn.com/dms/image/v2/D4D03AQEZbbsNjIkpYQ/profile-displayphoto-scale_100_100/B4DZ143DH4LMAg-/0/1775849191271?e=1783555200&v=beta&t=FwDRbjRvIUEgFJxvweL_S9cdAYXZSRRd9NkNJhcvt1c",
+            "location": {"linkedinText": "São Paulo, SP"},
+            "linkedinUrl": "https://www.linkedin.com/in/brian-benigno",
+            "publicIdentifier": "brian-benigno"
+        },
+        {
+            "id": "ACoAABcEDAYBSDAO278Y4FjqTmCXw1QhKk8Rkzk",
+            "name": "Brian Benigno",
+            "position": "Content Creator, Videographer, Editor, Graphics Op, AV Tech...",
+            "location": {"linkedinText": "Orlando, FL"},
+            "linkedinUrl": "https://www.linkedin.com/in/brianpbenigno",
+            "publicIdentifier": "brianpbenigno"
+        },
+        {
+            "id": "ACoAAGhxF3sB_u6irH1xA9ng9MH8WQZZVbUaeJk",
+            "name": "Brian Benigno",
+            "position": "Senior Systems Support Technician at Brazosport College",
+            "location": {"linkedinText": "Lake Jackson, TX"},
+            "linkedinUrl": "https://www.linkedin.com/in/brian-benigno-b639a440a",
+            "publicIdentifier": "brian-benigno-b639a440a"
+        }
+    ],
+    "query": {"search": "brian benigno", "firstName": "brian", "lastName": "benigno"},
+    "status": 200,
+    "retries": 0,
+    "payments": ["linkedinProfileSearch"],
+    "originalQuery": {"search": "brian benigno", "firstName": "brian", "lastName": "benigno"},
+    "cost": 0.0032,
+    "requestId": "f24eee95-12d3-4f6b-90ae-731dc7dd0540"
+}

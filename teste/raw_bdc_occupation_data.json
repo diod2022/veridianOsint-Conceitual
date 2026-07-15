@@ -1,0 +1,77 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "ProfessionData": {
+                "Professions": [
+                    {
+                        "Source": "RECEITA FEDERAL",
+                        "Sector": "PRIVATE - 6201501 - DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA",
+                        "Country": "BRAZIL",
+                        "CompanyIdNumber": "65064260000176",
+                        "CompanyName": "OSINT BRASIL - VERIDIAN DESENVOLVIMENTO DE SOFTWARES LTDA",
+                        "Area": "UNKNOWN",
+                        "Level": "ENTREPRENEUR | BUSINESS OWNER",
+                        "Status": "ACTIVE",
+                        "IncomeRange": "4 A 10 SM",
+                        "Income": 6000,
+                        "StartDate": "2026-02-11T00:00:00Z",
+                        "EndDate": "9999-12-31T23:59:59.9999999",
+                        "CreationDate": "2026-02-11T00:00:00Z",
+                        "LastUpdateDate": "2026-05-09T00:00:00Z"
+                    },
+                    {
+                        "Source": "RAIS",
+                        "Sector": "PRIVATE - 8220200 - ATIVIDADES DE TELEATENDIMENTO",
+                        "Country": "BRAZIL",
+                        "CompanyIdNumber": "02879250006614",
+                        "CompanyName": "ATENTO BRASIL S/A",
+                        "Area": "UNKNOWN",
+                        "Level": "EMPLOYEE",
+                        "Status": "INACTIVE",
+                        "IncomeRange": "SEM INFORMACAO",
+                        "Income": 0,
+                        "StartDate": "2015-10-01T00:00:00Z",
+                        "EndDate": "2016-10-01T00:00:00Z",
+                        "CreationDate": "2017-08-13T00:00:00Z",
+                        "LastUpdateDate": "2017-08-13T00:00:00Z"
+                    },
+                    {
+                        "Source": "RAIS",
+                        "Sector": "PRIVATE - 8211300 - SERVICOS COMBINADOS DE ESCRITORIO E APOIO ADMINISTRATIVO",
+                        "Country": "BRAZIL",
+                        "CompanyIdNumber": "02879250004751",
+                        "CompanyName": "ATENTO BRASIL S/A",
+                        "Area": "UNKNOWN",
+                        "Level": "EMPLOYEE",
+                        "Status": "INACTIVE",
+                        "IncomeRange": "SEM INFORMACAO",
+                        "Income": 0,
+                        "StartDate": "2009-12-01T00:00:00Z",
+                        "EndDate": "2012-10-01T00:00:00Z",
+                        "CreationDate": "0001-01-01T00:00:00Z",
+                        "LastUpdateDate": "0001-01-01T00:00:00Z"
+                    }
+                ],
+                "TotalProfessions": 3,
+                "TotalActiveProfessions": 1,
+                "TotalIncome": 6000,
+                "TotalIncomeRange": "4 A 10 SM",
+                "TotalDiscounts": 0,
+                "IsEmployed": true
+            }
+        }
+    ],
+    "QueryId": "0d49cafa-5b61-48d7-b3e1-eb787b027704",
+    "ElapsedMilliseconds": 76,
+    "QueryDate": "2026-06-19T16:54:38.5402Z",
+    "Status": {
+        "occupation_data": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

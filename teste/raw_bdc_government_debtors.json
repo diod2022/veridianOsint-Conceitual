@@ -1,0 +1,26 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "GovernmentDebtors": {
+                "TotalDebtValue": 0,
+                "TotalDebtValuePerOrigin": {},
+                "TotalDebts": 0,
+                "TotalDebtsPerOrigin": {},
+                "Debts": []
+            }
+        }
+    ],
+    "QueryId": "489ac39d-3e0d-4616-a583-e958c596f47d",
+    "ElapsedMilliseconds": 57,
+    "QueryDate": "2026-06-19T16:54:50.2514845Z",
+    "Status": {
+        "government_debtors": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

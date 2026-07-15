@@ -1,0 +1,101 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "HistoryBasicData": {
+                "CurrentName": "OSINT BRASIL - VERIDIAN DESENVOLVIMENTO DE SOFTWARES LTDA",
+                "Age": 0,
+                "TotalChanges": 9,
+                "NameTotalChanges": 1,
+                "TradeNameTotalChanges": 1,
+                "TaxRegimeTotalChanges": 2,
+                "TaxIdStatusTotalChanges": 1,
+                "HeadquarterTotalChanges": 0,
+                "CnaeTotalChanges": 3,
+                "CapitalTotalChanges": 1,
+                "LastDateChanged": "2026-03-01T00:00:00",
+                "LastNameChanged": "2026-02-01T00:00:00",
+                "LastLegalNatureChanged": "0001-01-01T00:00:00",
+                "NameHistoryList": [
+                    {
+                        "Name": "OSINT BRASIL - VERIDIAN DESENVOLVIMENTO DE SOFTWARES LTDA",
+                        "TradeName": "OSINT BRASIL - VERIDIAN",
+                        "OfficialName": "OSINT BRASIL - VERIDIAN DESENVOLVIMENTO DE SOFTWARES LTDA",
+                        "ChangeDate": "2026-02-01T00:00:00"
+                    }
+                ],
+                "TradeNameHistoryList": [
+                    {
+                        "Name": "OSINT BRASIL - VERIDIAN DESENVOLVIMENTO DE SOFTWARES LTDA",
+                        "TradeName": "OSINT BRASIL - VERIDIAN",
+                        "OfficialName": "OSINT BRASIL - VERIDIAN DESENVOLVIMENTO DE SOFTWARES LTDA",
+                        "ChangeDate": "2026-02-01T00:00:00"
+                    }
+                ],
+                "TaxRegimeHistoryList": [
+                    {
+                        "TaxRegime": "LTDA",
+                        "ChangeDate": "2026-02-01T00:00:00"
+                    },
+                    {
+                        "TaxRegime": "SIMPLES",
+                        "ChangeDate": "2026-03-01T00:00:00"
+                    }
+                ],
+                "TaxIdStatusHistoryList": [
+                    {
+                        "TaxIdStatus": "ATIVA",
+                        "ChangeDate": "2026-02-01T00:00:00"
+                    }
+                ],
+                "CnaeHistoryList": [
+                    {
+                        "Code": "6201501",
+                        "DocNumber": "",
+                        "Activity": "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA",
+                        "EconomicActivityDivision": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "EconomicActivityGroup": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "IsMainEconomicActivity": true,
+                        "ChangeDate": "2026-02-01T00:00:00"
+                    },
+                    {
+                        "Code": "6202300",
+                        "DocNumber": "",
+                        "Activity": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR CUSTOMIZAVEIS",
+                        "EconomicActivityDivision": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "EconomicActivityGroup": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "IsMainEconomicActivity": false,
+                        "ChangeDate": "2026-02-01T00:00:00"
+                    },
+                    {
+                        "Code": "6203100",
+                        "DocNumber": "",
+                        "Activity": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR NAO CUSTOMIZAVEIS",
+                        "EconomicActivityDivision": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "EconomicActivityGroup": "ATIVIDADES DOS SERVICOS DE TECNOLOGIA DA INFORMACAO",
+                        "IsMainEconomicActivity": false,
+                        "ChangeDate": "2026-02-01T00:00:00"
+                    }
+                ],
+                "CapitalHistoryList": [
+                    {
+                        "Capital": "10000.00",
+                        "ChangeDate": "2026-02-01T00:00:00"
+                    }
+                ]
+            }
+        }
+    ],
+    "QueryId": "38e5eb0c-f0ae-4615-b2ba-2a281c0fd9d9",
+    "ElapsedMilliseconds": 61,
+    "QueryDate": "2026-06-19T18:03:45.7769723Z",
+    "Status": {
+        "history_basic_data": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

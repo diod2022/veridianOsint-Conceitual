@@ -1,0 +1,32 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "IndustrialProperty": {
+                "PatentsCount": 0,
+                "BrandsCount": 0,
+                "PatentCountries": [],
+                "PatentPetitionCount": 0,
+                "BrandPetitionCount": 0,
+                "PatentPublicationCount": 0,
+                "BrandPublicationCount": 0,
+                "AVGDaysOrdinaryTerm": 0,
+                "AVGDaysExtraOrdinaryTerm": 0,
+                "Patents": [],
+                "Brands": []
+            }
+        }
+    ],
+    "QueryId": "c078a791-0f9e-4395-a3fd-da62472e0bd6",
+    "ElapsedMilliseconds": 45,
+    "QueryDate": "2026-06-19T16:54:38.0376997Z",
+    "Status": {
+        "industrial_property": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

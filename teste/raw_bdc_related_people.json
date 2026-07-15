@@ -1,0 +1,103 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "RelatedPeople": {
+                "PersonalRelationships": [
+                    {
+                        "RelatedEntityTaxIdNumber": "51926342704",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "MARIA DE FATIMA SIQUEIRA",
+                        "RelationshipType": "MOTHER",
+                        "RelationshipLevel": "DIRECT",
+                        "RelationshipStartDate": "0001-01-01T00:00:00",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999",
+                        "CreationDate": "2026-03-15T00:00:00Z",
+                        "LastUpdateDate": "2026-05-17T00:00:00Z"
+                    },
+                    {
+                        "RelatedEntityTaxIdNumber": "30722543700",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "JANETE DAS GRACAS SIQUEIRA STUTZ",
+                        "RelationshipType": "UNCLE",
+                        "RelationshipLevel": "DIRECT",
+                        "RelationshipStartDate": "0001-01-01T00:00:00",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999",
+                        "CreationDate": "2026-03-15T00:00:00Z",
+                        "LastUpdateDate": "2026-05-17T00:00:00Z"
+                    },
+                    {
+                        "RelatedEntityTaxIdNumber": "15438567727",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "ANA SIQUEIRA STUTZ",
+                        "RelationshipType": "COUSIN",
+                        "RelationshipLevel": "DIRECT",
+                        "RelationshipStartDate": "0001-01-01T00:00:00",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999",
+                        "CreationDate": "2026-03-15T00:00:00Z",
+                        "LastUpdateDate": "2026-05-17T00:00:00Z"
+                    },
+                    {
+                        "RelatedEntityTaxIdNumber": "15438568707",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "SAMUEL SIQUEIRA STUTZ",
+                        "RelationshipType": "COUSIN",
+                        "RelationshipLevel": "DIRECT",
+                        "RelationshipStartDate": "0001-01-01T00:00:00",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999",
+                        "CreationDate": "2026-03-15T00:00:00Z",
+                        "LastUpdateDate": "2026-05-17T00:00:00Z"
+                    },
+                    {
+                        "RelatedEntityTaxIdNumber": "02754691073",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "ROBERT WILLIAN SOUZA PEREIRA",
+                        "RelationshipType": "PARTNER",
+                        "RelationshipLevel": "INDIRECT",
+                        "RelationshipStartDate": "2026-02-11T00:00:00Z",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999",
+                        "CreationDate": "2016-08-23T00:00:00Z",
+                        "LastUpdateDate": "2026-06-02T00:00:00Z"
+                    },
+                    {
+                        "RelatedEntityTaxIdNumber": "69555001804",
+                        "RelatedEntityTaxIdType": "CPF",
+                        "RelatedEntityTaxIdCountry": "Brazil",
+                        "RelatedEntityName": "MARIA DA CONCEICAO LEITE DA SILVA",
+                        "RelationshipType": "COWORKER",
+                        "RelationshipLevel": "DIRECT",
+                        "RelationshipStartDate": "0001-01-01T00:00:00",
+                        "RelationshipEndDate": "9999-12-31T23:59:59.9999999",
+                        "CreationDate": "2023-08-24T00:00:00Z",
+                        "LastUpdateDate": "2026-05-17T00:00:00Z"
+                    }
+                ],
+                "TotalRelationships": 6,
+                "TotalRelatives": 4,
+                "TotalNeighbors": 0,
+                "TotalSpouses": 0,
+                "TotalCoworkers": 1,
+                "TotalHousehold": 0,
+                "TotalPartners": 1,
+                "TotalCollegeClass": 0
+            }
+        }
+    ],
+    "QueryId": "19360125-ddb6-40c1-951d-6fcdced746f2",
+    "ElapsedMilliseconds": 43,
+    "QueryDate": "2026-06-19T16:54:26.153437Z",
+    "Status": {
+        "related_people": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

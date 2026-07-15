@@ -1,0 +1,56 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "HistoricalBasicData": {
+                "CurrentName": "MARCELLA SIQUEIRA SEGURO LEAL",
+                "CurrentStatus": "REGULAR",
+                "CurrentGender": "F",
+                "BirthDate": "1985-01-08T00:00:00Z",
+                "Age": 41,
+                "TaxIdNumber": "10624079708",
+                "HasObitIndication": false,
+                "NameChangeHistory": [
+                    {
+                        "ChangedDate": "2003-01-08T00:00:00Z",
+                        "Name": "MARCELLA SIQUEIRA SEGURO LEAL",
+                        "Gender": "F"
+                    }
+                ],
+                "StatusChangeHistory": [
+                    {
+                        "ChangedDate": "2003-01-08T00:00:00Z",
+                        "Status": "REGULAR"
+                    }
+                ],
+                "NameLifetimePercent": {
+                    "MARCELLA SIQUEIRA SEGURO LEAL": 1
+                },
+                "GenderLifetimePercent": {
+                    "F": 1
+                },
+                "StatusLifetimePercent": {
+                    "REGULAR": 1
+                },
+                "NameChangesTotal": 0,
+                "StatusChangesTotal": 0,
+                "LastNameChangeDate": "0001-01-01T00:00:00",
+                "LastStatusChangeDate": "0001-01-01T00:00:00",
+                "FirstNameChangeDate": "0001-01-01T00:00:00",
+                "FirstStatusChangeDate": "0001-01-01T00:00:00"
+            }
+        }
+    ],
+    "QueryId": "e9ba2ac9-e3fc-4142-9717-14d49c6a3373",
+    "ElapsedMilliseconds": 83,
+    "QueryDate": "2026-06-19T16:54:36.0374198Z",
+    "Status": {
+        "historical_basic_data": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

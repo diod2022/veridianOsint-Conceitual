@@ -1,0 +1,36 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{10624079708}",
+            "ElectoralDonors": {
+                "DocNumber": "10624079708",
+                "Name": "MARCELLA SIQUEIRA SEGURO LEAL",
+                "TotalDonationsAmount": 0,
+                "TotalDonatedValue": 0,
+                "QuantityOfDonationsLastElection": 0,
+                "QuantityOfDonationsLastTwoElections": 0,
+                "QuantityOfDonationsLastThreeElection": 0,
+                "DonatedValueLastElection": 0,
+                "DonatedValueLastTwoElections": 0,
+                "DonatedValueLastThreeElection": 0,
+                "PartiesThatReceivedDonation": [],
+                "MaxDonationValue": 0,
+                "AverageDonationValue": 0,
+                "MinDonationValue": 0,
+                "ElectionDonationData": []
+            }
+        }
+    ],
+    "QueryId": "56c16d08-f902-456c-af07-1cd343b6e813",
+    "ElapsedMilliseconds": 45,
+    "QueryDate": "2026-06-19T16:54:50.7634966Z",
+    "Status": {
+        "electoral_donors": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}

@@ -1,0 +1,34 @@
+{
+    "Result": [
+        {
+            "MatchKeys": "doc{65064260000176}",
+            "ElectoralDonors": {
+                "TotalDonationsAmount": 0,
+                "TotalDonatedValue": 0,
+                "QuantityOfDonationsLastElection": 0,
+                "QuantityOfDonationsLastTwoElections": 0,
+                "QuantityOfDonationsLastThreeElection": 0,
+                "DonatedValueLastElection": 0,
+                "DonatedValueLastTwoElections": 0,
+                "DonatedValueLastThreeElection": 0,
+                "PartiesThatReceivedDonation": [],
+                "MaxDonationValue": 0,
+                "AverageDonationValue": 0,
+                "MinDonationValue": 0,
+                "ElectionDonationData": []
+            }
+        }
+    ],
+    "QueryId": "a97eb250-5a07-4c6c-bc51-efce6e7c3440",
+    "ElapsedMilliseconds": 42,
+    "QueryDate": "2026-06-19T18:03:44.093854Z",
+    "Status": {
+        "electoral_donors": [
+            {
+                "Code": 0,
+                "Message": "OK"
+            }
+        ]
+    },
+    "Evidences": {}
+}
