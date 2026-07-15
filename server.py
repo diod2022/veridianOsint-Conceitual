@@ -3570,27 +3570,80 @@ async def run_sse_with_auth(self_mcp) -> None:
         except Exception as e:
             return JSONResponse({"error": f"Failed to write keys file: {str(e)}"}, status_code=500)
 
-    starlette_app = Starlette(
-        debug=self_mcp.settings.debug,
-        routes=[
-            Mount("/sse", app=handle_sse),
-            Mount("/messages", app=handle_messages),
-            Route("/admin/api/status", endpoint=admin_api_status, methods=["GET"]),
-            Route("/admin/api/config", endpoint=admin_api_config, methods=["POST"]),
-            Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
-            Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
-            Mount("/admin", app=serve_admin_page),
-        ],
-    )
+    admin_port_env = os.environ.get("ADMIN_PORT")
+    admin_port = None
+    if admin_port_env:
+        try:
+            admin_port = int(admin_port_env)
+        except ValueError:
+            print(f"[AUTH ERROR] Valor de ADMIN_PORT inválido: {admin_port_env}. Usando mesma porta.", file=sys.stderr)
+            admin_port = None
 
-    config = uvicorn.Config(
-        starlette_app,
-        host=self_mcp.settings.host,
-        port=self_mcp.settings.port,
-        log_level=self_mcp.settings.log_level.lower(),
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
+    if admin_port:
+        mcp_app = Starlette(
+            debug=self_mcp.settings.debug,
+            routes=[
+                Mount("/sse", app=handle_sse),
+                Mount("/messages", app=handle_messages),
+            ],
+        )
+        
+        admin_app = Starlette(
+            debug=self_mcp.settings.debug,
+            routes=[
+                Route("/admin/api/status", endpoint=admin_api_status, methods=["GET"]),
+                Route("/admin/api/config", endpoint=admin_api_config, methods=["POST"]),
+                Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
+                Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
+                Mount("/admin", app=serve_admin_page),
+            ],
+        )
+
+        mcp_config = uvicorn.Config(
+            mcp_app,
+            host=self_mcp.settings.host,
+            port=self_mcp.settings.port,
+            log_level=self_mcp.settings.log_level.lower(),
+        )
+        
+        admin_config = uvicorn.Config(
+            admin_app,
+            host=self_mcp.settings.host,
+            port=admin_port,
+            log_level=self_mcp.settings.log_level.lower(),
+        )
+
+        mcp_server = uvicorn.Server(mcp_config)
+        admin_server = uvicorn.Server(admin_config)
+
+        print(f"[MCP] Servidor MCP rodando na porta: {self_mcp.settings.port}", file=sys.stderr, flush=True)
+        print(f"[ADMIN] Painel Administrativo rodando na porta: {admin_port}", file=sys.stderr, flush=True)
+
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(mcp_server.serve)
+            tg.start_soon(admin_server.serve)
+    else:
+        starlette_app = Starlette(
+            debug=self_mcp.settings.debug,
+            routes=[
+                Mount("/sse", app=handle_sse),
+                Mount("/messages", app=handle_messages),
+                Route("/admin/api/status", endpoint=admin_api_status, methods=["GET"]),
+                Route("/admin/api/config", endpoint=admin_api_config, methods=["POST"]),
+                Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
+                Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
+                Mount("/admin", app=serve_admin_page),
+            ],
+        )
+
+        config = uvicorn.Config(
+            starlette_app,
+            host=self_mcp.settings.host,
+            port=self_mcp.settings.port,
+            log_level=self_mcp.settings.log_level.lower(),
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
 
 
 # Ponto de entrada
