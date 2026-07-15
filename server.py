@@ -3727,6 +3727,8 @@ async def run_sse_with_auth(self_mcp) -> None:
             host=self_mcp.settings.host,
             port=self_mcp.settings.port,
             log_level=self_mcp.settings.log_level.lower(),
+            proxy_headers=True,
+            forwarded_allow_ips="*",
         )
         
         admin_config = uvicorn.Config(
@@ -3734,6 +3736,8 @@ async def run_sse_with_auth(self_mcp) -> None:
             host=self_mcp.settings.host,
             port=admin_port,
             log_level=self_mcp.settings.log_level.lower(),
+            proxy_headers=True,
+            forwarded_allow_ips="*",
         )
 
         mcp_server = uvicorn.Server(mcp_config)
@@ -3773,6 +3777,8 @@ async def run_sse_with_auth(self_mcp) -> None:
             host=self_mcp.settings.host,
             port=self_mcp.settings.port,
             log_level=self_mcp.settings.log_level.lower(),
+            proxy_headers=True,
+            forwarded_allow_ips="*",
         )
         server = uvicorn.Server(config)
         await server.serve()
