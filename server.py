@@ -3181,16 +3181,16 @@ from starlette.middleware.cors import CORSMiddleware
 from mcp.server.sse import SseServerTransport
 import uvicorn
 import anyio
-import mcp.server.sse
+import mcp.server.sse as mcp_sse
 
 # Monkeypatch quote no mcp.server.sse para não corromper URLs absolutas
-_orig_quote = mcp.server.sse.quote
+_orig_quote = mcp_sse.quote
 def _custom_quote(string, safe='/', encoding=None, errors=None):
     if string.startswith("http://") or string.startswith("https://"):
         parts = string.split("://", 1)
         return parts[0] + "://" + _orig_quote(parts[1], safe=safe, encoding=encoding, errors=errors)
     return _orig_quote(string, safe=safe, encoding=encoding, errors=errors)
-mcp.server.sse.quote = _custom_quote
+mcp_sse.quote = _custom_quote
 
 sessao_corrente: ContextVar[UUID] = ContextVar("sessao_corrente")
 sessoes_autorizadas = set()
