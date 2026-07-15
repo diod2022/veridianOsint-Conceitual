@@ -682,7 +682,8 @@
             "instagram": "HikerAPI (Instagram OSINT)",
             "linkedin": "Harvest API (LinkedIn OSINT)",
             "lighthouse": "Lighthouse (Facebook/Darknet/Imagens)",
-            "whois": "WhoisXML API (Domínios & DNS)"
+            "whois": "WhoisXML API (Domínios & DNS)",
+            "escavador": "Escavador (Processos por OAB)"
         };
 
         const CONSULTAS_POR_FONTE = {
@@ -758,7 +759,73 @@
             ],
             "whois": [
                 "whois_consultar"
+            ],
+            "escavador": [
+                "escavador_buscar_processos_oab"
             ]
+        };
+
+        const TRADUCAO_CONSULTAS = {
+            "bigdata_consultar_cpf": "Consultar CPF (Básico & Avançado)",
+            "bigdata_ver_categoria": "Consultar Detalhes da Categoria CPF",
+            "bigdata_consultar_cnpj": "Consultar CNPJ Completo",
+            "bigdata_ver_categoria_cnpj": "Consultar Detalhes da Categoria CNPJ",
+            "bigdata_consultar_processo": "Consultar Processos por CPF/CNPJ",
+            "bigdata_cnpj_alteracoes": "Mudanças Societárias do CNPJ",
+            "csint_consultar_ip": "Pesquisar IP e Geolocalização",
+            "csint_busca_universal": "Busca Universal de Vazamentos (Breachs)",
+            "csint_consultar_telefone": "Consultar Telefone OSINT",
+            "csint_consultar_email": "Consultar E-mail OSINT",
+            "unitfour_consultar_cpf": "Consultar Cadastro por CPF",
+            "unitfour_pessoas_ligadas": "Pesquisar Pessoas Ligadas (Parentes/Sócios)",
+            "unitfour_mandados_prisao": "Pesquisar Mandados de Prisão",
+            "unitfour_antecedentes_criminais": "Consultar Antecedentes Criminais",
+            "unitfour_consulta_pep": "Verificar se CPF é PEP (Politicamente Exposto)",
+            "unitfour_consultar_cnpj": "Consultar Cadastro por CNPJ",
+            "unitfour_tomadores_decisao": "Pesquisar Tomadores de Decisão",
+            "unitfour_empresas_ligadas": "Pesquisar Empresas Ligadas",
+            "unitfour_proprietario_veiculo_placa": "Descobrir Proprietário por Placa de Veículo",
+            "unitfour_busca_avancada_nome": "Busca Avançada por Nome",
+            "unitfour_busca_avancada_telefone": "Busca Avançada por Telefone",
+            "unitfour_busca_avancada_email": "Busca Avançada por E-mail",
+            "unitfour_busca_avancada_cep": "Busca Avançada por Endereço/CEP",
+            "instagram_buscar_usuario": "Buscar Perfil do Instagram",
+            "instagram_ver_seguidores": "Listar Seguidores do Instagram",
+            "instagram_ver_posts": "Listar Postagens do Instagram",
+            "instagram_ver_stories": "Visualizar Stories do Instagram",
+            "tiktok_buscar_perfil": "Buscar Perfil do TikTok",
+            "tiktok_listar_videos": "Listar Vídeos do TikTok",
+            "tiktok_listar_comentarios": "Ver Comentários em Vídeo do TikTok",
+            "tiktok_listar_respostas_comentario": "Ver Respostas a Comentário no TikTok",
+            "tiktok_listar_seguindo": "Ver Perfis Seguidos no TikTok",
+            "tiktok_listar_seguidores": "Listar Seguidores do TikTok",
+            "tiktok_buscar_usuarios": "Pesquisar Usuários no TikTok",
+            "linkedin_buscar_perfil": "Buscar Perfil do LinkedIn",
+            "linkedin_consultar_endpoint": "Consulta Direta (Lógica LinkedIn)",
+            "linkedin_buscar_pessoas_por_nome": "Pesquisar Pessoas no LinkedIn por Nome",
+            "linkedin_ver_comentarios_post": "Ver Comentários de Post no LinkedIn",
+            "linkedin_ver_reacoes_post": "Ver Reações de Post no LinkedIn",
+            "linkedin_buscar_posts": "Pesquisar Posts no LinkedIn",
+            "linkedin_ver_posts_usuario": "Ver Histórico de Posts de Usuário",
+            "linkedin_buscar_email_perfil": "Pesquisar E-mail associado ao LinkedIn",
+            "lighthouse_fb_uid_info": "Obter Informações de Perfil do Facebook",
+            "lighthouse_fb_uid_wall": "Obter Postagens do Mural do Facebook",
+            "lighthouse_fb_uid_reposts": "Obter Repostagens do Facebook",
+            "lighthouse_fb_uid_likes": "Obter Curtidas do Facebook",
+            "lighthouse_fb_uid_comments": "Obter Comentários do Facebook",
+            "lighthouse_fb_uid_friends": "Listar Amigos Públicos do Facebook",
+            "lighthouse_fb_uid_full_friends": "Listar Amigos Completos do Facebook",
+            "lighthouse_fb_phone_restore": "Recuperar UID do Facebook por Telefone",
+            "lighthouse_fb_email_restore": "Recuperar UID do Facebook por E-mail",
+            "lighthouse_fb_username_restore": "Recuperar UID do Facebook por Username",
+            "lighthouse_fb_phone_darknet": "Pesquisa de Telefone na Darknet",
+            "lighthouse_fb_email_darknet": "Pesquisa de E-mail na Darknet",
+            "lighthouse_fb_uid_darknet": "Pesquisa de UID do Facebook na Darknet",
+            "lighthouse_image_facecheck": "Reconhecimento Facial (Facecheck.ID)",
+            "lighthouse_image_geolocation": "Análise de Geolocalização de Imagem",
+            "lighthouse_image_search4faces": "Reconhecimento Facial (Search4Faces)",
+            "whois_consultar": "Consultar Registro WHOIS",
+            "escavador_buscar_processos_oab": "Buscar Processos por OAB (Escavador)"
         };
 
         // Estado Global
@@ -939,9 +1006,10 @@
                         <div class="query-list">
                             ${queries.map(qName => {
                                 const isQueryChecked = consultasAtivas[qName] !== false;
+                                const displayQueryName = TRADUCAO_CONSULTAS[qName] || qName;
                                 return `
                                     <div class="query-item">
-                                        <span class="query-name">${qName}</span>
+                                        <span class="query-name">${displayQueryName}</span>
                                         <label class="switch small">
                                             <input type="checkbox" ${isQueryChecked ? 'checked' : ''} data-query="${qName}">
                                             <span class="slider"></span>

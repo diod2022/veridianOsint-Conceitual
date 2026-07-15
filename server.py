@@ -49,6 +49,8 @@ def custom_tool(*args, **kwargs):
             nome_fonte = "linkedin"
         elif nome_funcao.startswith("lighthouse_"):
             nome_fonte = "lighthouse"
+        elif nome_funcao.startswith("escavador_"):
+            nome_fonte = "escavador"
 
         if nome_fonte:
             import functools
@@ -192,6 +194,86 @@ async def investigador_ler_cache(cache_id: str, chave: str = None, slice_start: 
         }
         
     return alvo
+
+# ==============================================================================
+# 00. INTEGRAÇÃO ESCAVADOR API v2
+# ==============================================================================
+ESCAVADOR_API_TOKEN = os.getenv("ESCAVADOR_API_TOKEN")
+
+# Semáforo para controlar concorrência (limite de 3 chamadas simultâneas)
+escavador_semaphore = asyncio.Semaphore(3)
+
+@mcp.tool()
+async def escavador_buscar_processos_oab(
+    oab_numero: str, 
+    oab_estado: str, 
+    oab_tipo: str = "ADVOGADO"
+) -> dict:
+    """
+    Busca processos de um advogado a partir da OAB usando a API v2 do Escavador.
+    
+    Args:
+        oab_numero: Número da OAB (ex: '12345' ou '123456').
+        oab_estado: Sigla do Estado da OAB (ex: 'SP', 'RJ').
+        oab_tipo: Tipo de inscrição OAB (opcional, padrão 'ADVOGADO').
+    """
+    if not ESCAVADOR_API_TOKEN:
+        return {"error": "ESCAVADOR_API_TOKEN não configurada no .env"}
+        
+    oab_num_clean = oab_numero.strip()
+    oab_est_clean = oab_estado.strip().upper()
+    oab_tipo_clean = oab_tipo.strip().upper()
+    
+    if not oab_num_clean or not oab_est_clean:
+        return {"error": "Número da OAB e Estado são obrigatórios."}
+        
+    # Cria chave de cache segura
+    cache_id = f"oab_{oab_est_clean.lower()}_{oab_num_clean.lower()}"
+    chave_cache = f"escavador_{cache_id}"
+    
+    # Interceptação de cache local
+    cache_hit = checar_cache_universal(chave_cache)
+    if cache_hit:
+        return cache_hit
+        
+    print(f"[ESCAVADOR] Consultando processos por OAB: {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
+    
+    headers = {
+        "Authorization": f"Bearer {ESCAVADOR_API_TOKEN}",
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept": "application/json"
+    }
+    
+    params = {
+        "oab_numero": oab_num_clean,
+        "oab_estado": oab_est_clean,
+        "oab_tipo": oab_tipo_clean
+    }
+    
+    async with escavador_semaphore:
+        try:
+            response = await http_client.get(
+                "https://api.escavador.com/api/v2/advogado/processos",
+                headers=headers,
+                params=params,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            dados = response.json()
+            
+            return salvar_cache_universal(chave_cache, dados)
+            
+        except httpx.HTTPStatusError as e:
+            try:
+                detalhes = e.response.json()
+            except Exception:
+                detalhes = e.response.text
+            print(f"[ESCAVADOR ERROR] Erro HTTP {e.response.status_code} para OAB {oab_num_clean}/{oab_est_clean}: {detalhes}", file=sys.stderr, flush=True)
+            return {"error": f"Erro HTTP {e.response.status_code} na API do Escavador", "detalhes": detalhes}
+        except httpx.HTTPError as e:
+            print(f"[ESCAVADOR ERROR] Erro de rede para OAB {oab_num_clean}/{oab_est_clean}: {str(e)}", file=sys.stderr, flush=True)
+            return {"error": f"Erro de rede ao consultar Escavador: {str(e)}"}
+
 
 # ==============================================================================
 # 0. INTEGRAÇÃO WHOISXML API
