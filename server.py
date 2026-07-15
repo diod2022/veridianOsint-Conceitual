@@ -3176,6 +3176,8 @@ from contextvars import ContextVar
 from starlette.applications import Starlette
 from starlette.routing import Route, Mount
 from starlette.responses import JSONResponse, Response
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 from mcp.server.sse import SseServerTransport
 import uvicorn
 import anyio
@@ -3668,6 +3670,15 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Mount("/sse", app=handle_sse),
                 Mount("/messages", app=handle_messages),
             ],
+            middleware=[
+                Middleware(
+                    CORSMiddleware,
+                    allow_origin_regex="https?://.*",
+                    allow_credentials=True,
+                    allow_methods=["*"],
+                    allow_headers=["*"],
+                )
+            ]
         )
         
         admin_app = Starlette(
@@ -3679,6 +3690,15 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
                 Mount("/admin", app=serve_admin_page),
             ],
+            middleware=[
+                Middleware(
+                    CORSMiddleware,
+                    allow_origin_regex="https?://.*",
+                    allow_credentials=True,
+                    allow_methods=["*"],
+                    allow_headers=["*"],
+                )
+            ]
         )
 
         mcp_config = uvicorn.Config(
@@ -3716,6 +3736,15 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
                 Mount("/admin", app=serve_admin_page),
             ],
+            middleware=[
+                Middleware(
+                    CORSMiddleware,
+                    allow_origin_regex="https?://.*",
+                    allow_credentials=True,
+                    allow_methods=["*"],
+                    allow_headers=["*"],
+                )
+            ]
         )
 
         config = uvicorn.Config(
