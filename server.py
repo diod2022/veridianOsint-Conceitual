@@ -3436,6 +3436,13 @@ async def run_sse_with_auth(self_mcp) -> None:
         from starlette.requests import Request
         request = Request(scope, receive)
         
+        if request.method == "POST":
+            try:
+                body = await request.body()
+                print(f"[AUTH DEBUG] POST /sse body={body.decode('utf-8')}", file=sys.stderr, flush=True)
+            except Exception as e:
+                print(f"[AUTH DEBUG] POST /sse falha ao ler corpo: {e}", file=sys.stderr, flush=True)
+        
         # Constrói a URL absoluta para o endpoint de POST /messages/
         proto = request.headers.get("x-forwarded-proto") or request.url.scheme
         host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
