@@ -3427,6 +3427,11 @@ async def run_sse_with_auth(self_mcp) -> None:
         # Constrói a URL absoluta para o endpoint de POST /messages/
         proto = request.headers.get("x-forwarded-proto") or request.url.scheme
         host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+        
+        # Força https se for um domínio público para evitar bloqueio de Mixed Content no navegador
+        if "localhost" not in host and "127.0.0.1" not in host and "0.0.0.0" not in host:
+            proto = "https"
+            
         base_url = f"{proto}://{host}"
         sse._endpoint = f"{base_url}/messages/"
         
