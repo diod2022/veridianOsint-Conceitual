@@ -28,6 +28,165 @@ async def server_lifespan(server):
 # Instância do servidor com lifespan registrado. Porta padrão definida como 8001 para não conflitar com o projeto Casas Bahia (porta 8000).
 mcp = FastMCP("veridianOsint-Conceitual", lifespan=server_lifespan, port=int(os.environ.get("FASTMCP_PORT", 8001)))
 
+# ==============================================================================
+# SISTEMA DE WHITE-LABELING (MASCARAMENTO DE FORNECEDORES)
+# ==============================================================================
+def obter_nome_whitelabel(nome_funcao: str) -> str:
+    # Remove prefixo do fornecedor e adiciona 'veridian_'
+    for prefixo in ["whois_", "csint_", "bigdata_", "unitfour_", "instagram_", "tiktok_", "linkedin_", "lighthouse_", "escavador_", "investigador_"]:
+        if nome_funcao.startswith(prefixo):
+            sub_nome = nome_funcao[len(prefixo):]
+            # Mapeamentos específicos para maior elegância e evitar duplicidades:
+            if prefixo == "csint_" and sub_nome == "busca_universal":
+                sub_nome = "busca_vazamentos"
+            elif prefixo == "csint_" and sub_nome == "consultar_telefone":
+                sub_nome = "consultar_telefone_vazamento"
+            elif prefixo == "csint_" and sub_nome == "consultar_email":
+                sub_nome = "consultar_email_vazamento"
+            elif prefixo == "bigdata_" and sub_nome == "consultar_cpf":
+                sub_nome = "consultar_cadastro_cpf"
+            elif prefixo == "bigdata_" and sub_nome == "consultar_cnpj":
+                sub_nome = "consultar_cadastro_cnpj"
+            elif prefixo == "bigdata_" and sub_nome == "consultar_processo":
+                sub_nome = "consultar_processos_judiciais"
+            elif prefixo == "unitfour_" and sub_nome == "consultar_cpf":
+                sub_nome = "consultar_dados_cadastrais_cpf"
+            elif prefixo == "unitfour_" and sub_nome == "consultar_cnpj":
+                sub_nome = "consultar_dados_cadastrais_cnpj"
+            elif prefixo == "unitfour_" and sub_nome == "pessoas_ligadas":
+                sub_nome = "ver_parentes_e_socios_cpf"
+            elif prefixo == "unitfour_" and sub_nome == "tomadores_decisao":
+                sub_nome = "ver_tomadores_decisao_cnpj"
+            elif prefixo == "unitfour_" and sub_nome == "empresas_ligadas":
+                sub_nome = "ver_empresas_ligadas_cnpj"
+            elif prefixo == "unitfour_" and sub_nome == "proprietario_veiculo_placa":
+                sub_nome = "consultar_proprietario_placa"
+            elif prefixo == "instagram_" and sub_nome == "buscar_usuario":
+                sub_nome = "buscar_perfil_instagram"
+            elif prefixo == "instagram_" and sub_nome == "ver_seguidores":
+                sub_nome = "ver_seguidores_instagram"
+            elif prefixo == "instagram_" and sub_nome == "ver_posts":
+                sub_nome = "ver_posts_instagram"
+            elif prefixo == "instagram_" and sub_nome == "ver_stories":
+                sub_nome = "ver_stories_instagram"
+            elif prefixo == "tiktok_" and sub_nome == "buscar_perfil":
+                sub_nome = "buscar_perfil_tiktok"
+            elif prefixo == "tiktok_" and sub_nome == "listar_videos":
+                sub_nome = "listar_videos_tiktok"
+            elif prefixo == "tiktok_" and sub_nome == "listar_comentarios":
+                sub_nome = "listar_comentarios_tiktok"
+            elif prefixo == "tiktok_" and sub_nome == "listar_respostas_comentario":
+                sub_nome = "listar_respostas_comentario_tiktok"
+            elif prefixo == "tiktok_" and sub_nome == "listar_seguindo":
+                sub_nome = "listar_seguidos_tiktok"
+            elif prefixo == "tiktok_" and sub_nome == "listar_seguidores":
+                sub_nome = "listar_seguidores_tiktok"
+            elif prefixo == "tiktok_" and sub_nome == "buscar_usuarios":
+                sub_nome = "buscar_usuarios_tiktok"
+            elif prefixo == "linkedin_" and sub_nome == "buscar_perfil":
+                sub_nome = "buscar_perfil_linkedin"
+            elif prefixo == "linkedin_" and sub_nome == "consultar_endpoint":
+                sub_nome = "linkedin_consulta_direta"
+            elif prefixo == "linkedin_" and sub_nome == "buscar_pessoas_por_nome":
+                sub_nome = "buscar_pessoas_linkedin"
+            elif prefixo == "linkedin_" and sub_nome == "ver_comentarios_post":
+                sub_nome = "ver_comentarios_post_linkedin"
+            elif prefixo == "linkedin_" and sub_nome == "ver_reacoes_post":
+                sub_nome = "ver_reacoes_post_linkedin"
+            elif prefixo == "linkedin_" and sub_nome == "buscar_posts":
+                sub_nome = "buscar_posts_linkedin"
+            elif prefixo == "linkedin_" and sub_nome == "ver_posts_usuario":
+                sub_nome = "ver_posts_usuario_linkedin"
+            elif prefixo == "linkedin_" and sub_nome == "buscar_email_perfil":
+                sub_nome = "buscar_email_perfil_linkedin"
+            elif prefixo == "lighthouse_" and sub_nome.startswith("fb_"):
+                sub_nome = sub_nome.replace("fb_uid_", "perfil_facebook_")
+                sub_nome = sub_nome.replace("fb_", "facebook_")
+            elif prefixo == "lighthouse_" and sub_nome == "image_facecheck":
+                sub_nome = "reconhecimento_facial_amplo"
+            elif prefixo == "lighthouse_" and sub_nome == "image_search4faces":
+                sub_nome = "reconhecimento_facial_redes_sociais"
+                
+            return f"veridian_{sub_nome}"
+            
+    # Caso especial para Tavily e Firecrawl
+    if nome_funcao == "tavily_buscar_web":
+        return "veridian_buscar_web"
+    if nome_funcao == "firecrawl_raspar_pagina":
+        return "veridian_extrair_texto_site"
+        
+    if nome_funcao.startswith("veridian_"):
+        return nome_funcao
+        
+    return f"veridian_{nome_funcao}"
+
+def limpar_descricao_whitelabel(docstring: str) -> str:
+    if not docstring:
+        return ""
+    substituicoes = {
+        "BigDataCorp": "Veridian",
+        "BigData": "Veridian",
+        "CSINT.pro": "Veridian",
+        "CSINT": "Veridian",
+        "UnitFour": "Veridian",
+        "Unitfour": "Veridian",
+        "HikerAPI": "Veridian",
+        "Hiker API": "Veridian",
+        "Harvest API": "Veridian",
+        "Harvest": "Veridian",
+        "Lighthouse": "Veridian",
+        "WhoisXML API": "Veridian",
+        "WhoisXML": "Veridian",
+        "Escavador": "Veridian",
+        "Tavily": "Veridian",
+        "Firecrawl": "Veridian",
+        
+        # Mapeamentos de nomes de funções antigas
+        "bigdata_consultar_cpf": "veridian_consultar_cadastro_cpf",
+        "unitfour_consultar_cpf": "veridian_consultar_dados_cadastrais_cpf",
+        "unitfour_pessoas_ligadas": "veridian_ver_parentes_e_socios_cpf",
+        "unitfour_consulta_pep": "veridian_verificar_pep_cpf",
+        "csint_consultar_email": "veridian_consultar_email_vazamento",
+        "csint_consultar_telefone": "veridian_consultar_telefone_vazamento"
+    }
+    texto = docstring
+    for de, para in substituicoes.items():
+        texto = texto.replace(de, para)
+    return texto
+
+def limpar_resultado_whitelabel(result):
+    substituicoes = {
+        "BigDataCorp": "Veridian",
+        "BigData": "Veridian",
+        "CSINT.pro": "Veridian",
+        "CSINT": "Veridian",
+        "UnitFour": "Veridian",
+        "Unitfour": "Veridian",
+        "HikerAPI": "Veridian",
+        "Hiker API": "Veridian",
+        "Harvest API": "Veridian",
+        "Harvest": "Veridian",
+        "Lighthouse": "Veridian",
+        "WhoisXML API": "Veridian",
+        "WhoisXML": "Veridian",
+        "Escavador": "Veridian",
+        "Tavily": "Veridian",
+        "Firecrawl": "Veridian"
+    }
+    
+    def processar(val):
+        if isinstance(val, str):
+            for de, para in substituicoes.items():
+                val = val.replace(de, para)
+            return val
+        elif isinstance(val, dict):
+            return {k: processar(v) for k, v in val.items()}
+        elif isinstance(val, list):
+            return [processar(v) for v in val]
+        return val
+
+    return processar(result)
+
 # Interceptação dinâmica do decorador mcp.tool para injeção automática de RBAC (permissões de fontes de dados)
 original_tool = mcp.tool
 
@@ -51,19 +210,35 @@ def custom_tool(*args, **kwargs):
             nome_fonte = "lighthouse"
         elif nome_funcao.startswith("escavador_"):
             nome_fonte = "escavador"
+        elif nome_funcao.startswith("tavily_"):
+            nome_fonte = "tavily"
+        elif nome_funcao.startswith("firecrawl_"):
+            nome_fonte = "firecrawl"
 
-        if nome_fonte:
-            import functools
-            @functools.wraps(func)
-            async def wrapper(*func_args, **func_kwargs):
+        # Mascara o nome da ferramenta dinamicamente
+        kwargs["name"] = obter_nome_whitelabel(nome_funcao)
+        
+        # Mascara a descrição da ferramenta dinamicamente se fornecida no decorator
+        if "description" in kwargs:
+            kwargs["description"] = limpar_descricao_whitelabel(kwargs["description"])
+
+        import functools
+        @functools.wraps(func)
+        async def wrapper(*func_args, **func_kwargs):
+            if nome_fonte:
                 # Executa a checagem de permissão no backend passando a fonte e a consulta específica
                 permissao = verificar_permissao_fonte(nome_fonte, nome_funcao)
                 if permissao:
                     return permissao
-                return await func(*func_args, **func_kwargs)
-            return original_tool(*args, **kwargs)(wrapper)
-        else:
-            return original_tool(*args, **kwargs)(func)
+            
+            result = await func(*func_args, **func_kwargs)
+            # Retorna o resultado mascarando qualquer marca/nome de fornecedores
+            return limpar_resultado_whitelabel(result)
+
+        # Garante que o docstring da função wrapper seja mascarado
+        wrapper.__doc__ = limpar_descricao_whitelabel(func.__doc__)
+        
+        return original_tool(*args, **kwargs)(wrapper)
     return decorator
 
 mcp.tool = custom_tool
@@ -3167,11 +3342,12 @@ async def investigador_enriquecer_dossie(
 
 
 # ==============================================================================
+# ==============================================================================
 # FERRAMENTAS DE BUSCA E RASPAGEM (TAVILY E FIRECRAWL)
 # ==============================================================================
 
 @mcp.tool()
-async def buscar_web_tavily(query: str, search_depth: str = "basic") -> str:
+async def tavily_buscar_web(query: str, search_depth: str = "basic") -> str:
     """
     Realiza uma busca otimizada na internet usando a API do Tavily.
     Útil para coletar notícias, artigos e referências recentes sobre alvos de investigação.
@@ -3179,10 +3355,6 @@ async def buscar_web_tavily(query: str, search_depth: str = "basic") -> str:
     :param query: Termo ou pergunta a ser pesquisada.
     :param search_depth: Profundidade da busca: 'basic' (rápida) ou 'advanced' (detalhada).
     """
-    err = verificar_permissao_fonte("tavily")
-    if err:
-        return err.get("error", "Erro de permissão.")
-
     api_key = os.environ.get("TAVILY_API_KEY")
     if not api_key:
         return "Erro: Chave TAVILY_API_KEY não configurada no .env"
@@ -3219,15 +3391,11 @@ async def buscar_web_tavily(query: str, search_depth: str = "basic") -> str:
 
 
 @mcp.tool()
-async def raspar_pagina_firecrawl(url_alvo: str) -> str:
+async def firecrawl_raspar_pagina(url_alvo: str) -> str:
     """
     Raspa uma página web completa e a converte em Markdown estruturado.
     Excelente para extrair o texto limpo de portais de notícias, blogs ou fóruns sem tags HTML/propaganda.
     """
-    err = verificar_permissao_fonte("firecrawl")
-    if err:
-        return err.get("error", "Erro de permissão.")
-
     api_key = os.environ.get("FIRECRAWL_API_KEY")
     if not api_key:
         return "Erro: Chave FIRECRAWL_API_KEY não configurada no .env"

@@ -723,16 +723,16 @@
     <script>
         // Configuração das Fontes
         const FONTES_DISPONIVEIS = {
-            "bigdata": "BigDataCorp (CPF/CNPJ/Jurídico)",
-            "csint": "CSINT.pro (Breachs/SEON/Reputação)",
-            "unitfour": "UnitFour (Cadastro/Mandados/Veículos)",
-            "instagram": "HikerAPI (Instagram OSINT)",
-            "linkedin": "Harvest API (LinkedIn OSINT)",
-            "lighthouse": "Lighthouse (Facebook/Darknet/Imagens)",
-            "whois": "WhoisXML API (Domínios & DNS)",
-            "escavador": "Escavador (Processos por OAB)",
-            "tavily": "Tavily API (Busca na Web para IA)",
-            "firecrawl": "Firecrawl API (Scraper & Crawler para Markdown)"
+            "bigdata": "Cadastro & Jurídico (Veridian)",
+            "csint": "Vazamentos & Reputação (Veridian)",
+            "unitfour": "Cadastro Avançado (Veridian)",
+            "instagram": "Redes Sociais OSINT (Veridian)",
+            "linkedin": "Profissional OSINT (Veridian)",
+            "lighthouse": "Facebook & Imagens OSINT (Veridian)",
+            "whois": "Domínios & DNS (Veridian)",
+            "escavador": "Processos OAB (Veridian)",
+            "tavily": "Pesquisa Web (Veridian)",
+            "firecrawl": "Extração de Sites (Veridian)"
         };
 
         const CONSULTAS_POR_FONTE = {
@@ -813,14 +813,15 @@
                 "escavador_buscar_processos_oab"
             ],
             "tavily": [
-                "buscar_web_tavily"
+                "tavily_buscar_web"
             ],
             "firecrawl": [
-                "raspar_pagina_firecrawl"
+                "firecrawl_raspar_pagina"
             ]
         };
 
         const TRADUCAO_CONSULTAS = {
+            // Nomes originais de configuração
             "bigdata_consultar_cpf": "Consultar CPF (Básico & Avançado)",
             "bigdata_ver_categoria": "Consultar Detalhes da Categoria CPF",
             "bigdata_consultar_cnpj": "Consultar CNPJ Completo",
@@ -876,13 +877,81 @@
             "lighthouse_fb_phone_darknet": "Pesquisa de Telefone na Darknet",
             "lighthouse_fb_email_darknet": "Pesquisa de E-mail na Darknet",
             "lighthouse_fb_uid_darknet": "Pesquisa de UID do Facebook na Darknet",
-            "lighthouse_image_facecheck": "Reconhecimento Facial (Facecheck.ID)",
+            "lighthouse_image_facecheck": "Reconhecimento Facial Amplo",
             "lighthouse_image_geolocation": "Análise de Geolocalização de Imagem",
-            "lighthouse_image_search4faces": "Reconhecimento Facial (Search4Faces)",
+            "lighthouse_image_search4faces": "Reconhecimento Facial em Redes Sociais",
             "whois_consultar": "Consultar Registro WHOIS",
-            "escavador_buscar_processos_oab": "Buscar Processos por OAB (Escavador)",
-            "buscar_web_tavily": "Pesquisa Web Inteligente (Tavily)",
-            "raspar_pagina_firecrawl": "Conversão de Página para Markdown (Firecrawl)"
+            "escavador_buscar_processos_oab": "Buscar Processos por OAB",
+            "tavily_buscar_web": "Pesquisa Web Inteligente",
+            "firecrawl_raspar_pagina": "Conversão de Página para Markdown",
+
+            // Traduções para os nomes públicos mascarados (White-Label)
+            "veridian_ler_cache": "Ler Cache de Investigador",
+            "veridian_consultar_cadastro_cpf": "Consultar CPF (Básico & Avançado)",
+            "veridian_ver_detalhes_categoria_cpf": "Consultar Detalhes da Categoria CPF",
+            "veridian_consultar_cadastro_cnpj": "Consultar CNPJ Completo",
+            "veridian_ver_detalhes_categoria_cnpj": "Consultar Detalhes da Categoria CNPJ",
+            "veridian_consultar_processos_judiciais": "Consultar Processos por CPF/CNPJ",
+            "veridian_cnpj_alteracoes": "Mudanças Societárias do CNPJ",
+            "veridian_consultar_ip": "Pesquisar IP e Geolocalização",
+            "veridian_busca_vazamentos": "Busca Universal de Vazamentos (Breachs)",
+            "veridian_consultar_telefone_vazamento": "Consultar Telefone OSINT",
+            "veridian_consultar_email_vazamento": "Consultar E-mail OSINT",
+            "veridian_consultar_dados_cadastrais_cpf": "Consultar Cadastro por CPF",
+            "veridian_ver_parentes_e_socios_cpf": "Pesquisar Pessoas Ligadas (Parentes/Sócios)",
+            "veridian_consultar_mandados_prisao": "Pesquisar Mandados de Prisão",
+            "veridian_consultar_antecedentes_criminais": "Consultar Antecedentes Criminais",
+            "veridian_verificar_pep_cpf": "Verificar se CPF é PEP (Politicamente Exposto)",
+            "veridian_consultar_dados_cadastrais_cnpj": "Consultar Cadastro por CNPJ",
+            "veridian_ver_tomadores_decisao_cnpj": "Pesquisar Tomadores de Decisão",
+            "veridian_ver_empresas_ligadas_cnpj": "Pesquisar Empresas Ligadas",
+            "veridian_consultar_proprietario_placa": "Descobrir Proprietário por Placa de Veículo",
+            "veridian_busca_avancada_por_nome": "Busca Avançada por Nome",
+            "veridian_busca_avancada_por_telefone": "Busca Avançada por Telefone",
+            "veridian_busca_avancada_por_email": "Busca Avançada por E-mail",
+            "veridian_busca_avancada_por_cep": "Busca Avançada por Endereço/CEP",
+            "veridian_buscar_perfil_instagram": "Buscar Perfil do Instagram",
+            "veridian_ver_seguidores_instagram": "Listar Seguidores do Instagram",
+            "veridian_ver_posts_instagram": "Listar Postagens do Instagram",
+            "veridian_ver_stories_instagram": "Visualizar Stories do Instagram",
+            "veridian_buscar_perfil_tiktok": "Buscar Perfil do TikTok",
+            "veridian_listar_videos_tiktok": "Listar Vídeos do TikTok",
+            "veridian_listar_comentarios_tiktok": "Ver Comentários em Vídeo do TikTok",
+            "veridian_listar_respostas_comentario_tiktok": "Ver Respostas a Comentário no TikTok",
+            "veridian_listar_seguidos_tiktok": "Ver Perfis Seguidos no TikTok",
+            "veridian_listar_seguidores_tiktok": "Listar Seguidores do TikTok",
+            "veridian_buscar_usuarios_tiktok": "Pesquisar Usuários no TikTok",
+            "veridian_buscar_perfil_linkedin": "Buscar Perfil do LinkedIn",
+            "veridian_linkedin_consulta_direta": "Consulta Direta (Lógica LinkedIn)",
+            "veridian_buscar_pessoas_linkedin": "Pesquisar Pessoas no LinkedIn por Nome",
+            "veridian_ver_comentarios_post_linkedin": "Ver Comentários de Post no LinkedIn",
+            "veridian_ver_reacoes_post_linkedin": "Ver Reações de Post no LinkedIn",
+            "veridian_buscar_posts_linkedin": "Pesquisar Posts no LinkedIn",
+            "veridian_ver_posts_usuario_linkedin": "Ver Histórico de Posts de Usuário",
+            "veridian_buscar_email_perfil_linkedin": "Pesquisar E-mail associado ao LinkedIn",
+            "veridian_buscar_perfil_facebook": "Obter Informações de Perfil do Facebook",
+            "veridian_ver_mural_facebook": "Obter Postagens do Mural do Facebook",
+            "veridian_ver_compartilhamentos_facebook": "Obter Repostagens do Facebook",
+            "veridian_ver_curtidas_facebook": "Obter Curtidas do Facebook",
+            "veridian_ver_comentarios_facebook": "Obter Comentários do Facebook",
+            "veridian_listar_amigos_publicos_facebook": "Listar Amigos Públicos do Facebook",
+            "veridian_listar_amigos_completos_facebook": "Listar Amigos Completos do Facebook",
+            "veridian_recuperar_perfil_facebook_por_telefone": "Recuperar UID do Facebook por Telefone",
+            "veridian_recuperar_perfil_facebook_por_email": "Recuperar UID do Facebook por E-mail",
+            "veridian_recuperar_perfil_facebook_por_username": "Recuperar UID do Facebook por Username",
+            "veridian_pesquisar_telefone_darknet": "Pesquisa de Telefone na Darknet",
+            "veridian_pesquisar_email_darknet": "Pesquisa de E-mail na Darknet",
+            "veridian_pesquisar_perfil_facebook_darknet": "Pesquisa de UID do Facebook na Darknet",
+            "veridian_reconhecimento_facial_amplo": "Reconhecimento Facial Amplo",
+            "veridian_analise_geolocalizacao_imagem": "Análise de Geolocalização de Imagem",
+            "veridian_reconhecimento_facial_redes_sociais": "Reconhecimento Facial em Redes Sociais",
+            "veridian_consultar_whois": "Consultar Registro WHOIS",
+            "veridian_buscar_processos_oab": "Buscar Processos por OAB",
+            "veridian_buscar_web": "Pesquisa Web Inteligente",
+            "veridian_extrair_texto_site": "Conversão de Página para Markdown",
+            "veridian_gerar_dossie_cpf": "Gerar Dossiê de CPF",
+            "veridian_consultar_alteracoes_societarias_cnpj": "Mudanças Societárias do CNPJ",
+            "veridian_enriquecer_dossie_cpf": "Enriquecer Dossiê de CPF"
         };
 
         // Estado Global
