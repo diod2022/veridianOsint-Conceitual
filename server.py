@@ -3267,6 +3267,7 @@ async def raspar_pagina_firecrawl(url_alvo: str) -> str:
 # ==============================================================================
 import secrets
 import time
+import sqlite3
 from uuid import UUID
 from contextvars import ContextVar
 from starlette.applications import Starlette
@@ -3303,6 +3304,95 @@ class ForceHTTPSMiddleware:
 sessao_corrente: ContextVar[UUID] = ContextVar("sessao_corrente")
 sessoes_autorizadas = set()
 sessoes_ativas = {} # session_id -> {"usuario": "...", "permissoes": [...], "token": "..."}
+
+DB_LOGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mcp_logs.db")
+
+def inicializar_db_logs():
+    try:
+        conn = sqlite3.connect(DB_LOGS_FILE)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS mcp_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                session_id TEXT,
+                usuario TEXT,
+                token_prefix TEXT,
+                method TEXT,
+                tool_name TEXT,
+                arguments TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[DB ERROR] Falha ao inicializar banco de logs: {e}", file=sys.stderr, flush=True)
+
+def registrar_log_busca(session_id, token: str, method: str, params: dict):
+    usuario = "desconhecido"
+    if session_id:
+        try:
+            sid = UUID(hex=session_id) if isinstance(session_id, str) else session_id
+            sess_info = sessoes_ativas.get(sid)
+            if sess_info:
+                usuario = sess_info.get("usuario", "desconhecido")
+        except Exception:
+            pass
+            
+    if usuario == "desconhecido" and token:
+        try:
+            chaves = carregar_chaves_autorizadas()
+            if token in chaves:
+                usuario = chaves[token].get("usuario", "desconhecido")
+        except Exception:
+            pass
+
+    args_str = json.dumps(params.get("arguments", {}), ensure_ascii=False)
+    
+    try:
+        conn = sqlite3.connect(DB_LOGS_FILE)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO mcp_logs (timestamp, session_id, usuario, token_prefix, method, tool_name, arguments)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            str(session_id.hex) if session_id and hasattr(session_id, "hex") else (str(session_id) if session_id else None),
+            usuario,
+            token[:10] if token else None,
+            method,
+            params.get("name") if method == "tools/call" else None,
+            args_str
+        ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[LOG ERROR] Falha ao registrar log no SQLite: {e}", file=sys.stderr, flush=True)
+
+class LoggingReceiveStream:
+    def __init__(self, original_stream, session_id, token):
+        self.original_stream = original_stream
+        self.session_id = session_id
+        self.token = token
+
+    async def receive(self):
+        message = await self.original_stream.receive()
+        try:
+            if hasattr(message, "method") and message.method == "tools/call":
+                tool_name = getattr(message.params, "name", None)
+                arguments = getattr(message.params, "arguments", {})
+                registrar_log_busca(
+                    self.session_id, 
+                    self.token, 
+                    message.method, 
+                    {"name": tool_name, "arguments": arguments}
+                )
+        except Exception as e:
+            print(f"[LOG ERROR] Falha ao interceptar mensagem na stream: {e}", file=sys.stderr, flush=True)
+        return message
+
+    async def aclose(self):
+        await self.original_stream.aclose()
 
 KEYS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mcp_keys.json")
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mcp_config.json")
@@ -3528,6 +3618,7 @@ def obter_chave_admin() -> str | None:
 
 async def run_sse_with_auth(self_mcp) -> None:
     """Roda o FastMCP usando SSE com interceptação de autenticação nas conexões."""
+    inicializar_db_logs()
     sse = SseServerTransport("/messages/")
 
     async def handle_sse(scope, receive, send):
@@ -3593,6 +3684,7 @@ async def run_sse_with_auth(self_mcp) -> None:
                 elif method == "tools/call":
                     tool_name = params.get("name")
                     tool_args = params.get("arguments", {})
+                    registrar_log_busca(None, token, method, params)
                     result = await self_mcp.call_tool(tool_name, tool_args)
                     result_json = [r.model_dump(mode="json", by_alias=True, exclude_none=True) for r in result]
                     response_data = {
@@ -3691,8 +3783,9 @@ async def run_sse_with_auth(self_mcp) -> None:
                 print(f"[AUTH] Conexão SSE iniciada. Sessão: {novo_session_id.hex} | Usuário: {usr_info['usuario']}", file=sys.stderr, flush=True)
             
             try:
+                logging_stream = LoggingReceiveStream(streams[0], novo_session_id, token)
                 await self_mcp._mcp_server.run(
-                    streams[0],
+                    logging_stream,
                     streams[1],
                     self_mcp._mcp_server.create_initialization_options(),
                 )
@@ -3902,6 +3995,79 @@ async def run_sse_with_auth(self_mcp) -> None:
         except Exception as e:
             return JSONResponse({"error": f"Failed to write keys file: {str(e)}"}, status_code=500)
 
+    async def admin_api_logs(request):
+        if not await admin_api_auth(request):
+            return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+            
+        usuario_filter = request.query_params.get("usuario")
+        tool_filter = request.query_params.get("tool_name")
+        limit_val = request.query_params.get("limit", "50")
+        offset_val = request.query_params.get("offset", "0")
+        
+        try:
+            limit = int(limit_val)
+            offset = int(offset_val)
+        except ValueError:
+            limit = 50
+            offset = 0
+            
+        try:
+            conn = sqlite3.connect(DB_LOGS_FILE)
+            cursor = conn.cursor()
+            
+            query = "SELECT id, timestamp, session_id, usuario, token_prefix, method, tool_name, arguments FROM mcp_logs"
+            params = []
+            where_clauses = []
+            
+            if usuario_filter:
+                where_clauses.append("usuario = ?")
+                params.append(usuario_filter)
+                
+            if tool_filter:
+                where_clauses.append("tool_name = ?")
+                params.append(tool_filter)
+                
+            if where_clauses:
+                query += " WHERE " + " AND ".join(where_clauses)
+                
+            query += " ORDER BY id DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+            
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            
+            count_query = "SELECT COUNT(*) FROM mcp_logs"
+            if where_clauses:
+                count_query += " WHERE " + " AND ".join(where_clauses)
+            
+            cursor.execute(count_query, params[:-2])
+            total_count = cursor.fetchone()[0]
+            
+            conn.close()
+            
+            logs_list = []
+            for row in rows:
+                logs_list.append({
+                    "id": row[0],
+                    "timestamp": row[1],
+                    "session_id": row[2],
+                    "usuario": row[3],
+                    "token_prefix": row[4],
+                    "method": row[5],
+                    "tool_name": row[6],
+                    "arguments": row[7]
+                })
+                
+            return JSONResponse({
+                "logs": logs_list,
+                "total": total_count,
+                "limit": limit,
+                "offset": offset
+            })
+            
+        except Exception as e:
+            return JSONResponse({"error": f"Failed to retrieve logs: {str(e)}"}, status_code=500)
+
     admin_port_env = os.environ.get("ADMIN_PORT")
     admin_port = None
     if admin_port_env:
@@ -3937,6 +4103,7 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/config", endpoint=admin_api_config, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
+                Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
             ],
             middleware=[
@@ -3988,6 +4155,7 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/config", endpoint=admin_api_config, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
+                Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
             ],
             middleware=[

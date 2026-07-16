@@ -639,6 +639,53 @@
                 </div>
             </div>
         </div>
+
+        <!-- Histórico de Auditoria (Full Width) -->
+        <div class="section-card" style="margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Auditoria de Buscas (OSINT Logs)
+                </h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="logUserFilter" placeholder="Filtrar usuário..." style="width: 150px; padding: 6px 12px; margin-bottom: 0; font-size: 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
+                    <input type="text" id="logToolFilter" placeholder="Filtrar tool..." style="width: 150px; padding: 6px 12px; margin-bottom: 0; font-size: 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
+                    <button id="btnFilterLogs" class="btn-add" style="width: auto; padding: 6px 12px; margin-bottom: 0;">Filtrar</button>
+                    <button id="btnRefreshLogs" class="btn-logout" style="width: auto; padding: 6px 12px; margin-bottom: 0; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);">Atualizar</button>
+                </div>
+            </div>
+
+            <div class="user-table-container" style="max-height: 400px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 150px;">Data/Hora (UTC)</th>
+                            <th style="width: 150px;">Usuário</th>
+                            <th style="width: 120px;">Prefixo Chave</th>
+                            <th style="width: 200px;">Ferramenta</th>
+                            <th>Parâmetros da Busca</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        <!-- Gerado dinamicamente -->
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhum registro encontrado.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação dos Logs -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                <div style="color: var(--text-secondary); font-size: 14px;" id="logPaginationInfo">
+                    Mostrando 0-0 de 0 registros
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <button id="btnPrevPage" class="btn-logout" style="width: auto; padding: 4px 10px; margin-bottom: 0; font-size: 12px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);" disabled>Anterior</button>
+                    <button id="btnNextPage" class="btn-logout" style="width: auto; padding: 4px 10px; margin-bottom: 0; font-size: 12px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);" disabled>Próxima</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL ADICIONAR USUÁRIO -->
@@ -857,6 +904,20 @@
         const newUserKey = document.getElementById('newUserKey');
         const saveUserBtn = document.getElementById('saveUserBtn');
 
+        // Elementos dos Logs
+        const logTableBody = document.getElementById('logTableBody');
+        const logUserFilter = document.getElementById('logUserFilter');
+        const logToolFilter = document.getElementById('logToolFilter');
+        const btnFilterLogs = document.getElementById('btnFilterLogs');
+        const btnRefreshLogs = document.getElementById('btnRefreshLogs');
+        const logPaginationInfo = document.getElementById('logPaginationInfo');
+        const btnPrevPage = document.getElementById('btnPrevPage');
+        const btnNextPage = document.getElementById('btnNextPage');
+
+        // Estado dos Logs
+        let logOffset = 0;
+        const logLimit = 30;
+
         // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
             if (adminKey) {
@@ -873,6 +934,99 @@
         openAddModalBtn.addEventListener('click', () => addModal.classList.add('active'));
         closeAddModalBtn.addEventListener('click', fecharModal);
         saveUserBtn.addEventListener('click', criarUsuario);
+
+        btnFilterLogs.addEventListener('click', () => {
+            logOffset = 0;
+            carregarLogs();
+        });
+        btnRefreshLogs.addEventListener('click', () => {
+            logOffset = 0;
+            logUserFilter.value = '';
+            logToolFilter.value = '';
+            carregarLogs();
+        });
+        btnPrevPage.addEventListener('click', () => {
+            if (logOffset >= logLimit) {
+                logOffset -= logLimit;
+                carregarLogs();
+            }
+        });
+        btnNextPage.addEventListener('click', () => {
+            logOffset += logLimit;
+            carregarLogs();
+        });
+
+        async function carregarLogs() {
+            try {
+                const user = logUserFilter.value.trim();
+                const tool = logToolFilter.value.trim();
+                
+                let url = `/admin/api/logs?limit=${logLimit}&offset=${logOffset}`;
+                if (user) url += `&usuario=${encodeURIComponent(user)}`;
+                if (tool) url += `&tool_name=${encodeURIComponent(tool)}`;
+                
+                const r = await fetch(url, {
+                    headers: { 'X-Admin-Key': adminKey }
+                });
+                
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                
+                renderizarTabelaLogs(data.logs);
+                atualizarPaginacaoLogs(data.total);
+            } catch (e) {
+                showToast('Falha ao carregar logs de auditoria.', 'error');
+            }
+        }
+
+        function renderizarTabelaLogs(logs) {
+            logTableBody.innerHTML = '';
+            if (!logs || logs.length === 0) {
+                logTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhum registro encontrado.</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            logs.forEach(log => {
+                const tr = document.createElement('tr');
+                let argsPretty = '';
+                try {
+                    const parsedArgs = JSON.parse(log.arguments);
+                    argsPretty = JSON.stringify(parsedArgs, null, 2);
+                } catch (e) {
+                    argsPretty = log.arguments;
+                }
+                
+                tr.innerHTML = `
+                    <td style="font-family: monospace; font-size: 13px; color: var(--text-secondary);">${log.timestamp}</td>
+                    <td><strong>${log.usuario}</strong></td>
+                    <td><code style="background: var(--bg-card); padding: 2px 6px; border-radius: 4px; font-size: 13px;">${log.token_prefix || '-'}...</code></td>
+                    <td><span class="source-name" style="font-size: 13px;">${log.tool_name || '-'}</span></td>
+                    <td>
+                        <pre style="margin:0; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.15); padding: 6px 10px; border-radius: 6px; overflow-x: auto; max-width: 500px; white-space: pre-wrap; word-break: break-all;">${argsPretty}</pre>
+                    </td>
+                `;
+                logTableBody.appendChild(tr);
+            });
+        }
+
+        function atualizarPaginacaoLogs(total) {
+            const start = logOffset + 1;
+            const end = Math.min(logOffset + logLimit, total);
+            
+            if (total === 0) {
+                logPaginationInfo.textContent = 'Mostrando 0-0 de 0 registros';
+                btnPrevPage.disabled = true;
+                btnNextPage.disabled = true;
+            } else {
+                logPaginationInfo.textContent = `Mostrando ${start}-${end} de ${total} registros`;
+                btnPrevPage.disabled = logOffset === 0;
+                btnNextPage.disabled = end >= total;
+            }
+        }
 
         // Notificações Toast
         function showToast(message, type = 'success') {
@@ -976,6 +1130,7 @@
 
                 renderizarTogglesGlobais(data.fontes_ativas, data.consultas_ativas);
                 renderizarTabelaUsuarios(data.chaves);
+                carregarLogs();
             } catch (e) {
                 showToast('Falha ao carregar configurações.', 'error');
             }
