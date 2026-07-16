@@ -3437,11 +3437,121 @@ async def run_sse_with_auth(self_mcp) -> None:
         request = Request(scope, receive)
         
         if request.method == "POST":
+            req_id = None
             try:
                 body = await request.body()
-                print(f"[AUTH DEBUG] POST /sse body={body.decode('utf-8')}", file=sys.stderr, flush=True)
+                json_data = json.loads(body)
+                method = json_data.get("method")
+                req_id = json_data.get("id")
+                params = json_data.get("params", {})
+                
+                # Check Auth first (same token validation!)
+                token = extrair_token(request)
+                if not verificar_token(token):
+                    response = JSONResponse({"error": "Unauthorized. Invalid or missing API key."}, status_code=401)
+                    await response(scope, receive, send)
+                    return
+                
+                response_data = None
+                
+                if method == "initialize":
+                    response_data = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {
+                                "experimental": {},
+                                "prompts": {"listChanged": False},
+                                "resources": {"subscribe": False, "listChanged": False},
+                                "tools": {"listChanged": False}
+                            },
+                            "serverInfo": {
+                                "name": "veridianOsint-Conceitual",
+                                "version": "1.2.0"
+                            }
+                        }
+                    }
+                elif method == "notifications/initialized":
+                    response = Response("", status_code=204)
+                    await response(scope, receive, send)
+                    return
+                elif method == "ping":
+                    response_data = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {}
+                    }
+                elif method == "tools/list":
+                    tools = await self_mcp.list_tools()
+                    tools_json = [t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in tools]
+                    response_data = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {
+                            "tools": tools_json
+                        }
+                    }
+                elif method == "tools/call":
+                    tool_name = params.get("name")
+                    tool_args = params.get("arguments", {})
+                    result = await self_mcp.call_tool(tool_name, tool_args)
+                    result_json = [r.model_dump(mode="json", by_alias=True, exclude_none=True) for r in result]
+                    response_data = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {
+                            "content": result_json
+                        }
+                    }
+                elif method == "resources/list":
+                    resources = await self_mcp.list_resources()
+                    resources_json = [r.model_dump(mode="json", by_alias=True, exclude_none=True) for r in resources]
+                    response_data = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {
+                            "resources": resources_json
+                        }
+                    }
+                elif method == "prompts/list":
+                    prompts = await self_mcp.list_prompts()
+                    prompts_json = [p.model_dump(mode="json", by_alias=True, exclude_none=True) for p in prompts]
+                    response_data = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "result": {
+                            "prompts": prompts_json
+                        }
+                    }
+                else:
+                    response_data = {
+                        "jsonrpc": "2.0",
+                        "id": req_id,
+                        "error": {
+                            "code": -32601,
+                            "message": f"Method not found: {method}"
+                        }
+                    }
+                
+                print(f"[AUTH DEBUG] POST /sse (método: {method}) -> Respondendo com JSON-RPC", file=sys.stderr, flush=True)
+                response = JSONResponse(response_data, status_code=200)
+                await response(scope, receive, send)
+                return
+                
             except Exception as e:
-                print(f"[AUTH DEBUG] POST /sse falha ao ler corpo: {e}", file=sys.stderr, flush=True)
+                print(f"[AUTH DEBUG] POST /sse falha ao processar: {e}", file=sys.stderr, flush=True)
+                response_data = {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "error": {
+                        "code": -32603,
+                        "message": f"Internal error: {str(e)}"
+                    }
+                }
+                response = JSONResponse(response_data, status_code=500)
+                await response(scope, receive, send)
+                return
         
         # Constrói a URL absoluta para o endpoint de POST /messages/
         proto = request.headers.get("x-forwarded-proto") or request.url.scheme
