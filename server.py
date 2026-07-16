@@ -3167,6 +3167,102 @@ async def investigador_enriquecer_dossie(
 
 
 # ==============================================================================
+# FERRAMENTAS DE BUSCA E RASPAGEM (TAVILY E FIRECRAWL)
+# ==============================================================================
+
+@mcp.tool()
+async def buscar_web_tavily(query: str, search_depth: str = "basic") -> str:
+    """
+    Realiza uma busca otimizada na internet usando a API do Tavily.
+    Útil para coletar notícias, artigos e referências recentes sobre alvos de investigação.
+    
+    :param query: Termo ou pergunta a ser pesquisada.
+    :param search_depth: Profundidade da busca: 'basic' (rápida) ou 'advanced' (detalhada).
+    """
+    err = verificar_permissao_fonte("tavily")
+    if err:
+        return err.get("error", "Erro de permissão.")
+
+    api_key = os.environ.get("TAVILY_API_KEY")
+    if not api_key:
+        return "Erro: Chave TAVILY_API_KEY não configurada no .env"
+        
+    url = "https://api.tavily.com/search"
+    payload = {
+        "api_key": api_key,
+        "query": query,
+        "search_depth": search_depth,
+        "include_answer": True,
+        "max_results": 5
+    }
+    
+    try:
+        response = await http_client.post(url, json=payload, timeout=15.0)
+        if response.status_code != 200:
+            return f"Erro na busca Tavily (HTTP {response.status_code}): {response.text}"
+            
+        data = response.json()
+        
+        output = []
+        if data.get("answer"):
+            output.append(f"### Resposta Direta:\n{data['answer']}\n")
+            
+        output.append("### Fontes Encontradas:")
+        for result in data.get("results", []):
+            output.append(f"- **[{result['title']}]({result['url']})**")
+            output.append(f"  *Score de Relevância: {result.get('score', 0)}*")
+            output.append(f"  {result['content']}\n")
+            
+        return "\n".join(output)
+    except Exception as e:
+        return f"Falha na consulta ao Tavily: {e}"
+
+
+@mcp.tool()
+async def raspar_pagina_firecrawl(url_alvo: str) -> str:
+    """
+    Raspa uma página web completa e a converte em Markdown estruturado.
+    Excelente para extrair o texto limpo de portais de notícias, blogs ou fóruns sem tags HTML/propaganda.
+    """
+    err = verificar_permissao_fonte("firecrawl")
+    if err:
+        return err.get("error", "Erro de permissão.")
+
+    api_key = os.environ.get("FIRECRAWL_API_KEY")
+    if not api_key:
+        return "Erro: Chave FIRECRAWL_API_KEY não configurada no .env"
+        
+    url = "https://api.firecrawl.dev/v1/scrape"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "url": url_alvo,
+        "formats": ["markdown"]
+    }
+    
+    try:
+        response = await http_client.post(url, json=payload, headers=headers, timeout=30.0)
+        if response.status_code != 200:
+            return f"Erro ao raspar com Firecrawl (HTTP {response.status_code}): {response.text}"
+            
+        data = response.json()
+        if not data.get("success"):
+            return f"Falha na raspagem: {data.get('error', 'Erro desconhecido')}"
+            
+        markdown_content = data.get("data", {}).get("markdown", "")
+        
+        limite_caracteres = 40000
+        if len(markdown_content) > limite_caracteres:
+            return markdown_content[:limite_caracteres] + "\n\n...[Conteúdo truncado para evitar estouro de contexto]..."
+            
+        return markdown_content
+    except Exception as e:
+        return f"Falha na consulta ao Firecrawl: {e}"
+
+
+# ==============================================================================
 # SEGURANÇA E AUTENTICAÇÃO VIA CHAVE DE API (TRANSPORTE SSE)
 # ==============================================================================
 import secrets
@@ -3222,7 +3318,9 @@ def carregar_config_global() -> dict:
             "instagram": True,
             "linkedin": True,
             "lighthouse": True,
-            "whois": True
+            "whois": True,
+            "tavily": True,
+            "firecrawl": True
         },
         "consultas_ativas": {}
     }
