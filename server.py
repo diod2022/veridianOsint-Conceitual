@@ -118,6 +118,8 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
         return "veridian_pesquisa_dorks"
     if nome_funcao == "serper_buscar_google":
         return "veridian_buscar_google"
+    if nome_funcao == "wayback_consultar_disponibilidade":
+        return "veridian_pesquisa_historica_web"
         
     if nome_funcao.startswith("veridian_"):
         return nome_funcao
@@ -146,6 +148,9 @@ def limpar_descricao_whitelabel(docstring: str) -> str:
         "Firecrawl": "Veridian",
         "Serper.dev": "Veridian",
         "Serper": "Veridian",
+        "Wayback Machine": "Veridian Histórico",
+        "Wayback": "Veridian Histórico",
+        "Internet Archive": "Veridian Histórico",
         
         # Mapeamentos de nomes de funções antigas
         "bigdata_consultar_cpf": "veridian_consultar_cadastro_cpf",
@@ -178,7 +183,10 @@ def limpar_resultado_whitelabel(result):
         "Tavily": "Veridian",
         "Firecrawl": "Veridian",
         "Serper.dev": "Veridian",
-        "Serper": "Veridian"
+        "Serper": "Veridian",
+        "Wayback Machine": "Veridian Histórico",
+        "Wayback": "Veridian Histórico",
+        "Internet Archive": "Veridian Histórico"
     }
     
     def processar(val):
@@ -223,6 +231,8 @@ def custom_tool(*args, **kwargs):
             nome_fonte = "firecrawl"
         elif nome_funcao.startswith("serper_"):
             nome_fonte = "serper"
+        elif nome_funcao.startswith("wayback_"):
+            nome_fonte = "wayback"
 
         # Mascara o nome da ferramenta dinamicamente
         kwargs["name"] = obter_nome_whitelabel(nome_funcao)
@@ -3563,6 +3573,29 @@ async def serper_buscar_google(query: str) -> dict:
         return {"error": f"Falha na consulta ao Google: {str(e)}"}
 
 
+@mcp.tool()
+async def wayback_consultar_disponibilidade(url_alvo: str, timestamp: str = None) -> dict:
+    """
+    Verifica se uma URL possui capturas salvas no histórico do Wayback Machine (Internet Archive).
+    Retorna o link para a captura mais próxima do momento atual ou de um timestamp específico.
+    
+    :param url_alvo: A URL a ser consultada (ex: 'http://example.com').
+    :param timestamp: Opcional. Data/hora no formato AAAAMMDDhhmmss (ex: '20060101') para buscar capturas próximas àquela data.
+    """
+    url = "https://archive.org/wayback/available"
+    params = {"url": url_alvo}
+    if timestamp:
+        params["timestamp"] = timestamp
+        
+    try:
+        response = await http_client.get(url, params=params, timeout=10.0)
+        if response.status_code != 200:
+            return {"error": f"Erro na API do Wayback (HTTP {response.status_code}): {response.text}"}
+        return response.json()
+    except Exception as e:
+        return {"error": f"Falha ao consultar o Wayback Machine: {str(e)}"}
+
+
 # ==============================================================================
 # SEGURANÇA E AUTENTICAÇÃO VIA CHAVE DE API (TRANSPORTE SSE)
 # ==============================================================================
@@ -3712,7 +3745,8 @@ def carregar_config_global() -> dict:
             "whois": True,
             "tavily": True,
             "firecrawl": True,
-            "serper": True
+            "serper": True,
+            "wayback": True
         },
         "consultas_ativas": {}
     }
