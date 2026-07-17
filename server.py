@@ -120,6 +120,8 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
         return "veridian_buscar_google"
     if nome_funcao == "wayback_consultar_disponibilidade":
         return "veridian_pesquisa_historica_web"
+    if nome_funcao == "wayback_listar_imagens":
+        return "veridian_listar_imagens_historicas"
         
     if nome_funcao.startswith("veridian_"):
         return nome_funcao
@@ -3594,6 +3596,66 @@ async def wayback_consultar_disponibilidade(url_alvo: str, timestamp: str = None
         return response.json()
     except Exception as e:
         return {"error": f"Falha ao consultar o Wayback Machine: {str(e)}"}
+
+
+@mcp.tool()
+async def wayback_listar_imagens(url_alvo: str, limite: int = 50) -> dict:
+    """
+    Lista as imagens arquivadas no histórico do Wayback Machine para um domínio ou URL específica.
+    Útil para descobrir mídias, logotipos ou imagens deletadas do alvo.
+    
+    :param url_alvo: O domínio ou URL do site (ex: 'uol.com.br' ou 'uol.com.br/noticias').
+    :param limite: Opcional. Número máximo de resultados a retornar (padrão 50, máximo 500).
+    """
+    url_consulta = url_alvo.strip()
+    if not url_consulta.endswith("*") and not url_consulta.endswith("/") and "." in url_consulta:
+        if "/" not in url_consulta or url_consulta.count("/") == 1:
+            url_consulta = f"{url_consulta}/*"
+        else:
+            url_consulta = f"{url_consulta}*"
+
+    url = "https://web.archive.org/cdx/search/cdx"
+    params = {
+        "url": url_consulta,
+        "output": "json",
+        "filter": "mimetype:image/.*",
+        "limit": min(limite, 500),
+        "fl": "original,timestamp,mimetype,statuscode"
+    }
+    
+    try:
+        response = await http_client.get(url, params=params, timeout=20.0)
+        if response.status_code != 200:
+            return {"error": f"Erro na API CDX do Wayback (HTTP {response.status_code}): {response.text}"}
+            
+        data = response.json()
+        if not data or len(data) <= 1:
+            return {"url_alvo": url_alvo, "total_encontrado": 0, "imagens": []}
+            
+        headers = data[0]
+        rows = data[1:]
+        
+        imagens = []
+        for row in rows:
+            if len(row) < 4:
+                continue
+            original, timestamp, mimetype, statuscode = row[0], row[1], row[2], row[3]
+            link_captura = f"http://web.archive.org/web/{timestamp}/{original}"
+            imagens.append({
+                "url_original": original,
+                "timestamp": timestamp,
+                "tipo_mimetype": mimetype,
+                "status_http": statuscode,
+                "link_visualizacao": link_captura
+            })
+            
+        return {
+            "url_alvo": url_alvo,
+            "total_encontrado": len(imagens),
+            "imagens": imagens
+        }
+    except Exception as e:
+        return {"error": f"Falha ao listar imagens no Wayback: {str(e)}"}
 
 
 # ==============================================================================
