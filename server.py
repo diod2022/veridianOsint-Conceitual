@@ -1350,13 +1350,14 @@ async def instagram_buscar_usuario(username: str) -> dict:
             return {"error": f"Erro na HikerAPI (buscar usuário): {str(e)}"}
 
 @mcp.tool()
-async def instagram_ver_seguidores(user_id: str) -> dict:
+async def instagram_ver_seguidores(user_id: str | int) -> dict:
     """
     Extrai a primeira página de seguidores (e quem o alvo segue) usando o user_id.
     
     Args:
         user_id: O ID interno do usuário (obtido com instagram_buscar_usuario).
     """
+    user_id = str(user_id)
     if not HIKER_TOKEN:
         return {"error": "HIKER_API_TOKEN não configurado no .env"}
         
@@ -1393,13 +1394,14 @@ async def instagram_ver_seguidores(user_id: str) -> dict:
             return {"error": f"Erro na HikerAPI (seguidores): {str(e)}"}
 
 @mcp.tool()
-async def instagram_ver_posts(user_id: str) -> dict:
+async def instagram_ver_posts(user_id: str | int) -> dict:
     """
     Puxa os posts recentes do feed do usuário. Útil para análise de fotos, legendas e locais.
     
     Args:
         user_id: O ID interno do usuário.
     """
+    user_id = str(user_id)
     if not HIKER_TOKEN:
         return {"error": "HIKER_API_TOKEN não configurado no .env"}
         
@@ -1419,13 +1421,14 @@ async def instagram_ver_posts(user_id: str) -> dict:
             return {"error": f"Erro na HikerAPI (ver posts): {str(e)}"}
 
 @mcp.tool()
-async def instagram_ver_stories(user_id: str) -> dict:
+async def instagram_ver_stories(user_id: str | int) -> dict:
     """
     Puxa os stories que estão ativos/online neste exato momento para o usuário.
     
     Args:
         user_id: O ID interno do usuário.
     """
+    user_id = str(user_id)
     if not HIKER_TOKEN:
         return {"error": "HIKER_API_TOKEN não configurado no .env"}
         
@@ -2704,7 +2707,7 @@ async def tiktok_buscar_perfil(handle: str) -> dict:
 
 
 @mcp.tool()
-async def tiktok_listar_videos(handle: str, user_id: str = None, sort_by: str = "latest", max_cursor: str = None, trim: bool = False) -> dict:
+async def tiktok_listar_videos(handle: str, user_id: str | int = None, sort_by: str = "latest", max_cursor: str = None, trim: bool = False) -> dict:
     """
     Recupera a lista de vídeos postados por um perfil do TikTok.
     Consome 1 crédito da API SociaVault por requisição de página.
@@ -2934,7 +2937,7 @@ async def tiktok_listar_seguindo(handle: str, min_time: int = None, trim: bool =
 
 
 @mcp.tool()
-async def tiktok_listar_seguidores(handle: str = None, user_id: str = None, min_time: int = None, trim: bool = False) -> dict:
+async def tiktok_listar_seguidores(handle: str = None, user_id: str | int = None, min_time: int = None, trim: bool = False) -> dict:
     """
     Lista os seguidores de um perfil do TikTok.
     Consome 1 crédito da API SociaVault por requisição de página.
