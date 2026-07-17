@@ -63,6 +63,8 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
                 sub_nome = "consultar_proprietario_placa"
             elif prefixo == "instagram_" and sub_nome == "buscar_usuario":
                 sub_nome = "buscar_perfil_instagram"
+            elif prefixo == "instagram_" and sub_nome == "pesquisar_perfis":
+                sub_nome = "pesquisar_perfis_instagram"
             elif prefixo == "instagram_" and sub_nome == "ver_seguidores":
                 sub_nome = "ver_seguidores_instagram"
             elif prefixo == "instagram_" and sub_nome == "ver_posts":
@@ -1364,6 +1366,65 @@ async def instagram_buscar_usuario(username: str) -> dict:
             return salvar_cache_universal(f"ig_user_{username}", response.json())
         except httpx.HTTPError as e:
             return {"error": f"Erro na HikerAPI (buscar usuário): {str(e)}"}
+
+
+@mcp.tool()
+async def instagram_pesquisar_perfis(query: str) -> dict:
+    """
+    Pesquisa perfis de usuários no Instagram por nome completo, termo de busca ou nome aproximado.
+    Retorna uma lista de contas correspondentes com seus respectivos usernames, nomes completos e IDs de usuário.
+    
+    Args:
+        query: O nome completo, termo de pesquisa ou nome aproximado do perfil (ex: 'Neymar da Silva').
+    """
+    if not HIKER_TOKEN:
+        return {"error": "HIKER_API_TOKEN não configurado no .env"}
+        
+    headers = {
+        "x-access-key": HIKER_TOKEN,
+        "Accept": "application/json"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{HIKER_BASE_URL}/v2/fbsearch/accounts",
+                headers=headers,
+                params={"query": query},
+                timeout=25.0
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            perfis = []
+            
+            lista_usuarios = data.get("users", []) if isinstance(data, dict) else data
+            if not isinstance(lista_usuarios, list):
+                lista_usuarios = []
+                
+            for user_wrapper in lista_usuarios:
+                user = user_wrapper.get("user", {}) if isinstance(user_wrapper, dict) and "user" in user_wrapper else user_wrapper
+                if not isinstance(user, dict):
+                    continue
+                    
+                perfis.append({
+                    "username": user.get("username"),
+                    "nome_completo": user.get("full_name"),
+                    "user_id": user.get("pk") or user.get("pk_id"),
+                    "is_private": user.get("is_private"),
+                    "is_verified": user.get("is_verified"),
+                    "profile_pic_url": user.get("profile_pic_url"),
+                    "byline": user.get("byline")
+                })
+                
+            resultado = {
+                "termo_pesquisado": query,
+                "total_resultados": len(perfis),
+                "perfis": perfis
+            }
+            return salvar_cache_universal(f"ig_search_{query.replace(' ', '_')}", resultado)
+        except httpx.HTTPError as e:
+            return {"error": f"Erro na HikerAPI (pesquisa de contas): {str(e)}"}
 
 @mcp.tool()
 async def instagram_ver_seguidores(user_id: str | int) -> dict:
