@@ -109,11 +109,13 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
                 
             return f"veridian_{sub_nome}"
             
-    # Caso especial para Tavily e Firecrawl
+    # Caso especial para Tavily, Firecrawl e Serper
     if nome_funcao == "tavily_buscar_web":
         return "veridian_buscar_web"
     if nome_funcao == "firecrawl_raspar_pagina":
         return "veridian_extrair_texto_site"
+    if nome_funcao == "serper_buscar_web_dorks":
+        return "veridian_pesquisa_dorks"
         
     if nome_funcao.startswith("veridian_"):
         return nome_funcao
@@ -140,6 +142,8 @@ def limpar_descricao_whitelabel(docstring: str) -> str:
         "Escavador": "Veridian",
         "Tavily": "Veridian",
         "Firecrawl": "Veridian",
+        "Serper.dev": "Veridian",
+        "Serper": "Veridian",
         
         # Mapeamentos de nomes de funções antigas
         "bigdata_consultar_cpf": "veridian_consultar_cadastro_cpf",
@@ -169,9 +173,10 @@ def limpar_resultado_whitelabel(result):
         "Lighthouse": "Veridian",
         "WhoisXML API": "Veridian",
         "WhoisXML": "Veridian",
-        "Escavador": "Veridian",
         "Tavily": "Veridian",
-        "Firecrawl": "Veridian"
+        "Firecrawl": "Veridian",
+        "Serper.dev": "Veridian",
+        "Serper": "Veridian"
     }
     
     def processar(val):
@@ -214,6 +219,8 @@ def custom_tool(*args, **kwargs):
             nome_fonte = "tavily"
         elif nome_funcao.startswith("firecrawl_"):
             nome_fonte = "firecrawl"
+        elif nome_funcao.startswith("serper_"):
+            nome_fonte = "serper"
 
         # Mascara o nome da ferramenta dinamicamente
         kwargs["name"] = obter_nome_whitelabel(nome_funcao)
@@ -3430,6 +3437,85 @@ async def firecrawl_raspar_pagina(url_alvo: str) -> str:
         return f"Falha na consulta ao Firecrawl: {e}"
 
 
+@mcp.tool()
+async def serper_buscar_web_dorks(alvo: str, categoria: str = "arquivos_expostos") -> dict:
+    """
+    Realiza pesquisas avançadas utilizando Google Dorks automatizados (via Serper.dev) 
+    para descobrir vazamentos de dados, subdomínios, portais expostos ou documentos confidenciais do alvo.
+    
+    :param alvo: O domínio alvo (ex: 'empresa.com.br') ou nome corporativo.
+    :param categoria: Categoria de busca: 'arquivos_expostos', 'credenciais_e_backups', 'infraestrutura_e_login' ou 'subdominios'.
+    """
+    api_key = os.environ.get("SERPER_API_KEY")
+    if not api_key:
+        return {"error": "Erro: Chave SERPER_API_KEY não configurada no .env"}
+
+    dork_templates = {
+        "arquivos_expostos": [
+            'site:{alvo} filetype:pdf OR filetype:xlsx OR filetype:csv',
+            'site:{alvo} filetype:docx OR filetype:doc OR filetype:rtf OR filetype:txt'
+        ],
+        "credenciais_e_backups": [
+            'site:{alvo} filetype:sql OR filetype:env OR filetype:conf',
+            'site:{alvo} filetype:bkp OR filetype:bak OR filetype:zip OR filetype:tar.gz',
+            'site:{alvo} inurl:wp-config.php OR inurl:settings.py OR inurl:db_connect'
+        ],
+        "infraestrutura_e_login": [
+            'site:{alvo} inurl:login OR inurl:admin OR inurl:portal OR inurl:signin',
+            'site:{alvo} "Index of /" OR "Index of /backup" OR "Index of /uploads"'
+        ],
+        "subdominios": [
+            'site:*.{alvo} -site:www.{alvo}'
+        ]
+    }
+
+    templates = dork_templates.get(categoria)
+    if not templates:
+        return {"error": f"Categoria '{categoria}' inválida. Escolha entre: {list(dork_templates.keys())}"}
+
+    queries = [tpl.format(alvo=alvo) for tpl in templates]
+    url = "https://google.serper.dev/search"
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/json"
+    }
+
+    async def fazer_busca(query):
+        try:
+            payload = {"q": query}
+            response = await http_client.post(url, json=payload, headers=headers, timeout=15.0)
+            if response.status_code != 200:
+                return {"query": query, "status": "error", "message": f"HTTP {response.status_code}"}
+            
+            data = response.json()
+            achados = []
+            for item in data.get("organic", []):
+                achados.append({
+                    "titulo": item.get("title"),
+                    "url": item.get("link"),
+                    "resumo": item.get("snippet")
+                })
+            return {
+                "query": query,
+                "status": "success",
+                "total_encontrado": len(achados),
+                "resultados": achados
+            }
+        except Exception as e:
+            return {"query": query, "status": "error", "message": str(e)}
+
+    # Executa as buscas em paralelo
+    import asyncio
+    tarefas = [fazer_busca(q) for q in queries]
+    resultados = await asyncio.gather(*tarefas)
+
+    return {
+        "alvo": alvo,
+        "categoria": categoria,
+        "varredura": resultados
+    }
+
+
 # ==============================================================================
 # SEGURANÇA E AUTENTICAÇÃO VIA CHAVE DE API (TRANSPORTE SSE)
 # ==============================================================================
@@ -3578,7 +3664,8 @@ def carregar_config_global() -> dict:
             "lighthouse": True,
             "whois": True,
             "tavily": True,
-            "firecrawl": True
+            "firecrawl": True,
+            "serper": True
         },
         "consultas_ativas": {}
     }
