@@ -122,6 +122,8 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
         return "veridian_pesquisa_historica_web"
     if nome_funcao == "wayback_listar_imagens":
         return "veridian_listar_imagens_historicas"
+    if nome_funcao == "wayback_listar_snapshots":
+        return "veridian_listar_snapshots_historicos"
         
     if nome_funcao.startswith("veridian_"):
         return nome_funcao
@@ -3656,6 +3658,62 @@ async def wayback_listar_imagens(url_alvo: str, limite: int = 50) -> dict:
         }
     except Exception as e:
         return {"error": f"Falha ao listar imagens no Wayback: {str(e)}"}
+
+
+@mcp.tool()
+async def wayback_listar_snapshots(url_alvo: str, limite: int = 100, apenas_mudancas: bool = True) -> dict:
+    """
+    Lista todos os snapshots arquivados no Wayback Machine para uma URL específica desde a primeira captura.
+    Permite obter o histórico cronológico completo de capturas de uma página.
+    
+    :param url_alvo: A URL específica da página (ex: 'example.com' ou 'http://example.com/noticia.html').
+    :param limite: Opcional. Número máximo de registros (padrão 100, máximo 1000).
+    :param apenas_mudancas: Opcional. Se 'True' (padrão), remove duplicidades consecutivas onde o conteúdo não sofreu alteração (usando collapse=digest).
+    """
+    url = "https://web.archive.org/cdx/search/cdx"
+    params = {
+        "url": url_alvo.strip(),
+        "output": "json",
+        "fl": "timestamp,original,statuscode,digest",
+        "limit": min(limite, 1000)
+    }
+    if apenas_mudancas:
+        params["collapse"] = "digest"
+        
+    try:
+        response = await http_client.get(url, params=params, timeout=20.0)
+        if response.status_code != 200:
+            return {"error": f"Erro na API CDX do Wayback (HTTP {response.status_code}): {response.text}"}
+            
+        data = response.json()
+        if not data or len(data) <= 1:
+            return {"url_alvo": url_alvo, "total_encontrado": 0, "snapshots": []}
+            
+        headers = data[0]
+        rows = data[1:]
+        
+        snapshots = []
+        for row in rows:
+            if len(row) < 4:
+                continue
+            timestamp, original, statuscode, digest = row[0], row[1], row[2], row[3]
+            link_captura = f"http://web.archive.org/web/{timestamp}/{original}"
+            snapshots.append({
+                "timestamp": timestamp,
+                "url_original": original,
+                "status_http": statuscode,
+                "checksum_digest": digest,
+                "link_visualizacao": link_captura
+            })
+            
+        return {
+            "url_alvo": url_alvo,
+            "apenas_mudancas": apenas_mudancas,
+            "total_encontrado": len(snapshots),
+            "snapshots": snapshots
+        }
+    except Exception as e:
+        return {"error": f"Falha ao listar snapshots no Wayback: {str(e)}"}
 
 
 # ==============================================================================
