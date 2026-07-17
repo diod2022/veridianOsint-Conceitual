@@ -116,6 +116,8 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
         return "veridian_extrair_texto_site"
     if nome_funcao == "serper_buscar_web_dorks":
         return "veridian_pesquisa_dorks"
+    if nome_funcao == "serper_buscar_google":
+        return "veridian_buscar_google"
         
     if nome_funcao.startswith("veridian_"):
         return nome_funcao
@@ -3517,6 +3519,48 @@ async def serper_buscar_web_dorks(alvo: str, categoria: str = "arquivos_expostos
         "categoria": categoria,
         "varredura": resultados
     }
+
+
+@mcp.tool()
+async def serper_buscar_google(query: str) -> dict:
+    """
+    Realiza uma pesquisa direta no Google utilizando a API do Serper.dev.
+    Suporta operadores de busca avançados (Dorks) tais como site:, filetype:, intitle:, inurl:, etc.
+    
+    :param query: Termo de busca ou expressão Google Dork completa.
+    """
+    api_key = os.environ.get("SERPER_API_KEY")
+    if not api_key:
+        return {"error": "Erro: Chave SERPER_API_KEY não configurada no .env"}
+        
+    url = "https://google.serper.dev/search"
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/json"
+    }
+    payload = {"q": query}
+    
+    try:
+        response = await http_client.post(url, json=payload, headers=headers, timeout=15.0)
+        if response.status_code != 200:
+            return {"error": f"Erro na busca Google (HTTP {response.status_code}): {response.text}"}
+            
+        data = response.json()
+        achados = []
+        for item in data.get("organic", []):
+            achados.append({
+                "titulo": item.get("title"),
+                "url": item.get("link"),
+                "resumo": item.get("snippet")
+            })
+            
+        return {
+            "query": query,
+            "total_encontrado": len(achados),
+            "resultados": achados
+        }
+    except Exception as e:
+        return {"error": f"Falha na consulta ao Google: {str(e)}"}
 
 
 # ==============================================================================
