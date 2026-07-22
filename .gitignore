@@ -32,3 +32,5 @@ Thumbs.db
 # Logs e relatórios temporários
 *.log
 npx_out.log
+mcp_logs.db
+

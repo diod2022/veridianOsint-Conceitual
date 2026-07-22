@@ -6,7 +6,7 @@ Este documento serve como manual de instrução do sistema (System Instructions)
 
 ## 📌 1. Visão Geral das APIs Habilitadas
 
-O servidor MCP integra 7 fontes principais de dados de inteligência e OSINT:
+O servidor MCP integra 8 fontes principais de dados de inteligência e OSINT:
 1. **BigDataCorp**: Consultas cadastrais completas, dados profissionais, fiscais, econômicos, relacionamentos e processos judiciais para PF (CPF) e PJ (CNPJ).
 2. **CSINT.pro**: Busca universal de vazamentos (Breach data), IP Lookup e reputação avançada de e-mails/telefones (via SEON).
 3. **UnitFour**: Localização cadastral reversa (CEP, Telefone, E-mail, Nome), tomadores de decisão, empresas ligadas, mandados de prisão, antecedentes criminais e proprietários de veículos por placa.
@@ -14,6 +14,10 @@ O servidor MCP integra 7 fontes principais de dados de inteligência e OSINT:
 5. **Harvest API (LinkedIn)**: OSINT de perfis do LinkedIn (extração de perfis, posts, comentários, reações e busca de e-mails atrelados).
 6. **Lighthouse/Lampyre (Facebook & Imagens)**: Busca reversa de contas no Facebook (por UID, telefone, e-mail ou username), consultas na Darknet e ferramentas de imagem (reconhecimento facial e geolocalização por foto).
 7. **WhoisXML API**: Consulta de dados WHOIS (registro e propriedade) para domínios, endereços IP e extração automática de dados de domínios a partir de e-mails.
+8. **Escavador**: Consulta de processos judiciais vinculados a **Advogados por OAB** (número e UF) com suporte a paginação ampla (`escavador_buscar_processos_oab` / `veridian_buscar_processos_oab`).
+
+> ℹ️ **Nota sobre Nomes de Ferramentas (White-Labeling):**
+> Dependendo da configuração ativa no servidor, as ferramentas podem estar expostas com o prefixo do fornecedor (ex: `escavador_buscar_processos_oab`) ou com o prefixo unificado (ex: `veridian_buscar_processos_oab`). Ambas se referem exatamente à mesma função.
 
 ---
 
@@ -36,6 +40,7 @@ Algumas respostas de consultas completas (como o histórico de processos judicia
 - **Não carregue tudo de uma vez**: Evite solicitar múltiplos datasets pesados na mesma chamada inicial se o alvo for muito exposto.
 - **Visualização por Categoria**: Use `bigdata_ver_categoria` (para CPF) ou `bigdata_ver_categoria_cnpj` (para CNPJ) especificando o dataset desejado para ler apenas o bloco de dados relevante por vez.
 - **Paginação de Cache**: Para analisar dados gigantescos que já estão salvos localmente, utilize a ferramenta `investigador_ler_cache` controlando a paginação com os parâmetros `slice_start` e `slice_end` (ex: navegando de 20 em 20 itens).
+- **Exportação de Cache Compactado**: Se precisar do resultado completo sem exceder o limite de contexto, utilize `investigador_obter_cache_compactado` (ou `veridian_obter_cache_compactado`) para receber o caminho do arquivo ZIP local e o pacote codificado em Base64.
 
 ---
 
@@ -98,6 +103,24 @@ graph TD
 2. **Investigação a partir de E-mails**: Ao receber um e-mail suspeito, você pode rodar `whois_consultar` fornecendo o e-mail completo. A ferramenta extrairá automaticamente o domínio e retornará a propriedade do domínio em questão.
 3. **Evitar Estouro de Contexto**: Mantenha o parâmetro `ignore_raw_text=True` (comportamento padrão) para evitar retornar o texto bruto desestruturado do WHOIS, poupando tokens e mantendo o contexto limpo.
 4. **Dados Obrigatórios**: Ao exibir as informações recuperadas para o usuário, garanta que dados fundamentais como **País**, **Estado** (se disponível na resposta) e **Último Update (updatedDate)** sejam destacados na apresentação do resultado.
+
+---
+
+### ⚖️ Fluxo 6: Consulta de Processos Judiciais (Diferenciação Crítica de Ferramentas)
+
+> 🚨 **ATENÇÃO LLM — NÃO CONFUNDA AS FERRAMENTAS DE PROCESSOS:**
+
+1. **Busca de Processos por OAB (Advogados)**: 
+   - **Ferramenta OBRIGATÓRIA**: `escavador_buscar_processos_oab` (ou `veridian_buscar_processos_oab`).
+   - **Parâmetros**: `oab_numero` (ex: `'5485'`), `oab_estado` (ex: `'MS'`).
+   - **NUNCA** tente inventar funções como `bigdata_processos_oab` ou usar BigDataCorp para OAB. O BigDataCorp NÃO possui busca por OAB!
+   - Se o advogado tiver muitos processos, informe o parâmetro `max_paginas` (ex: `max_paginas=10` ou `max_paginas=50`) para resgatar todas as páginas de processos.
+
+2. **Busca de Processos por CPF ou CNPJ (Partes / Envolvidos)**:
+   - Use `bigdata_consultar_cpf` com dataset `bdclawsuits` (ou `veridian_consultar_cadastro_cpf`).
+
+3. **Consulta de UM Número de Processo CNJ Específico**:
+   - Use `bigdata_consultar_processo` (ou `veridian_consultar_processos_judiciais`) informando o número CNJ (ex: `'1415618-82.2026.8.12.0000'`). garanta que dados fundamentais como **País**, **Estado** (se disponível na resposta) e **Último Update (updatedDate)** sejam destacados na apresentação do resultado.
 
 ---
 

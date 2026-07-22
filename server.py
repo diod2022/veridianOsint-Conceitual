@@ -299,6 +299,28 @@ def obter_caminho_cache_seguro(cache_id: str) -> str:
         return caminho_absoluto
     return None
 
+def obter_caminho_cache_seguro_ext(cache_id: str, ext: str = ".json") -> str:
+    """
+    Sanitiza o cache_id e resolve o caminho absoluto com a extensão informada,
+    garantindo que o arquivo esteja estritamente dentro do diretório de cache.
+    """
+    if not cache_id:
+        return None
+        
+    if "/" in cache_id or "\\" in cache_id or ".." in cache_id:
+        return None
+        
+    cache_id_seguro = os.path.basename(cache_id)
+    if not cache_id_seguro or cache_id_seguro in (".", ".."):
+        return None
+        
+    caminho_absoluto = os.path.abspath(os.path.join(CACHE_DIR, f"{cache_id_seguro}{ext}"))
+    caminho_limite = os.path.abspath(CACHE_DIR)
+    
+    if caminho_absoluto.startswith(caminho_limite):
+        return caminho_absoluto
+    return None
+
 def checar_cache_universal(chave_identificadora: str) -> dict:
     """Verifica se existe cache local e retorna o resumo imediatamente se existir (evita chamadas redundantes)."""
     cache_file = obter_caminho_cache_seguro(chave_identificadora)
@@ -395,6 +417,132 @@ async def investigador_ler_cache(cache_id: str, chave: str = None, slice_start: 
         
     return alvo
 
+@mcp.tool()
+async def investigador_limpar_cache(cache_id: str = None, limpar_tudo: bool = False) -> dict:
+    """
+    Remove arquivos de cache locais (consultas BigDataCorp, Instagram, LinkedIn, WHOIS, etc)
+    para liberar espaço ou forçar a atualização de buscas antigas.
+    
+    Args:
+        cache_id: (Opcional) O ID específico do cache a ser limpo (ex: 'bigdata_01660684625').
+        limpar_tudo: (Opcional) Se True, limpa todo o diretório de cache (exceto pastas internas do sistema).
+    """
+    if not cache_id and not limpar_tudo:
+        return {
+            "status": "erro",
+            "mensagem": "Informe um 'cache_id' específico ou defina 'limpar_tudo' como True."
+        }
+        
+    deleted_count = 0
+    freed_bytes = 0
+    errors = []
+    
+    if cache_id:
+        for ext in [".json", ".md"]:
+            file_path = obter_caminho_cache_seguro_ext(cache_id, ext)
+            if file_path and os.path.exists(file_path):
+                try:
+                    sz = os.path.getsize(file_path)
+                    os.remove(file_path)
+                    deleted_count += 1
+                    freed_bytes += sz
+                except Exception as e:
+                    errors.append(f"Erro ao remover {os.path.basename(file_path)}: {str(e)}")
+                    
+        if deleted_count == 0:
+            if errors:
+                return {"status": "erro", "mensagem": f"Falha ao deletar arquivos: {', '.join(errors)}"}
+            return {"status": "erro", "mensagem": f"Nenhum arquivo encontrado para o cache_id '{cache_id}'."}
+            
+        return {
+            "status": "sucesso",
+            "mensagem": f"Cache '{cache_id}' limpo com sucesso. {deleted_count} arquivo(s) removido(s) ({freed_bytes} bytes liberados)."
+        }
+        
+    if limpar_tudo:
+        if os.path.exists(CACHE_DIR):
+            for item in os.listdir(CACHE_DIR):
+                item_path = os.path.join(CACHE_DIR, item)
+                if os.path.isfile(item_path):
+                    if item.startswith('.'):
+                        continue
+                    try:
+                        sz = os.path.getsize(item_path)
+                        os.remove(item_path)
+                        deleted_count += 1
+                        freed_bytes += sz
+                    except Exception as e:
+                        errors.append(f"Erro ao remover {item}: {str(e)}")
+                        
+        return {
+            "status": "sucesso",
+            "mensagem": f"Todo o cache de consultas foi limpo. {deleted_count} arquivos removidos ({freed_bytes} bytes liberados).",
+            "erros": errors if errors else None
+        }
+
+@mcp.tool()
+async def investigador_obter_cache_compactado(cache_id: str) -> dict:
+    """
+    Compacta os arquivos de cache de consultas associados a um cache_id específico 
+    em um único arquivo ZIP e retorna seu caminho local e conteúdo em Base64.
+    
+    Args:
+        cache_id: O ID do cache a ser compactado (ex: 'bigdata_01660684625').
+    """
+    import io
+    import zipfile
+    import base64
+    
+    if not cache_id or "/" in cache_id or "\\" in cache_id or ".." in cache_id:
+        return {"status": "erro", "mensagem": "Nome de cache inválido ou inseguro."}
+        
+    cache_id_seguro = os.path.basename(cache_id)
+    if not cache_id_seguro or cache_id_seguro in (".", ".."):
+        return {"status": "erro", "mensagem": "Nome de cache inválido."}
+        
+    zip_buffer = io.BytesIO()
+    arquivos_adicionados = 0
+    tamanho_original = 0
+    
+    for ext in [".json", ".md"]:
+        file_path = obter_caminho_cache_seguro_ext(cache_id_seguro, ext)
+        if file_path and os.path.exists(file_path):
+            try:
+                sz = os.path.getsize(file_path)
+                tamanho_original += sz
+                with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+                    zip_file.write(file_path, arcname=f"{cache_id_seguro}{ext}")
+                arquivos_adicionados += 1
+            except Exception as e:
+                print(f"[COMPRESS ERROR] Erro ao adicionar {file_path} ao ZIP: {str(e)}", file=sys.stderr, flush=True)
+                
+    if arquivos_adicionados == 0:
+        return {"status": "erro", "mensagem": f"Nenhum arquivo de cache encontrado para o cache_id '{cache_id}'."}
+        
+    zip_data = zip_buffer.getvalue()
+    
+    # Salvar o ZIP localmente na pasta de cache
+    caminho_zip = os.path.abspath(os.path.join(CACHE_DIR, f"{cache_id_seguro}.zip"))
+    try:
+        with open(caminho_zip, "wb") as f:
+            f.write(zip_data)
+    except Exception as e:
+        print(f"[COMPRESS ERROR] Erro ao gravar ZIP local em {caminho_zip}: {str(e)}", file=sys.stderr, flush=True)
+        caminho_zip = "Erro ao gravar arquivo em disco"
+        
+    conteudo_b64 = base64.b64encode(zip_data).decode("utf-8")
+    
+    return {
+        "status": "sucesso",
+        "cache_id": cache_id_seguro,
+        "arquivos_compactados": arquivos_adicionados,
+        "tamanho_original_bytes": tamanho_original,
+        "tamanho_compactado_bytes": len(zip_data),
+        "caminho_arquivo_zip": caminho_zip,
+        "conteudo_base64": conteudo_b64,
+        "mensagem": "Arquivo compactado gerado com sucesso. O conteúdo ZIP completo está codificado em Base64 na chave 'conteudo_base64'."
+    }
+
 # ==============================================================================
 # 00. INTEGRAÇÃO ESCAVADOR API v2
 # ==============================================================================
@@ -407,15 +555,23 @@ escavador_semaphore = asyncio.Semaphore(3)
 async def escavador_buscar_processos_oab(
     oab_numero: str, 
     oab_estado: str, 
-    oab_tipo: str = "ADVOGADO"
+    oab_tipo: str = "ADVOGADO",
+    max_paginas: int = 1,
+    ignore_cache: bool = False
 ) -> dict:
     """
-    Busca processos de um advogado a partir da OAB usando a API v2 do Escavador.
+    ATENÇÃO: Esta é a ÚNICA ferramenta para consultar processos judiciais de um advogado por NÚMERO DE OAB e ESTADO (UF).
+    NÃO use ferramentas de BigDataCorp/CPF para busca por OAB. Use esta ferramenta.
+    
+    Busca processos de um advogado a partir da OAB (API Escavador / Veridian).
+    Permite paginação múltipla controlada por 'max_paginas'.
     
     Args:
-        oab_numero: Número da OAB (ex: '12345' ou '123456').
-        oab_estado: Sigla do Estado da OAB (ex: 'SP', 'RJ').
+        oab_numero: Número da OAB (ex: '5485', '12345' ou '123456').
+        oab_estado: Sigla do Estado da OAB (ex: 'MS', 'SP', 'RJ').
         oab_tipo: Tipo de inscrição OAB (opcional, padrão 'ADVOGADO').
+        max_paginas: Limite máximo de páginas a consultar na API (padrão 1). Para advogados com muitos processos, aumente este número (ex: 10, 50).
+        ignore_cache: Se True, ignora o cache local e faz nova busca na API.
     """
     if not ESCAVADOR_API_TOKEN:
         return {"error": "ESCAVADOR_API_TOKEN não configurada no .env"}
@@ -432,9 +588,12 @@ async def escavador_buscar_processos_oab(
     chave_cache = f"escavador_{cache_id}"
     
     # Interceptação de cache local
-    cache_hit = checar_cache_universal(chave_cache)
-    if cache_hit:
-        return cache_hit
+    if not ignore_cache:
+        cache_hit = checar_cache_universal(chave_cache)
+        if cache_hit:
+            # Se pedirmos apenas 1 página ou se o cache já tiver todos os itens (sem links.next)
+            # ou se o total de itens já for grande, podemos simplesmente retornar o cache
+            return cache_hit
         
     print(f"[ESCAVADOR] Consultando processos por OAB: {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
     
@@ -450,8 +609,13 @@ async def escavador_buscar_processos_oab(
         "oab_tipo": oab_tipo_clean
     }
     
+    todos_items = []
+    dados_finais = None
+    next_url = None
+    
     async with escavador_semaphore:
         try:
+            # Página 1
             response = await http_client.get(
                 "https://api.escavador.com/api/v2/advogado/processos",
                 headers=headers,
@@ -461,7 +625,55 @@ async def escavador_buscar_processos_oab(
             response.raise_for_status()
             dados = response.json()
             
-            return salvar_cache_universal(chave_cache, dados)
+            todos_items.extend(dados.get("items", []))
+            dados_finais = dados
+            next_url = dados.get("links", {}).get("next")
+            
+            # Loop de paginação se max_paginas > 1
+            pagina_atual = 1
+            while next_url and pagina_atual < max_paginas:
+                import urllib.parse
+                parsed_url = urllib.parse.urlparse(next_url)
+                query_params = urllib.parse.parse_qs(parsed_url.query)
+                
+                params_next = {
+                    "oab_numero": oab_num_clean,
+                    "oab_estado": oab_est_clean,
+                    "oab_tipo": oab_tipo_clean
+                }
+                if "cursor" in query_params:
+                    params_next["cursor"] = query_params["cursor"][0]
+                if "li" in query_params:
+                    params_next["li"] = query_params["li"][0]
+                    
+                print(f"[ESCAVADOR] Consultando página {pagina_atual + 1} de processos por OAB: {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
+                
+                response = await http_client.get(
+                    "https://api.escavador.com/api/v2/advogado/processos",
+                    headers=headers,
+                    params=params_next,
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                dados_prox = response.json()
+                
+                items_pagina = dados_prox.get("items", [])
+                if not items_pagina:
+                    break
+                    
+                todos_items.extend(items_pagina)
+                next_url = dados_prox.get("links", {}).get("next")
+                pagina_atual += 1
+                
+                # Pequeno delay para respeitar limites de requisições da API
+                await asyncio.sleep(0.5)
+                
+            if dados_finais:
+                dados_finais["items"] = todos_items
+                if "links" in dados_finais:
+                    dados_finais["links"]["next"] = next_url
+                    
+            return salvar_cache_universal(chave_cache, dados_finais)
             
         except httpx.HTTPStatusError as e:
             try:
@@ -1288,10 +1500,13 @@ async def bigdata_ver_categoria_cnpj(cnpj: str | int, dataset_code: str) -> dict
 @mcp.tool()
 async def bigdata_consultar_processo(numero_processo: str | int, dataset_code: str = "bdclawsuitbasicdata") -> dict:
     """
-    Busca os dados básicos de um Processo Judicial específico na BigDataCorp.
+    Busca os dados básicos de um Processo Judicial específico pelo NÚMERO DO PROCESSO CNJ na BigDataCorp / Veridian.
+    
+    NOTA: Esta ferramenta serve EXCLUSIVAMENTE para consultar um número de processo CNJ específico (ex: '1415618-82.2026.8.12.0000').
+    NÃO use esta ferramenta para buscas por OAB. Para consultar processos por OAB, use 'escavador_buscar_processos_oab' ('veridian_buscar_processos_oab').
     
     Args:
-        numero_processo: O número do processo (preferencialmente no formato CNJ xxxxxxx-xx.xxxx.x.xx.xxxx).
+        numero_processo: O número do processo (no formato CNJ xxxxxxx-xx.xxxx.x.xx.xxxx).
         dataset_code: O código do dataset (padrão é 'bdclawsuitbasicdata' que mapeia para 'basic_data').
     """
     if not BIGDATA_TOKEN:
@@ -4400,11 +4615,144 @@ async def run_sse_with_auth(self_mcp) -> None:
                     "description": info.get("description", ""),
                     "permissoes": info.get("permissoes", ["*"])
                 }
+                
+        # Calcular estatísticas do cache
+        cache_files = 0
+        cache_size = 0
+        try:
+            if os.path.exists(CACHE_DIR):
+                for item in os.listdir(CACHE_DIR):
+                    item_path = os.path.join(CACHE_DIR, item)
+                    if os.path.isfile(item_path) and not item.startswith('.'):
+                        cache_files += 1
+                        cache_size += os.path.getsize(item_path)
+        except Exception:
+            pass
+
         return JSONResponse({
             "fontes_ativas": config.get("fontes_ativas", {}),
             "consultas_ativas": config.get("consultas_ativas", {}),
-            "chaves": chaves_brutas
+            "chaves": chaves_brutas,
+            "cache_stats": {
+                "arquivos": cache_files,
+                "tamanho_bytes": cache_size
+            }
         })
+
+    async def admin_api_cache_clear(request):
+        if not await admin_api_auth(request):
+            return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+        
+        body = {}
+        if request.method == "POST":
+            try:
+                body = await request.json() if await request.body() else {}
+            except Exception:
+                pass
+                
+        cache_id = body.get("cache_id")
+        deleted_count = 0
+        freed_bytes = 0
+        errors = []
+        
+        if cache_id:
+            for ext in [".json", ".md"]:
+                file_path = obter_caminho_cache_seguro_ext(cache_id, ext)
+                if file_path and os.path.exists(file_path):
+                    try:
+                        sz = os.path.getsize(file_path)
+                        os.remove(file_path)
+                        deleted_count += 1
+                        freed_bytes += sz
+                    except Exception as e:
+                        errors.append(f"Erro ao remover {os.path.basename(file_path)}: {str(e)}")
+            
+            if deleted_count == 0 and not errors:
+                return JSONResponse({"status": "erro", "mensagem": f"Cache '{cache_id}' não encontrado ou inválido."}, status_code=404)
+        else:
+            if os.path.exists(CACHE_DIR):
+                for item in os.listdir(CACHE_DIR):
+                    item_path = os.path.join(CACHE_DIR, item)
+                    if os.path.isfile(item_path):
+                        if item.startswith('.'):
+                            continue
+                        try:
+                            sz = os.path.getsize(item_path)
+                            os.remove(item_path)
+                            deleted_count += 1
+                            freed_bytes += sz
+                        except Exception as e:
+                            errors.append(f"Erro ao remover {item}: {str(e)}")
+                            
+        # Recalcular estatísticas após limpeza
+        cache_files = 0
+        cache_size = 0
+        try:
+            if os.path.exists(CACHE_DIR):
+                for item in os.listdir(CACHE_DIR):
+                    item_path = os.path.join(CACHE_DIR, item)
+                    if os.path.isfile(item_path) and not item.startswith('.'):
+                        cache_files += 1
+                        cache_size += os.path.getsize(item_path)
+        except Exception:
+            pass
+            
+        return JSONResponse({
+            "status": "sucesso",
+            "mensagem": f"Limpeza concluída. {deleted_count} arquivos removidos.",
+            "detalhes": {
+                "arquivos_deletados": deleted_count,
+                "espaco_liberado_bytes": freed_bytes,
+                "erros": errors
+            },
+            "cache_stats": {
+                "arquivos": cache_files,
+                "tamanho_bytes": cache_size
+            }
+        })
+
+    async def admin_api_cache_download(request):
+        if not await admin_api_auth(request):
+            return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+            
+        cache_id = request.query_params.get("cache_id")
+        if not cache_id:
+            return JSONResponse({"error": "cache_id parameter is required"}, status_code=400)
+            
+        import io
+        import zipfile
+        
+        cache_id_seguro = os.path.basename(cache_id)
+        if not cache_id_seguro or cache_id_seguro in (".", ".."):
+            return JSONResponse({"error": "Invalid cache_id"}, status_code=400)
+            
+        zip_buffer = io.BytesIO()
+        arquivos_adicionados = 0
+        
+        for ext in [".json", ".md"]:
+            file_path = obter_caminho_cache_seguro_ext(cache_id_seguro, ext)
+            if file_path and os.path.exists(file_path):
+                try:
+                    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+                        zip_file.write(file_path, arcname=f"{cache_id_seguro}{ext}")
+                    arquivos_adicionados += 1
+                except Exception as e:
+                    print(f"[DOWNLOAD COMPRESS ERROR] {str(e)}", file=sys.stderr, flush=True)
+                    
+        if arquivos_adicionados == 0:
+            return JSONResponse({"error": f"Nenhum arquivo de cache encontrado para o cache_id '{cache_id}'"}, status_code=404)
+            
+        zip_data = zip_buffer.getvalue()
+        
+        from starlette.responses import Response
+        return Response(
+            zip_data,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f"attachment; filename={cache_id_seguro}.zip",
+                "Content-Length": str(len(zip_data))
+            }
+        )
 
     async def admin_api_config(request):
         if not await admin_api_auth(request):
@@ -4621,6 +4969,8 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
                 Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
+                Route("/admin/api/cache/clear", endpoint=admin_api_cache_clear, methods=["POST"]),
+                Route("/admin/api/cache/download", endpoint=admin_api_cache_download, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
             ],
             middleware=[
@@ -4673,6 +5023,8 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
                 Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
+                Route("/admin/api/cache/clear", endpoint=admin_api_cache_clear, methods=["POST"]),
+                Route("/admin/api/cache/download", endpoint=admin_api_cache_download, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
             ],
             middleware=[

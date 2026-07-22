@@ -246,6 +246,32 @@ async def run_tests():
             assert chave_restrita_teste not in res["chaves"]
             print("✓ TESTE 6 PASSOU: Chave excluída com sucesso.")
 
+            # ==================================================================
+            # TESTE 7: API de Cache (Status & Limpeza)
+            # ==================================================================
+            print("\n[TESTE 7] Testando endpoints da API de Cache...")
+            
+            # 7.1. Verificar se as estatísticas de cache aparecem no status
+            r = await client.get(f"{BASE_URL}/admin/api/status", headers=headers_admin)
+            assert r.status_code == 200
+            res = r.json()
+            assert "cache_stats" in res
+            assert "arquivos" in res["cache_stats"]
+            assert "tamanho_bytes" in res["cache_stats"]
+            print(f"  Estatísticas do cache recuperadas: {res['cache_stats']}")
+            
+            # 7.2. Testar limpeza de cache sem autorização
+            r = await client.post(f"{BASE_URL}/admin/api/cache/clear", json={"cache_id": "dummy_cache_id"})
+            assert r.status_code == 401
+            print("  Limpeza não autorizada bloqueada (401)")
+            
+            # 7.3. Testar limpeza de um cache inexistente/inválido com autorização
+            r = await client.post(f"{BASE_URL}/admin/api/cache/clear", headers=headers_admin, json={"cache_id": "dummy_cache_id"})
+            assert r.status_code == 404
+            print("  Limpeza de cache inexistente retornou 404")
+            
+            print("✓ TESTE 7 PASSOU: API de Cache validada com sucesso.")
+
     except Exception as e:
         print(f"❌ ERRO DURANTE OS TESTES: {e}")
         raise

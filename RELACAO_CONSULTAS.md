@@ -67,6 +67,9 @@ Este documento detalha todas as ferramentas de consulta disponíveis no servidor
 | **SociaVault (TikTok)** | `tiktok_listar_seguindo` | `handle`: Username do TikTok (sem `@`) | Lista de perfis que a conta alvo segue. |
 | **SociaVault (TikTok)** | `tiktok_listar_seguidores` | `handle`: Username do TikTok (sem `@`) | Contas públicas que seguem o canal do alvo. |
 | **SociaVault (TikTok)** | `tiktok_buscar_usuarios` | `query`: Termo de busca textual | Contas do TikTok que correspondem à palavra-chave buscada. |
+| **Escavador** | `escavador_buscar_processos_oab` / `veridian_buscar_processos_oab` | `oab_numero`: Número da OAB<br>`oab_estado`: UF (ex: `MS`) <br>`max_paginas`: Limite de páginas (padrão 1, ex: 10, 50) | Lista completa de processos judiciais vinculados ao advogado no Escavador. **ÚNICA ferramenta para busca por OAB.** |
 | **Investigador Core** | `investigador_ler_cache` | `cache_id`: ID do cache<br>`chave`: Opcional<br>`slice_start`/`slice_end`: Paginação | Retorno de fatias paginadas de cache local de consultas grandes para evitar estouro de tokens da LLM. |
+| **Investigador Core** | `investigador_limpar_cache` | `cache_id`: ID (opcional)<br>`limpar_tudo`: boolean | Remove arquivos de cache salvos em disco (específicos ou diretório completo). |
+| **Investigador Core** | `investigador_obter_cache_compactado` | `cache_id`: ID do cache | Compacta arquivos do cache em um pacote ZIP e retorna o caminho físico e codificação Base64. |
 | **Investigador Core** | `investigador_gerar_dossie` | `cpf`: CPF com/sem máscara | Dossiê consolidado, deduplicado e corroborado com cruzamento de todas as fontes consultadas. |
 | **Investigador Core** | `investigador_enriquecer_dossie`| `cpf`: CPF com/sem máscara | Enriquecimento automático do dossiê consultando reputação SEON e vazamentos para todos os contatos. |

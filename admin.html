@@ -639,6 +639,33 @@
                 </div>
             </div>
         </div>
+<div id="cache_management_card"></div>
+        <!-- Gerenciamento de Cache -->
+        <div class="section-card" style="margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Gerenciamento de Cache de Consultas
+                </h2>
+                <button id="btnClearCache" class="btn-logout" style="width: auto; padding: 6px 12px; margin-bottom: 0; background: #e1372d; color: white; border: none;">Limpar Todo o Cache</button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Arquivos de Cache</div>
+                        <div id="cacheFileCount" style="font-size: 24px; font-weight: bold; color: var(--text-primary);">Carregando...</div>
+                    </div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="opacity: 0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Espaço Utilizado</div>
+                        <div id="cacheTotalSize" style="font-size: 24px; font-weight: bold; color: var(--text-primary);">Carregando...</div>
+                    </div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="opacity: 0.5;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                </div>
+            </div>
+        </div>
 
         <!-- Histórico de Auditoria (Full Width) -->
         <div class="section-card" style="margin-top: 30px;">
@@ -900,6 +927,10 @@
 
             // Traduções para os nomes públicos mascarados (White-Label)
             "veridian_ler_cache": "Ler Cache de Investigador",
+            "veridian_limpar_cache": "Limpar Cache de Investigador",
+            "investigador_limpar_cache": "Limpar Cache de Investigador",
+            "veridian_obter_cache_compactado": "Obter Cache Compactado (ZIP)",
+            "investigador_obter_cache_compactado": "Obter Cache Compactado (ZIP)",
             "veridian_consultar_cadastro_cpf": "Consultar CPF (Básico & Avançado)",
             "veridian_ver_detalhes_categoria_cpf": "Consultar Detalhes da Categoria CPF",
             "veridian_consultar_cadastro_cnpj": "Consultar CNPJ Completo",
@@ -998,6 +1029,19 @@
         const newUserKey = document.getElementById('newUserKey');
         const saveUserBtn = document.getElementById('saveUserBtn');
 
+        // Elementos do Cache
+        const cacheFileCount = document.getElementById('cacheFileCount');
+        const cacheTotalSize = document.getElementById('cacheTotalSize');
+        const btnClearCache = document.getElementById('btnClearCache');
+
+        function formatarBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
         // Elementos dos Logs
         const logTableBody = document.getElementById('logTableBody');
         const logUserFilter = document.getElementById('logUserFilter');
@@ -1028,6 +1072,44 @@
         openAddModalBtn.addEventListener('click', () => addModal.classList.add('active'));
         closeAddModalBtn.addEventListener('click', fecharModal);
         saveUserBtn.addEventListener('click', criarUsuario);
+        btnClearCache.addEventListener('click', limparCacheGlobal);
+
+        async function limparCacheGlobal() {
+            if (!confirm('Deseja realmente limpar TODO o cache de consultas? Esta ação é irreversível.')) {
+                return;
+            }
+            
+            try {
+                btnClearCache.disabled = true;
+                btnClearCache.textContent = 'Limpando...';
+                
+                const r = await fetch('/admin/api/cache/clear', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Key': adminKey 
+                    }
+                });
+                
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                
+                if (data.status === 'sucesso') {
+                    showToast(data.mensagem || 'Cache limpo com sucesso!');
+                    if (data.cache_stats) {
+                        cacheFileCount.textContent = data.cache_stats.arquivos;
+                        cacheTotalSize.textContent = formatarBytes(data.cache_stats.tamanho_bytes);
+                    }
+                } else {
+                    showToast(data.mensagem || 'Falha ao limpar cache.', 'error');
+                }
+            } catch (e) {
+                showToast('Erro ao se conectar com o servidor.', 'error');
+            } finally {
+                btnClearCache.disabled = false;
+                btnClearCache.textContent = 'Limpar Todo o Cache';
+            }
+        }
 
         btnFilterLogs.addEventListener('click', () => {
             logOffset = 0;
@@ -1225,6 +1307,15 @@
                 renderizarTogglesGlobais(data.fontes_ativas, data.consultas_ativas);
                 renderizarTabelaUsuarios(data.chaves);
                 carregarLogs();
+
+                // Exibir estatísticas do cache
+                if (data.cache_stats) {
+                    cacheFileCount.textContent = data.cache_stats.arquivos;
+                    cacheTotalSize.textContent = formatarBytes(data.cache_stats.tamanho_bytes);
+                } else {
+                    cacheFileCount.textContent = 'Indisponível';
+                    cacheTotalSize.textContent = 'Indisponível';
+                }
             } catch (e) {
                 showToast('Falha ao carregar configurações.', 'error');
             }
