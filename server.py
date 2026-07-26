@@ -690,15 +690,15 @@ async def escavador_buscar_processos_oab(
     next_url = None
     
     start_time = time.time()
-    max_time_seconds = 12.0  # Limite para não estourar timeout do cliente MCP
+    max_time_seconds = 7.0  # Limite rígido de 7s para garantir que o cliente MCP receba a resposta
     
     try:
-        # Página 1
+        # Página 1 (Timeout rápido de 6s)
         response = await http_client.get(
             "https://api.escavador.com/api/v2/advogado/processos",
             headers=headers,
             params=params,
-            timeout=30.0
+            timeout=6.0
         )
         response.raise_for_status()
         dados = response.json()
@@ -734,7 +734,7 @@ async def escavador_buscar_processos_oab(
                 "https://api.escavador.com/api/v2/advogado/processos",
                 headers=headers,
                 params=params_next,
-                timeout=15.0
+                timeout=5.0
             )
             response.raise_for_status()
             dados_prox = response.json()
@@ -747,7 +747,7 @@ async def escavador_buscar_processos_oab(
             next_url = dados_prox.get("links", {}).get("next")
             pagina_atual += 1
             
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.2)
             
         if dados_finais:
             dados_finais["items"] = todos_items
@@ -756,6 +756,13 @@ async def escavador_buscar_processos_oab(
                 
         return salvar_cache_universal(chave_cache, dados_finais)
         
+    except httpx.TimeoutException:
+        print(f"[ESCAVADOR TIMEOUT] A API do Escavador excedeu o tempo limite de 6s no IP do servidor.", file=sys.stderr, flush=True)
+        return {
+            "status": "erro",
+            "error": "A API do Escavador não respondeu dentro de 6 segundos a partir do IP deste servidor.",
+            "sugestao": "A API de OAB do Escavador pode estar com alta latência ou bloqueando temporariamente o IP. Tente consultar os processos pelo CPF do advogado utilizando 'bigdata_consultar_cpf' (dataset: 'bdclawsuits')."
+        }
     except httpx.HTTPStatusError as e:
         try:
             detalhes = e.response.json()
