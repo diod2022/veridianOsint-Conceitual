@@ -615,20 +615,89 @@ async def investigador_obter_cache_compactado(cache_id: str) -> dict:
         "mensagem": "Arquivo compactado gerado com sucesso. O conteúdo ZIP completo está codificado em Base64 na chave 'conteudo_base64'."
     }
 
-# ==============================================================================
-# 00. INTEGRAÇÃO ESCAVADOR API v2
-# ==============================================================================
-ESCAVADOR_API_TOKEN = os.getenv("ESCAVADOR_API_TOKEN")
+# Set para controle de buscas de OAB em segundo plano (evita duplicatas)
+_oab_bg_tasks = set()
 
-# Semáforo para controlar concorrência (limite de 3 chamadas simultâneas)
-escavador_semaphore = asyncio.Semaphore(3)
+async def _background_fetch_escavador_oab(oab_num_clean: str, oab_est_clean: str, oab_tipo_clean: str, max_paginas: int, chave_cache: str):
+    """Worker assíncrono em background que realiza a coleta ampla na API do Escavador sem bloquear o cliente MCP."""
+    try:
+        print(f"[ESCAVADOR BG] Iniciando busca em background para OAB {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
+        headers = {
+            "Authorization": f"Bearer {ESCAVADOR_API_TOKEN}",
+            "X-Requested-With": "XMLHttpRequest",
+            "Accept": "application/json"
+        }
+        params = {
+            "oab_numero": oab_num_clean,
+            "oab_estado": oab_est_clean,
+            "oab_tipo": oab_tipo_clean
+        }
+        
+        todos_items = []
+        dados_finais = None
+        
+        response = await http_client.get(
+            "https://api.escavador.com/api/v2/advogado/processos",
+            headers=headers,
+            params=params,
+            timeout=25.0
+        )
+        if response.status_code == 200:
+            dados = response.json()
+            todos_items.extend(dados.get("items", []))
+            dados_finais = dados
+            next_url = dados.get("links", {}).get("next")
+            
+            pagina_atual = 1
+            while next_url and pagina_atual < max_paginas:
+                import urllib.parse
+                parsed_url = urllib.parse.urlparse(next_url)
+                query_params = urllib.parse.parse_qs(parsed_url.query)
+                
+                params_next = {
+                    "oab_numero": oab_num_clean,
+                    "oab_estado": oab_est_clean,
+                    "oab_tipo": oab_tipo_clean
+                }
+                if "cursor" in query_params:
+                    params_next["cursor"] = query_params["cursor"][0]
+                if "li" in query_params:
+                    params_next["li"] = query_params["li"][0]
+                    
+                response = await http_client.get(
+                    "https://api.escavador.com/api/v2/advogado/processos",
+                    headers=headers,
+                    params=params_next,
+                    timeout=20.0
+                )
+                if response.status_code != 200:
+                    break
+                dados_prox = response.json()
+                items_pagina = dados_prox.get("items", [])
+                if not items_pagina:
+                    break
+                todos_items.extend(items_pagina)
+                next_url = dados_prox.get("links", {}).get("next")
+                pagina_atual += 1
+                await asyncio.sleep(0.3)
+                
+            if dados_finais:
+                dados_finais["items"] = todos_items
+                if "links" in dados_finais:
+                    dados_finais["links"]["next"] = next_url
+            salvar_cache_universal(chave_cache, dados_finais)
+            print(f"[ESCAVADOR BG] Busca concluída e salva no cache '{chave_cache}' ({len(todos_items)} itens).", file=sys.stderr, flush=True)
+    except Exception as e:
+        print(f"[ESCAVADOR BG ERROR] Falha na busca em background para {chave_cache}: {str(e)}", file=sys.stderr, flush=True)
+    finally:
+        _oab_bg_tasks.discard(chave_cache)
 
 @mcp.tool()
 async def escavador_buscar_processos_oab(
     oab_numero: str, 
     oab_estado: str = "", 
     oab_tipo: str = "ADVOGADO",
-    max_paginas: int = 1,
+    max_paginas: int = 10,
     ignore_cache: bool = False
 ) -> dict:
     """
@@ -636,14 +705,14 @@ async def escavador_buscar_processos_oab(
     NÃO use ferramentas de BigDataCorp/CPF para busca por OAB. Use esta ferramenta.
     
     Busca processos de um advogado a partir da OAB (API Escavador / Veridian).
-    Por padrão, busca a 1ª página com resposta ultra-rápida (1.5s). Para buscar mais páginas, passe 'max_paginas'.
+    Se o resultado estiver em cache, retorna de forma instantânea. Caso contrário, inicia a coleta em segundo plano no servidor para evitar timeout.
     
     Args:
         oab_numero: Número da OAB (ex: '7008', '5485', '7008/MS' ou 'OAB/MS 7008').
         oab_estado: Sigla do Estado da OAB (ex: 'MS', 'SP', 'RJ'). Opcional se informado junto ao número.
         oab_tipo: Tipo de inscrição OAB (opcional, padrão 'ADVOGADO').
-        max_paginas: Limite de páginas a consultar na API (padrão 1 para resposta instantânea). Aumente se precisar de mais (ex: 5, 10).
-        ignore_cache: Se True, ignora o cache local e faz nova busca na API.
+        max_paginas: Limite de páginas a consultar na API (padrão 10).
+        ignore_cache: Se True, força uma nova busca na API.
     """
     if not ESCAVADOR_API_TOKEN:
         return {"error": "ESCAVADOR_API_TOKEN não configurada no .env"}
@@ -665,114 +734,53 @@ async def escavador_buscar_processos_oab(
     cache_id = f"oab_{oab_est_clean.lower()}_{oab_num_clean.lower()}"
     chave_cache = f"escavador_{cache_id}"
     
-    # Interceptação de cache local
+    # 1. Interceptação de cache local (Resposta instantânea em < 0.01s)
     if not ignore_cache:
         cache_hit = checar_cache_universal(chave_cache)
         if cache_hit:
             return cache_hit
-        
-    print(f"[ESCAVADOR] Consultando processos por OAB: {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
-    
+
+    # 2. Tenta uma busca ultra-rápida (3.0s) da 1ª página
     headers = {
         "Authorization": f"Bearer {ESCAVADOR_API_TOKEN}",
         "X-Requested-With": "XMLHttpRequest",
         "Accept": "application/json"
     }
-    
     params = {
         "oab_numero": oab_num_clean,
         "oab_estado": oab_est_clean,
         "oab_tipo": oab_tipo_clean
     }
     
-    todos_items = []
-    dados_finais = None
-    next_url = None
-    
-    start_time = time.time()
-    max_time_seconds = 7.0  # Limite rígido de 7s para garantir que o cliente MCP receba a resposta
-    
     try:
-        # Página 1 (Timeout rápido de 6s)
         response = await http_client.get(
             "https://api.escavador.com/api/v2/advogado/processos",
             headers=headers,
             params=params,
-            timeout=6.0
+            timeout=3.0
         )
-        response.raise_for_status()
-        dados = response.json()
-        
-        todos_items.extend(dados.get("items", []))
-        dados_finais = dados
-        next_url = dados.get("links", {}).get("next")
-        
-        # Loop de paginação controlado por max_paginas e tempo limite
-        pagina_atual = 1
-        while next_url and pagina_atual < max_paginas:
-            if time.time() - start_time > max_time_seconds:
-                print(f"[ESCAVADOR WARN] Atingido limite de tempo de {max_time_seconds}s. Pausando paginação com {len(todos_items)} itens.", file=sys.stderr, flush=True)
-                break
-                
-            import urllib.parse
-            parsed_url = urllib.parse.urlparse(next_url)
-            query_params = urllib.parse.parse_qs(parsed_url.query)
-            
-            params_next = {
-                "oab_numero": oab_num_clean,
-                "oab_estado": oab_est_clean,
-                "oab_tipo": oab_tipo_clean
-            }
-            if "cursor" in query_params:
-                params_next["cursor"] = query_params["cursor"][0]
-            if "li" in query_params:
-                params_next["li"] = query_params["li"][0]
-                
-            print(f"[ESCAVADOR] Consultando página {pagina_atual + 1} de processos por OAB: {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
-            
-            response = await http_client.get(
-                "https://api.escavador.com/api/v2/advogado/processos",
-                headers=headers,
-                params=params_next,
-                timeout=5.0
-            )
-            response.raise_for_status()
-            dados_prox = response.json()
-            
-            items_pagina = dados_prox.get("items", [])
-            if not items_pagina:
-                break
-                
-            todos_items.extend(items_pagina)
-            next_url = dados_prox.get("links", {}).get("next")
-            pagina_atual += 1
-            
-            await asyncio.sleep(0.2)
-            
-        if dados_finais:
-            dados_finais["items"] = todos_items
-            if "links" in dados_finais:
-                dados_finais["links"]["next"] = next_url
-                
-        return salvar_cache_universal(chave_cache, dados_finais)
-        
-    except httpx.TimeoutException:
-        print(f"[ESCAVADOR TIMEOUT] A API do Escavador excedeu o tempo limite de 6s no IP do servidor.", file=sys.stderr, flush=True)
-        return {
-            "status": "erro",
-            "error": "A API do Escavador não respondeu dentro de 6 segundos a partir do IP deste servidor.",
-            "sugestao": "A API de OAB do Escavador pode estar com alta latência ou bloqueando temporariamente o IP. Tente consultar os processos pelo CPF do advogado utilizando 'bigdata_consultar_cpf' (dataset: 'bdclawsuits')."
-        }
-    except httpx.HTTPStatusError as e:
-        try:
-            detalhes = e.response.json()
-        except Exception:
-            detalhes = e.response.text
-        print(f"[ESCAVADOR ERROR] Erro HTTP {e.response.status_code} para OAB {oab_num_clean}/{oab_est_clean}: {detalhes}", file=sys.stderr, flush=True)
-        return {"error": f"Erro HTTP {e.response.status_code} na API do Escavador", "detalhes": detalhes}
-    except httpx.HTTPError as e:
-        print(f"[ESCAVADOR ERROR] Erro de rede para OAB {oab_num_clean}/{oab_est_clean}: {str(e)}", file=sys.stderr, flush=True)
-        return {"error": f"Erro de rede ao consultar Escavador: {str(e)}"}
+        if response.status_code == 200:
+            dados = response.json()
+            return salvar_cache_universal(chave_cache, dados)
+    except (httpx.TimeoutException, httpx.HTTPError):
+        pass
+
+    # 3. Se a API externa demorar mais de 3s, dispara tarefa em background no servidor e responde em 0.05s
+    if chave_cache not in _oab_bg_tasks:
+        _oab_bg_tasks.add(chave_cache)
+        asyncio.create_task(_background_fetch_escavador_oab(oab_num_clean, oab_est_clean, oab_tipo_clean, max_paginas, chave_cache))
+
+    return {
+        "status": "processando_em_segundo_plano",
+        "cache_id": chave_cache,
+        "mensagem": f"A busca de processos da OAB {oab_num_clean}/{oab_est_clean} foi iniciada em segundo plano no servidor.",
+        "tempo_estimado_segundos": 10,
+        "instrucao": (
+            f"A consulta à API do Escavador foi iniciada no servidor em segundo plano para evitar que sua janela de chat seja encerrada por timeout. "
+            f"AGUARDE DE 5 A 10 SEGUNDOS e chame novamente a ferramenta 'escavador_buscar_processos_oab' com oab_numero='{oab_num_clean}' e oab_estado='{oab_est_clean}' "
+            f"ou a ferramenta 'investigador_ler_cache' com cache_id='{chave_cache}' para obter o resultado pronto diretamente do cache."
+        )
+    }
 
 
 # ==============================================================================
