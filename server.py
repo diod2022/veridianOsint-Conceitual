@@ -628,7 +628,7 @@ async def escavador_buscar_processos_oab(
     oab_numero: str, 
     oab_estado: str = "", 
     oab_tipo: str = "ADVOGADO",
-    max_paginas: int = 10,
+    max_paginas: int = 1,
     ignore_cache: bool = False
 ) -> dict:
     """
@@ -636,13 +636,13 @@ async def escavador_buscar_processos_oab(
     NÃO use ferramentas de BigDataCorp/CPF para busca por OAB. Use esta ferramenta.
     
     Busca processos de um advogado a partir da OAB (API Escavador / Veridian).
-    Permite paginação múltipla controlada por 'max_paginas'.
+    Por padrão, busca a 1ª página com resposta ultra-rápida (1.5s). Para buscar mais páginas, passe 'max_paginas'.
     
     Args:
         oab_numero: Número da OAB (ex: '7008', '5485', '7008/MS' ou 'OAB/MS 7008').
         oab_estado: Sigla do Estado da OAB (ex: 'MS', 'SP', 'RJ'). Opcional se informado junto ao número.
         oab_tipo: Tipo de inscrição OAB (opcional, padrão 'ADVOGADO').
-        max_paginas: Limite máximo de páginas a consultar na API (padrão 10). Para advogados com muitos processos, aumente este número (ex: 20, 50).
+        max_paginas: Limite de páginas a consultar na API (padrão 1 para resposta instantânea). Aumente se precisar de mais (ex: 5, 10).
         ignore_cache: Se True, ignora o cache local e faz nova busca na API.
     """
     if not ESCAVADOR_API_TOKEN:
