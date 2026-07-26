@@ -321,6 +321,73 @@ def obter_caminho_cache_seguro_ext(cache_id: str, ext: str = ".json") -> str:
         return caminho_absoluto
     return None
 
+def gerar_resposta_enriquecida_cache(chave_identificadora: str, dados) -> dict:
+    """Gera resposta resumida e enriquecida para evitar estouro de tokens mas entregando amostra imediata útil."""
+    if isinstance(dados, dict) and ("advogado_encontrado" in dados or "items" in dados):
+        adv = dados.get("advogado_encontrado") or {}
+        items = dados.get("items") or []
+        items_ordenados = sorted(items, key=lambda x: str(x.get("data_inicio") or ""), reverse=True)
+        
+        tribunais = {}
+        amostra = []
+        for idx, p in enumerate(items_ordenados):
+            fontes = p.get("fontes") or []
+            sigla = "OUTROS"
+            if fontes and (fontes[0].get("sigla") or fontes[0].get("nome")):
+                sigla = fontes[0].get("sigla") or fontes[0].get("nome")
+            elif p.get("unidade_origem", {}).get("tribunal_sigla"):
+                sigla = p.get("unidade_origem", {}).get("tribunal_sigla")
+            
+            tribunais[sigla] = tribunais.get(sigla, 0) + 1
+            
+            if idx < 10:
+                amostra.append({
+                    "numero_cnj": p.get("numero_cnj") or "Sem número CNJ",
+                    "polo_ativo": p.get("titulo_polo_ativo") or "Não informado",
+                    "polo_passivo": p.get("titulo_polo_passivo") or "Não informado",
+                    "tribunal": sigla,
+                    "data_inicio": p.get("data_inicio") or "N/D",
+                    "qtd_movimentacoes": p.get("quantidade_movimentacoes") or 0
+                })
+                
+        oab_str = ""
+        if adv.get("oab_numero") or adv.get("oab_estado"):
+            oab_str = f"{adv.get('oab_numero', '')}/{adv.get('oab_estado', '')}".strip("/")
+            
+        return {
+            "status": "sucesso",
+            "advogado": {
+                "nome": adv.get("nome"),
+                "oab": oab_str,
+                "cpf": adv.get("cpf"),
+                "total_processos_cadastrados": adv.get("quantidade_processos")
+            },
+            "total_processos_baixados": len(items),
+            "resumo_tribunais": tribunais,
+            "amostra_10_processos_mais_recentes": amostra,
+            "cache_id": chave_identificadora,
+            "instrucao": (
+                f"Exibindo amostra dos 10 processos mais recentes do total de {len(items)} baixados. "
+                f"O arquivo completo com todos os {len(items)} processos está salvo localmente no cache '{chave_identificadora}'. "
+                f"Para paginar o restante dos itens se o usuário pedir, use 'investigador_ler_cache' (cache_id='{chave_identificadora}', chave='items')."
+            )
+        }
+
+    if isinstance(dados, dict):
+        resumo = {"tipo": "objeto", "chaves_disponiveis": list(dados.keys())}
+    elif isinstance(dados, list):
+        resumo = {"tipo": "lista", "tamanho_total": len(dados), "amostra_primeiros_3": dados[:3]}
+    else:
+        resumo = str(dados)[:500]
+
+    return {
+        "status": "sucesso",
+        "cache_id": chave_identificadora,
+        "mensagem": "Dados recuperados do cache local (crédito e tempo poupados!).",
+        "resumo_dos_dados": resumo,
+        "instrucao": f"Use a ferramenta 'investigador_ler_cache' com o cache_id '{chave_identificadora}' para explorar os dados."
+    }
+
 def checar_cache_universal(chave_identificadora: str) -> dict:
     """Verifica se existe cache local e retorna o resumo imediatamente se existir (evita chamadas redundantes)."""
     cache_file = obter_caminho_cache_seguro(chave_identificadora)
@@ -330,21 +397,8 @@ def checar_cache_universal(chave_identificadora: str) -> dict:
         with open(cache_file, "r", encoding="utf-8") as f:
             dados = json.load(f)
         
-        if isinstance(dados, dict):
-            resumo = {"tipo": "objeto", "chaves_disponiveis": list(dados.keys())}
-        elif isinstance(dados, list):
-            resumo = {"tipo": "lista", "tamanho_total": len(dados), "amostra_primeiros_3": dados[:3]}
-        else:
-            resumo = str(dados)[:500]
-
         print(f"[CACHE HIT] '{chave_identificadora}' recuperado do cache local.", file=sys.stderr, flush=True)
-        return {
-            "status": "sucesso",
-            "cache_id": chave_identificadora,
-            "mensagem": "Dados recuperados do cache local (crédito e tempo poupados!).",
-            "resumo_dos_dados": resumo,
-            "instrucao": f"Use a ferramenta 'investigador_ler_cache' com o cache_id '{chave_identificadora}' para explorar os dados."
-        }
+        return gerar_resposta_enriquecida_cache(chave_identificadora, dados)
     except Exception as e:
         print(f"[CACHE ERROR] Falha ao ler cache '{chave_identificadora}': {str(e)}", file=sys.stderr, flush=True)
     return None
@@ -359,21 +413,8 @@ def salvar_cache_universal(chave_identificadora: str, dados) -> dict:
     with open(cache_file, "w", encoding="utf-8") as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
     
-    if isinstance(dados, dict):
-        resumo = {"tipo": "objeto", "chaves_disponiveis": list(dados.keys())}
-    elif isinstance(dados, list):
-        resumo = {"tipo": "lista", "tamanho_total": len(dados), "amostra_primeiros_3": dados[:3]}
-    else:
-        resumo = str(dados)[:500]
-
     print(f"[CACHE SAVE] '{chave_identificadora}' gravado no cache local.", file=sys.stderr, flush=True)
-    return {
-        "status": "sucesso",
-        "cache_id": chave_identificadora,
-        "mensagem": "Dados gigantes salvos no cache. NUNCA REPITA A MESMA BUSCA.",
-        "resumo_dos_dados": resumo,
-        "instrucao": f"Use a ferramenta 'investigador_ler_cache' com o cache_id '{chave_identificadora}' para explorar os dados."
-    }
+    return gerar_resposta_enriquecida_cache(chave_identificadora, dados)
 
 @mcp.tool()
 async def investigador_ler_cache(cache_id: str, chave: str = None, slice_start: int = 0, slice_end: int = 20) -> dict:
@@ -554,9 +595,9 @@ escavador_semaphore = asyncio.Semaphore(3)
 @mcp.tool()
 async def escavador_buscar_processos_oab(
     oab_numero: str, 
-    oab_estado: str, 
+    oab_estado: str = "", 
     oab_tipo: str = "ADVOGADO",
-    max_paginas: int = 1,
+    max_paginas: int = 10,
     ignore_cache: bool = False
 ) -> dict:
     """
@@ -567,21 +608,27 @@ async def escavador_buscar_processos_oab(
     Permite paginação múltipla controlada por 'max_paginas'.
     
     Args:
-        oab_numero: Número da OAB (ex: '5485', '12345' ou '123456').
-        oab_estado: Sigla do Estado da OAB (ex: 'MS', 'SP', 'RJ').
+        oab_numero: Número da OAB (ex: '7008', '5485', '7008/MS' ou 'OAB/MS 7008').
+        oab_estado: Sigla do Estado da OAB (ex: 'MS', 'SP', 'RJ'). Opcional se informado junto ao número.
         oab_tipo: Tipo de inscrição OAB (opcional, padrão 'ADVOGADO').
-        max_paginas: Limite máximo de páginas a consultar na API (padrão 1). Para advogados com muitos processos, aumente este número (ex: 10, 50).
+        max_paginas: Limite máximo de páginas a consultar na API (padrão 10). Para advogados com muitos processos, aumente este número (ex: 20, 50).
         ignore_cache: Se True, ignora o cache local e faz nova busca na API.
     """
     if not ESCAVADOR_API_TOKEN:
         return {"error": "ESCAVADOR_API_TOKEN não configurada no .env"}
         
-    oab_num_clean = oab_numero.strip()
-    oab_est_clean = oab_estado.strip().upper()
-    oab_tipo_clean = oab_tipo.strip().upper()
+    # Parser resiliente de OAB (aceita "7008/MS", "OAB/MS 7008", "7008 MS", etc.)
+    import re
+    raw_str = f"{oab_numero} {oab_estado}".strip().upper()
+    uf_match = re.search(r'\b(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b', raw_str)
+    oab_est_clean = uf_match.group(1) if uf_match else oab_estado.strip().upper()
+    
+    num_match = re.search(r'\b(\d{1,7})\b', raw_str)
+    oab_num_clean = num_match.group(1) if num_match else re.sub(r'\D', '', oab_numero)
+    oab_tipo_clean = oab_tipo.strip().upper() if oab_tipo else "ADVOGADO"
     
     if not oab_num_clean or not oab_est_clean:
-        return {"error": "Número da OAB e Estado são obrigatórios."}
+        return {"error": "Número da OAB e Estado são obrigatórios (ex: oab_numero='7008', oab_estado='MS')."}
         
     # Cria chave de cache segura
     cache_id = f"oab_{oab_est_clean.lower()}_{oab_num_clean.lower()}"
@@ -591,8 +638,6 @@ async def escavador_buscar_processos_oab(
     if not ignore_cache:
         cache_hit = checar_cache_universal(chave_cache)
         if cache_hit:
-            # Se pedirmos apenas 1 página ou se o cache já tiver todos os itens (sem links.next)
-            # ou se o total de itens já for grande, podemos simplesmente retornar o cache
             return cache_hit
         
     print(f"[ESCAVADOR] Consultando processos por OAB: {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
@@ -613,6 +658,9 @@ async def escavador_buscar_processos_oab(
     dados_finais = None
     next_url = None
     
+    start_time = time.time()
+    max_time_seconds = 12.0  # Limite para não estourar timeout do cliente MCP
+    
     async with escavador_semaphore:
         try:
             # Página 1
@@ -629,9 +677,13 @@ async def escavador_buscar_processos_oab(
             dados_finais = dados
             next_url = dados.get("links", {}).get("next")
             
-            # Loop de paginação se max_paginas > 1
+            # Loop de paginação controlado por max_paginas e tempo limite
             pagina_atual = 1
             while next_url and pagina_atual < max_paginas:
+                if time.time() - start_time > max_time_seconds:
+                    print(f"[ESCAVADOR WARN] Atingido limite de tempo de {max_time_seconds}s. Pausando paginação com {len(todos_items)} itens.", file=sys.stderr, flush=True)
+                    break
+                    
                 import urllib.parse
                 parsed_url = urllib.parse.urlparse(next_url)
                 query_params = urllib.parse.parse_qs(parsed_url.query)
@@ -652,7 +704,7 @@ async def escavador_buscar_processos_oab(
                     "https://api.escavador.com/api/v2/advogado/processos",
                     headers=headers,
                     params=params_next,
-                    timeout=30.0
+                    timeout=15.0
                 )
                 response.raise_for_status()
                 dados_prox = response.json()
@@ -665,8 +717,7 @@ async def escavador_buscar_processos_oab(
                 next_url = dados_prox.get("links", {}).get("next")
                 pagina_atual += 1
                 
-                # Pequeno delay para respeitar limites de requisições da API
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.3)
                 
             if dados_finais:
                 dados_finais["items"] = todos_items
