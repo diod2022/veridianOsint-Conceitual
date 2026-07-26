@@ -615,6 +615,11 @@ async def investigador_obter_cache_compactado(cache_id: str) -> dict:
         "mensagem": "Arquivo compactado gerado com sucesso. O conteúdo ZIP completo está codificado em Base64 na chave 'conteudo_base64'."
     }
 
+# ==============================================================================
+# 00. INTEGRAÇÃO ESCAVADOR API v2
+# ==============================================================================
+ESCAVADOR_API_TOKEN = os.getenv("ESCAVADOR_API_TOKEN")
+
 # Set para controle de buscas de OAB em segundo plano (evita duplicatas)
 _oab_bg_tasks = set()
 
