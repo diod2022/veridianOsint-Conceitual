@@ -278,23 +278,47 @@ def obter_caminho_cache_seguro(cache_id: str) -> str:
     """
     Sanitiza o cache_id e resolve o caminho absoluto, garantindo que o arquivo
     esteja estritamente dentro do diretório de cache (evita Path Traversal).
+    Oferece busca resiliente para variações de nomes (ex: escavador_oab_7008_MS -> escavador_oab_ms_7008).
     Retorna None se o caminho for inválido ou tentar sair do CACHE_DIR.
     """
     if not cache_id:
         return None
         
-    # Rejeita explicitamente se contiver subdiretórios ou tentativa de retroceder caminho
     if "/" in cache_id or "\\" in cache_id or ".." in cache_id:
         return None
         
-    cache_id_seguro = os.path.basename(cache_id)
-    # Se o ID resultante for vazio ou pontos, retorna None
+    cache_id_seguro = os.path.basename(cache_id).strip()
     if not cache_id_seguro or cache_id_seguro in (".", ".."):
         return None
         
     caminho_absoluto = os.path.abspath(os.path.join(CACHE_DIR, f"{cache_id_seguro}.json"))
     caminho_limite = os.path.abspath(CACHE_DIR)
     
+    if os.path.exists(caminho_absoluto) and caminho_absoluto.startswith(caminho_limite):
+        return caminho_absoluto
+
+    # Busca resiliente para variações de OAB / cache IDs informados por LLMs
+    import re
+    raw_upper = cache_id_seguro.upper()
+    uf_match = re.search(r'\b(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b', raw_upper)
+    num_match = re.search(r'\b(\d{1,7})\b', raw_upper)
+    
+    if uf_match and num_match:
+        uf = uf_match.group(1).lower()
+        num = num_match.group(1).lower()
+        resiliente_path = os.path.abspath(os.path.join(CACHE_DIR, f"escavador_oab_{uf}_{num}.json"))
+        if os.path.exists(resiliente_path) and resiliente_path.startswith(caminho_limite):
+            return resiliente_path
+
+    # Fallback genérico por palavra-chave se não encontrou exato
+    import glob
+    keywords = [k.lower() for k in re.split(r'[\s_\-\/]+', cache_id_seguro) if k and k.lower() not in ['advogado', 'oab', 'json']]
+    if keywords:
+        for f in glob.glob(os.path.join(CACHE_DIR, "*.json")):
+            fname = os.path.basename(f).lower()
+            if all(kw in fname for kw in keywords):
+                return os.path.abspath(f)
+                
     if caminho_absoluto.startswith(caminho_limite):
         return caminho_absoluto
     return None
@@ -310,13 +334,20 @@ def obter_caminho_cache_seguro_ext(cache_id: str, ext: str = ".json") -> str:
     if "/" in cache_id or "\\" in cache_id or ".." in cache_id:
         return None
         
-    cache_id_seguro = os.path.basename(cache_id)
+    cache_id_seguro = os.path.basename(cache_id).strip()
     if not cache_id_seguro or cache_id_seguro in (".", ".."):
         return None
         
     caminho_absoluto = os.path.abspath(os.path.join(CACHE_DIR, f"{cache_id_seguro}{ext}"))
     caminho_limite = os.path.abspath(CACHE_DIR)
     
+    if os.path.exists(caminho_absoluto) and caminho_absoluto.startswith(caminho_limite):
+        return caminho_absoluto
+
+    # Se a extensão for .json, usar busca resiliente
+    if ext == ".json":
+        return obter_caminho_cache_seguro(cache_id)
+
     if caminho_absoluto.startswith(caminho_limite):
         return caminho_absoluto
     return None
