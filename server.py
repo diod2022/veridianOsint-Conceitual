@@ -715,7 +715,7 @@ async def _fast_escavador_fetch(headers: dict, params: dict) -> dict | None:
 
 @mcp.tool()
 async def escavador_buscar_processos_oab(
-    oab_numero: str, 
+    oab_numero: str | int, 
     oab_estado: str = "", 
     oab_tipo: str = "ADVOGADO",
     max_paginas: int = 10,
@@ -739,6 +739,10 @@ async def escavador_buscar_processos_oab(
     """
     # === BLINDAGEM TOTAL: try/except global garante que a função SEMPRE retorna um dict ===
     try:
+        # Converte para string caso LLM envie como inteiro (ex: 7008 ao invés de "7008")
+        oab_numero = str(oab_numero)
+        oab_estado = str(oab_estado)
+        
         if not ESCAVADOR_API_TOKEN:
             return {"error": "ESCAVADOR_API_TOKEN não configurada no .env"}
             
