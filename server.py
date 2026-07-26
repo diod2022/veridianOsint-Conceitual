@@ -692,81 +692,80 @@ async def escavador_buscar_processos_oab(
     start_time = time.time()
     max_time_seconds = 12.0  # Limite para não estourar timeout do cliente MCP
     
-    async with escavador_semaphore:
-        try:
-            # Página 1
+    try:
+        # Página 1
+        response = await http_client.get(
+            "https://api.escavador.com/api/v2/advogado/processos",
+            headers=headers,
+            params=params,
+            timeout=30.0
+        )
+        response.raise_for_status()
+        dados = response.json()
+        
+        todos_items.extend(dados.get("items", []))
+        dados_finais = dados
+        next_url = dados.get("links", {}).get("next")
+        
+        # Loop de paginação controlado por max_paginas e tempo limite
+        pagina_atual = 1
+        while next_url and pagina_atual < max_paginas:
+            if time.time() - start_time > max_time_seconds:
+                print(f"[ESCAVADOR WARN] Atingido limite de tempo de {max_time_seconds}s. Pausando paginação com {len(todos_items)} itens.", file=sys.stderr, flush=True)
+                break
+                
+            import urllib.parse
+            parsed_url = urllib.parse.urlparse(next_url)
+            query_params = urllib.parse.parse_qs(parsed_url.query)
+            
+            params_next = {
+                "oab_numero": oab_num_clean,
+                "oab_estado": oab_est_clean,
+                "oab_tipo": oab_tipo_clean
+            }
+            if "cursor" in query_params:
+                params_next["cursor"] = query_params["cursor"][0]
+            if "li" in query_params:
+                params_next["li"] = query_params["li"][0]
+                
+            print(f"[ESCAVADOR] Consultando página {pagina_atual + 1} de processos por OAB: {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
+            
             response = await http_client.get(
                 "https://api.escavador.com/api/v2/advogado/processos",
                 headers=headers,
-                params=params,
-                timeout=30.0
+                params=params_next,
+                timeout=15.0
             )
             response.raise_for_status()
-            dados = response.json()
+            dados_prox = response.json()
             
-            todos_items.extend(dados.get("items", []))
-            dados_finais = dados
-            next_url = dados.get("links", {}).get("next")
+            items_pagina = dados_prox.get("items", [])
+            if not items_pagina:
+                break
+                
+            todos_items.extend(items_pagina)
+            next_url = dados_prox.get("links", {}).get("next")
+            pagina_atual += 1
             
-            # Loop de paginação controlado por max_paginas e tempo limite
-            pagina_atual = 1
-            while next_url and pagina_atual < max_paginas:
-                if time.time() - start_time > max_time_seconds:
-                    print(f"[ESCAVADOR WARN] Atingido limite de tempo de {max_time_seconds}s. Pausando paginação com {len(todos_items)} itens.", file=sys.stderr, flush=True)
-                    break
-                    
-                import urllib.parse
-                parsed_url = urllib.parse.urlparse(next_url)
-                query_params = urllib.parse.parse_qs(parsed_url.query)
-                
-                params_next = {
-                    "oab_numero": oab_num_clean,
-                    "oab_estado": oab_est_clean,
-                    "oab_tipo": oab_tipo_clean
-                }
-                if "cursor" in query_params:
-                    params_next["cursor"] = query_params["cursor"][0]
-                if "li" in query_params:
-                    params_next["li"] = query_params["li"][0]
-                    
-                print(f"[ESCAVADOR] Consultando página {pagina_atual + 1} de processos por OAB: {oab_num_clean}/{oab_est_clean}...", file=sys.stderr, flush=True)
-                
-                response = await http_client.get(
-                    "https://api.escavador.com/api/v2/advogado/processos",
-                    headers=headers,
-                    params=params_next,
-                    timeout=15.0
-                )
-                response.raise_for_status()
-                dados_prox = response.json()
-                
-                items_pagina = dados_prox.get("items", [])
-                if not items_pagina:
-                    break
-                    
-                todos_items.extend(items_pagina)
-                next_url = dados_prox.get("links", {}).get("next")
-                pagina_atual += 1
-                
-                await asyncio.sleep(0.3)
-                
-            if dados_finais:
-                dados_finais["items"] = todos_items
-                if "links" in dados_finais:
-                    dados_finais["links"]["next"] = next_url
-                    
-            return salvar_cache_universal(chave_cache, dados_finais)
+            await asyncio.sleep(0.3)
             
-        except httpx.HTTPStatusError as e:
-            try:
-                detalhes = e.response.json()
-            except Exception:
-                detalhes = e.response.text
-            print(f"[ESCAVADOR ERROR] Erro HTTP {e.response.status_code} para OAB {oab_num_clean}/{oab_est_clean}: {detalhes}", file=sys.stderr, flush=True)
-            return {"error": f"Erro HTTP {e.response.status_code} na API do Escavador", "detalhes": detalhes}
-        except httpx.HTTPError as e:
-            print(f"[ESCAVADOR ERROR] Erro de rede para OAB {oab_num_clean}/{oab_est_clean}: {str(e)}", file=sys.stderr, flush=True)
-            return {"error": f"Erro de rede ao consultar Escavador: {str(e)}"}
+        if dados_finais:
+            dados_finais["items"] = todos_items
+            if "links" in dados_finais:
+                dados_finais["links"]["next"] = next_url
+                
+        return salvar_cache_universal(chave_cache, dados_finais)
+        
+    except httpx.HTTPStatusError as e:
+        try:
+            detalhes = e.response.json()
+        except Exception:
+            detalhes = e.response.text
+        print(f"[ESCAVADOR ERROR] Erro HTTP {e.response.status_code} para OAB {oab_num_clean}/{oab_est_clean}: {detalhes}", file=sys.stderr, flush=True)
+        return {"error": f"Erro HTTP {e.response.status_code} na API do Escavador", "detalhes": detalhes}
+    except httpx.HTTPError as e:
+        print(f"[ESCAVADOR ERROR] Erro de rede para OAB {oab_num_clean}/{oab_est_clean}: {str(e)}", file=sys.stderr, flush=True)
+        return {"error": f"Erro de rede ao consultar Escavador: {str(e)}"}
 
 
 # ==============================================================================
