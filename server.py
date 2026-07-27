@@ -384,25 +384,64 @@ def gerar_resposta_enriquecida_cache(chave_identificadora: str, dados) -> dict:
         oab_str = ""
         if adv.get("oab_numero") or adv.get("oab_estado"):
             oab_str = f"{adv.get('oab_numero', '')}/{adv.get('oab_estado', '')}".strip("/")
-            
-        return {
-            "status": "sucesso",
-            "advogado": {
-                "nome": adv.get("nome"),
-                "oab": oab_str,
-                "cpf": adv.get("cpf"),
-                "total_processos_cadastrados": adv.get("quantidade_processos")
-            },
-            "total_processos_baixados": len(items),
-            "resumo_tribunais": tribunais,
-            "amostra_10_processos_mais_recentes": amostra,
-            "cache_id": chave_identificadora,
-            "instrucao": (
+        elif adv.get("oab"):
+            oab_str = str(adv.get("oab"))
+
+        if not oab_str and chave_identificadora.startswith("escavador_oab_"):
+            parts = chave_identificadora.replace("escavador_oab_", "").split("_")
+            if len(parts) >= 2:
+                oab_str = f"{parts[1].upper()}/{parts[0].upper()}"
+
+        paginacao_em_andamento = bool(dados.get("_paginacao_em_andamento"))
+
+        if len(items) == 0 and not adv.get("nome"):
+            res = {
+                "status": "sem_resultados",
+                "advogado": {
+                    "nome": None,
+                    "oab": oab_str,
+                    "cpf": None,
+                    "total_processos_cadastrados": 0
+                },
+                "total_processos_baixados": 0,
+                "resumo_tribunais": {},
+                "amostra_10_processos_mais_recentes": [],
+                "cache_id": chave_identificadora,
+                "mensagem": "Nenhum advogado ou processo encontrado para esta OAB na API do Escavador.",
+                "instrucao": f"A busca retornou 0 processos para a OAB {oab_str}."
+            }
+        else:
+            instrucao_txt = (
                 f"Exibindo amostra dos 10 processos mais recentes do total de {len(items)} baixados. "
                 f"O arquivo completo com todos os {len(items)} processos está salvo localmente no cache '{chave_identificadora}'. "
                 f"Para paginar o restante dos itens se o usuário pedir, use 'investigador_ler_cache' (cache_id='{chave_identificadora}', chave='items')."
             )
-        }
+            if paginacao_em_andamento:
+                instrucao_txt = (
+                    f"Retornando os {len(items)} primeiros processos. A PAGINAÇÃO EM SEGUNDO PLANO ESTÁ EM ANDAMENTO no servidor. "
+                    f"AGUARDE DE 30 A 60 SEGUNDOS e chame novamente esta ferramenta ou 'investigador_ler_cache' (cache_id='{chave_identificadora}', chave='items') "
+                    f"para obter a lista completa de processos."
+                )
+
+            res = {
+                "status": "sucesso",
+                "advogado": {
+                    "nome": adv.get("nome"),
+                    "oab": oab_str,
+                    "cpf": adv.get("cpf"),
+                    "total_processos_cadastrados": adv.get("quantidade_processos") or len(items)
+                },
+                "total_processos_baixados": len(items),
+                "resumo_tribunais": tribunais,
+                "amostra_10_processos_mais_recentes": amostra,
+                "cache_id": chave_identificadora,
+                "instrucao": instrucao_txt
+            }
+
+        if paginacao_em_andamento:
+            res["_paginacao_em_andamento"] = True
+
+        return res
 
     if isinstance(dados, dict):
         resumo = {"tipo": "objeto", "chaves_disponiveis": list(dados.keys())}
@@ -623,7 +662,7 @@ ESCAVADOR_API_TOKEN = os.getenv("ESCAVADOR_API_TOKEN")
 # Set para controle de buscas de OAB em segundo plano (evita duplicatas)
 _oab_bg_tasks = set()
 
-async def _background_fetch_all_pages(oab_num: str, oab_est: str, oab_tipo: str, max_paginas: int, chave_cache: str, initial_items: list = None, first_next_url: str = None):
+async def _background_fetch_all_pages(oab_num: str, oab_est: str, oab_tipo: str, max_paginas: int, chave_cache: str, initial_items: list = None, first_next_url: str = None, first_page_data: dict = None):
     """Worker em background: pagina TODAS as páginas via cursor e salva no cache."""
     import urllib.parse
     try:
@@ -636,7 +675,7 @@ async def _background_fetch_all_pages(oab_num: str, oab_est: str, oab_tipo: str,
         base_params = {"oab_numero": oab_num, "oab_estado": oab_est, "oab_tipo": oab_tipo}
         
         todos_items = list(initial_items) if initial_items else []
-        dados_finais = None
+        dados_finais = dict(first_page_data) if first_page_data else None
         next_url = first_next_url
         
         async with httpx.AsyncClient(timeout=35.0) as client:
@@ -681,10 +720,11 @@ async def _background_fetch_all_pages(oab_num: str, oab_est: str, oab_tipo: str,
                 print(f"[ESCAVADOR BG] Página {pagina}/{max_paginas} — {len(todos_items)} itens acumulados", file=sys.stderr, flush=True)
                 await asyncio.sleep(0.3)
         
-        # Monta e salva resultado final no cache
+        # Monta e salva resultado final no cache (marcando fim da paginação)
         if dados_finais is None:
             dados_finais = {}
         dados_finais["items"] = todos_items
+        dados_finais["_paginacao_em_andamento"] = False
         if "links" not in dados_finais:
             dados_finais["links"] = {}
         dados_finais["links"]["next"] = next_url
@@ -710,9 +750,9 @@ async def escavador_buscar_processos_oab(
     Busca processos de um advogado a partir da OAB (API Escavador / Veridian).
     
     Fluxo:
-    1. Se já existir cache, retorna instantaneamente todos os processos.
-    2. Senão, busca a 1ª página (~2s), retorna os 20 primeiros processos E dispara download completo em segundo plano.
-    3. IMPORTANTE: Se o retorno contiver 'paginacao_em_andamento': true, AGUARDE 60 SEGUNDOS e chame esta ferramenta novamente para obter TODOS os processos do cache.
+    1. Se já existir cache e a paginação estiver concluída, retorna instantaneamente todos os processos.
+    2. Se for a primeira busca, busca a 1ª página (~2s), retorna os primeiros 20 processos com '_paginacao_em_andamento': true e dispara o download completo de todas as páginas em segundo plano.
+    3. IMPORTANTE: Se o retorno contiver '_paginacao_em_andamento': true, AGUARDE DE 30 A 60 SEGUNDOS e chame novamente esta ferramenta (ou 'investigador_ler_cache') para obter o resultado completo de todos os processos.
     
     Args:
         oab_numero: Número da OAB (ex: 7008, '5485', '7008/MS' ou 'OAB/MS 7008').
@@ -744,10 +784,16 @@ async def escavador_buscar_processos_oab(
         cache_id = f"oab_{oab_est_clean.lower()}_{oab_num_clean.lower()}"
         chave_cache = f"escavador_{cache_id}"
         
-        # 1. Cache local — retorno instantâneo
+        # 1. Cache local — retorno instantâneo se existir
         if not ignore_cache:
             cache_hit = checar_cache_universal(chave_cache)
             if cache_hit:
+                # Se o cache já existir mas ainda estiver paginando, dispara worker se não estiver rodando
+                if cache_hit.get("_paginacao_em_andamento") and chave_cache not in _oab_bg_tasks:
+                    _oab_bg_tasks.add(chave_cache)
+                    asyncio.create_task(_background_fetch_all_pages(
+                        oab_num_clean, oab_est_clean, oab_tipo_clean, max_paginas, chave_cache
+                    ))
                 return cache_hit
 
         print(f"[ESCAVADOR] Buscando OAB {oab_num_clean}/{oab_est_clean} (max_paginas={max_paginas})...", file=sys.stderr, flush=True)
@@ -780,9 +826,10 @@ async def escavador_buscar_processos_oab(
                 asyncio.create_task(_background_fetch_all_pages(oab_num_clean, oab_est_clean, oab_tipo_clean, max_paginas, chave_cache))
             return {
                 "status": "processando_em_segundo_plano",
+                "_paginacao_em_andamento": True,
                 "cache_id": chave_cache,
                 "mensagem": f"A API do Escavador demorou para responder. A busca foi iniciada em segundo plano.",
-                "instrucao": f"AGUARDE 60 SEGUNDOS e chame novamente esta ferramenta ou 'investigador_ler_cache' com cache_id='{chave_cache}'."
+                "instrucao": f"AGUARDE DE 30 A 60 SEGUNDOS e chame novamente esta ferramenta ou 'investigador_ler_cache' com cache_id='{chave_cache}'."
             }
         
         if response.status_code != 200:
@@ -804,7 +851,7 @@ async def escavador_buscar_processos_oab(
                 _oab_bg_tasks.add(chave_cache)
                 asyncio.create_task(_background_fetch_all_pages(
                     oab_num_clean, oab_est_clean, oab_tipo_clean, max_paginas, chave_cache,
-                    initial_items=items_p1, first_next_url=next_url
+                    initial_items=items_p1, first_next_url=next_url, first_page_data=dados_p1
                 ))
                 print(f"[ESCAVADOR] Paginação em background disparada para {chave_cache}.", file=sys.stderr, flush=True)
             
@@ -815,7 +862,7 @@ async def escavador_buscar_processos_oab(
                 "_instrucao_paginacao": (
                     f"Retornando os primeiros {len(items_p1)} processos da OAB {oab_num_clean}/{oab_est_clean}. "
                     f"O download de TODAS as páginas foi iniciado em segundo plano no servidor. "
-                    f"AGUARDE 60 SEGUNDOS e chame novamente esta ferramenta (sem ignore_cache) "
+                    f"AGUARDE DE 30 A 60 SEGUNDOS e chame novamente esta ferramenta (sem ignore_cache) "
                     f"ou 'investigador_ler_cache' com cache_id='{chave_cache}' para obter o resultado completo."
                 )
             })
