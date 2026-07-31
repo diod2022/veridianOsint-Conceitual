@@ -7,9 +7,9 @@ import contextlib
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
 
-# Carrega as variáveis do arquivo .env baseado no diretório atual deste script
+# Carrega as variáveis do arquivo .env baseado no diretório atual deste script (override=True força atualização)
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
-load_dotenv(env_path)
+load_dotenv(env_path, override=True)
 
 # Shared HTTPX client com connection pooling persistente (melhor prática de performance)
 http_client = httpx.AsyncClient(timeout=30.0)
