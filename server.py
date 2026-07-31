@@ -4695,15 +4695,20 @@ async def run_sse_with_auth(self_mcp) -> None:
             if novas_sessoes:
                 novo_session_id = list(novas_sessoes)[0]
                 sessoes_autorizadas.add(novo_session_id)
+                sessoes_autorizadas.add(novo_session_id.hex)
+                sessoes_autorizadas.add(str(novo_session_id))
                 
                 chaves = carregar_chaves_autorizadas()
                 usr_info = chaves.get(token, {"usuario": "desconhecido", "permissoes": ["*"]})
                 
-                sessoes_ativas[novo_session_id] = {
+                sess_data = {
                     "usuario": usr_info["usuario"],
                     "permissoes": usr_info.get("permissoes", ["*"]),
                     "token": token
                 }
+                sessoes_ativas[novo_session_id] = sess_data
+                sessoes_ativas[novo_session_id.hex] = sess_data
+                sessoes_ativas[str(novo_session_id)] = sess_data
                 print(f"[AUTH] Conexão SSE iniciada. Sessão: {novo_session_id.hex} | Usuário: {usr_info['usuario']}", file=sys.stderr, flush=True)
             
             try:
@@ -4716,7 +4721,11 @@ async def run_sse_with_auth(self_mcp) -> None:
             finally:
                 if novo_session_id:
                     sessoes_autorizadas.discard(novo_session_id)
+                    sessoes_autorizadas.discard(novo_session_id.hex)
+                    sessoes_autorizadas.discard(str(novo_session_id))
                     sessoes_ativas.pop(novo_session_id, None)
+                    sessoes_ativas.pop(novo_session_id.hex, None)
+                    sessoes_ativas.pop(str(novo_session_id), None)
                     print(f"[AUTH] Conexão SSE encerrada. Sessão: {novo_session_id.hex}", file=sys.stderr, flush=True)
 
     async def handle_messages(scope, receive, send):
@@ -4735,8 +4744,8 @@ async def run_sse_with_auth(self_mcp) -> None:
             await response(scope, receive, send)
             return
             
-        # Validação de segurança: a sessão precisa constar em sessoes_ativas
-        if session_id not in sessoes_ativas:
+        # Validação de segurança: a sessão precisa constar em sessoes_ativas (aceita UUID, hex e str)
+        if session_id not in sessoes_ativas and session_id_param not in sessoes_ativas and session_id.hex not in sessoes_ativas:
             print(f"[AUTH DENIED] Tentativa de POST em /messages para sessão não autorizada/inexistente: {session_id_param}", file=sys.stderr, flush=True)
             response = Response("Unauthorized session", status_code=401)
             await response(scope, receive, send)
