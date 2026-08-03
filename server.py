@@ -4744,8 +4744,8 @@ async def run_sse_with_auth(self_mcp) -> None:
             await response(scope, receive, send)
             return
             
-        # Validação de segurança: a sessão precisa constar em sessoes_ativas (aceita UUID, hex e str)
-        if session_id not in sessoes_ativas and session_id_param not in sessoes_ativas and session_id.hex not in sessoes_ativas:
+        # Validação de segurança: a sessão precisa constar em sse._read_stream_writers ou sessoes_ativas
+        if session_id not in sse._read_stream_writers and session_id_param not in sse._read_stream_writers and session_id not in sessoes_ativas and session_id_param not in sessoes_ativas and session_id.hex not in sessoes_ativas:
             print(f"[AUTH DENIED] Tentativa de POST em /messages para sessão não autorizada/inexistente: {session_id_param}", file=sys.stderr, flush=True)
             response = Response("Unauthorized session", status_code=401)
             await response(scope, receive, send)
