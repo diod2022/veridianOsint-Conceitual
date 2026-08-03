@@ -1164,8 +1164,13 @@ async def csint_consultar_email(email: str | int) -> dict:
 import re
 
 BIGDATA_BASE_URL = "https://plataforma.bigdatacorp.com.br"
-BIGDATA_TOKEN = os.getenv("BIGDATA_ACCESS_TOKEN")
-BIGDATA_TOKEN_ID = os.getenv("BIGDATA_TOKEN_ID")
+
+def get_bigdata_token() -> str:
+    load_dotenv(env_path, override=True)
+    return os.getenv("BIGDATA_ACCESS_TOKEN") or ""
+
+def get_bigdata_token_id() -> str:
+    return os.getenv("BIGDATA_TOKEN_ID") or ""
 
 MAPA_DATASETS_PF = {
     "bdcbasicdata": "basic_data",
@@ -1341,7 +1346,9 @@ async def bigdata_consultar_cpf(cpf: str | int, datasets: str = "bdcbasicdata") 
         cpf: O CPF a ser consultado (com ou sem máscara).
         datasets: Lista de datasets separados por vírgula (ex: 'bdcbasicdata,bdcphones').
     """
-    if not BIGDATA_TOKEN or BIGDATA_TOKEN == "seu_token_jwt_aqui":
+    bigdata_token = get_bigdata_token()
+    bigdata_token_id = get_bigdata_token_id()
+    if not bigdata_token or bigdata_token == "seu_token_jwt_aqui":
         return {"error": "BIGDATA_ACCESS_TOKEN não configurado no .env"}
         
     # Higienização de máscaras e preenchimento de zeros (zfill)
@@ -1396,11 +1403,11 @@ async def bigdata_consultar_cpf(cpf: str | int, datasets: str = "bdcbasicdata") 
     print(f"[BDC] Consultando CPF {cpf_limpo} (Datasets API: {datasets_string})...", file=sys.stderr, flush=True)
     
     headers = {
-        "AccessToken": BIGDATA_TOKEN,
+        "AccessToken": bigdata_token,
         "Content-Type": "application/json"
     }
-    if BIGDATA_TOKEN_ID:
-        headers["TokenId"] = BIGDATA_TOKEN_ID
+    if bigdata_token_id:
+        headers["TokenId"] = bigdata_token_id
 
     payload = {
         "q": f"doc{{'{cpf_limpo}'}}",
@@ -1523,7 +1530,9 @@ async def bigdata_consultar_cnpj(cnpj: str | int, datasets: str = "bdccompanybas
         cnpj: O CNPJ da empresa (com ou sem máscara).
         datasets: Lista de datasets separados por vírgula (ex: 'bdccompanybasicdata,bdccompanyphones').
     """
-    if not BIGDATA_TOKEN or BIGDATA_TOKEN == "seu_token_jwt_aqui":
+    bigdata_token = get_bigdata_token()
+    bigdata_token_id = get_bigdata_token_id()
+    if not bigdata_token or bigdata_token == "seu_token_jwt_aqui":
         return {"error": "BIGDATA_ACCESS_TOKEN não configurado no .env"}
         
     # Higienização de máscaras e preenchimento de zeros (zfill)
@@ -1575,11 +1584,11 @@ async def bigdata_consultar_cnpj(cnpj: str | int, datasets: str = "bdccompanybas
     print(f"[BDC] Consultando CNPJ {cnpj_limpo} (Datasets API: {datasets_string})...", file=sys.stderr, flush=True)
     
     headers = {
-        "AccessToken": BIGDATA_TOKEN,
+        "AccessToken": bigdata_token,
         "Content-Type": "application/json"
     }
-    if BIGDATA_TOKEN_ID:
-        headers["TokenId"] = BIGDATA_TOKEN_ID
+    if bigdata_token_id:
+        headers["TokenId"] = bigdata_token_id
 
     payload = {
         "q": f"doc{{'{cnpj_limpo}'}}",
@@ -1701,13 +1710,15 @@ async def bigdata_consultar_processo(numero_processo: str | int, dataset_code: s
         numero_processo: O número do processo (no formato CNJ xxxxxxx-xx.xxxx.x.xx.xxxx).
         dataset_code: O código do dataset (padrão é 'bdclawsuitbasicdata' que mapeia para 'basic_data').
     """
-    if not BIGDATA_TOKEN:
+    bigdata_token = get_bigdata_token()
+    bigdata_token_id = get_bigdata_token_id()
+    if not bigdata_token:
         return {"error": "BIGDATA_ACCESS_TOKEN não configurado no .env"}
         
     processo_str = str(numero_processo).strip()
     headers = {
-        "AccessToken": BIGDATA_TOKEN,
-        "TokenId": BIGDATA_TOKEN_ID or "",
+        "AccessToken": bigdata_token,
+        "TokenId": bigdata_token_id,
         "Accept": "application/json",
         "Content-Type": "application/json"
     }
@@ -3644,7 +3655,9 @@ async def _bigdata_cnpj_evolucao(cnpj_limpo: str) -> dict:
     Busca os datasets de EVOLUÇÃO e HISTÓRICO de um CNPJ na BigDataCorp, com cache
     dedicado (chave própria, sem colidir com a consulta básica). Retorna o payload bruto.
     """
-    if not BIGDATA_TOKEN or BIGDATA_TOKEN == "seu_token_jwt_aqui":
+    bigdata_token = get_bigdata_token()
+    bigdata_token_id = get_bigdata_token_id()
+    if not bigdata_token or bigdata_token == "seu_token_jwt_aqui":
         return {"error": "BIGDATA_ACCESS_TOKEN não configurado no .env"}
 
     chave_cache = f"bigdata_cnpj_evolucao_{cnpj_limpo}"
@@ -3653,9 +3666,9 @@ async def _bigdata_cnpj_evolucao(cnpj_limpo: str) -> dict:
         print(f"[CACHE HIT] Evolução CNPJ {cnpj_limpo} recuperada do cache.", file=sys.stderr, flush=True)
         return cache
 
-    headers = {"AccessToken": BIGDATA_TOKEN, "Content-Type": "application/json"}
-    if BIGDATA_TOKEN_ID:
-        headers["TokenId"] = BIGDATA_TOKEN_ID
+    headers = {"AccessToken": bigdata_token, "Content-Type": "application/json"}
+    if bigdata_token_id:
+        headers["TokenId"] = bigdata_token_id
     payload = {"q": f"doc{{'{cnpj_limpo}'}}", "Datasets": "company_evolution,history_basic_data"}
 
     try:
