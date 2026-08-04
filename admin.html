@@ -667,6 +667,23 @@
             </div>
         </div>
 
+        <!-- Gerenciador de Chaves de API (.env) -->
+        <div class="section-card" style="margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                    Chaves de API & Conexões (.env)
+                </h2>
+                <button id="btnSaveEnv" class="btn-add" style="width: auto; padding: 8px 16px; margin-bottom: 0; background: var(--accent-primary); color: white; border: none; font-weight: 600;">💾 Salvar e Recarregar Tokens</button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+                Gerencie as chaves de acesso aos provedores de dados externos. Ao clicar em salvar, o arquivo <code style="color: #a5b4fc;">.env</code> é atualizado no disco e as variáveis são recarregadas na memória imediatamente sem parar o servidor.
+            </p>
+            <div id="envFieldsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+                <div style="color: var(--text-secondary); grid-column: 1/-1; text-align: center; padding: 20px;">Carregando variáveis de ambiente...</div>
+            </div>
+        </div>
+
         <!-- Histórico de Auditoria (Full Width) -->
         <div class="section-card" style="margin-top: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
@@ -1295,6 +1312,7 @@
         }
 
         // Carregar dados
+        // Carregar dados
         async function carregarPainel() {
             try {
                 const r = await fetch('/admin/api/status', {
@@ -1307,6 +1325,7 @@
                 renderizarTogglesGlobais(data.fontes_ativas, data.consultas_ativas);
                 renderizarTabelaUsuarios(data.chaves);
                 carregarLogs();
+                carregarEnv();
 
                 // Exibir estatísticas do cache
                 if (data.cache_stats) {
@@ -1319,6 +1338,145 @@
             } catch (e) {
                 showToast('Falha ao carregar configurações.', 'error');
             }
+        }
+
+        // --- Gestão de Variáveis do .env ---
+        let envDataAtual = {};
+
+        const LABEL_CHAVES_ENV = {
+            "BIGDATA_ACCESS_TOKEN": "BigDataCorp — Access Token (JWT)",
+            "BIGDATA_TOKEN_ID": "BigDataCorp — Token ID",
+            "CSINT_API_KEY": "CSINT — API Key",
+            "UNITFOUR_TOKEN": "Unitfour — API Token",
+            "ESCAVADOR_API_TOKEN": "Escavador — API Token (JWT)",
+            "LIGHTHOUSE_API_TOKEN": "Lighthouse — OSINT Token",
+            "SOCIAVAULT_API_KEY": "SociaVault — TikTok API Key",
+            "HIKER_API_TOKEN": "HikerAPI — Instagram Token",
+            "HARVEST_API_TOKEN": "Harvest — LinkedIn Token",
+            "WHOISXML_API_KEY": "WhoisXML — Domain API Key",
+            "SERPER_API_KEY": "Serper — Google Dorks Key",
+            "TAVILY_API_KEY": "Tavily — Web Search Key",
+            "FIRECRAWL_API_KEY": "Firecrawl — Web Scraping Key"
+        };
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        async function carregarEnv() {
+            const container = document.getElementById('envFieldsContainer');
+            if (!container) return;
+            try {
+                const r = await fetch('/admin/api/env', {
+                    headers: { 'X-Admin-Key': adminKey }
+                });
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+                envDataAtual = data.env || {};
+                renderizarCamposEnv(envDataAtual);
+            } catch (e) {
+                container.innerHTML = `<div style="color: var(--error); grid-column: 1/-1; padding: 20px;">Falha ao carregar variáveis de ambiente do .env</div>`;
+            }
+        }
+
+        function renderizarCamposEnv(envObj) {
+            const container = document.getElementById('envFieldsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const keysList = Object.keys(envObj);
+            if (keysList.length === 0) {
+                container.innerHTML = `<div style="color: var(--text-secondary); grid-column: 1/-1; text-align: center; padding: 20px;">Nenhuma variável encontrada no arquivo .env</div>`;
+                return;
+            }
+
+            keysList.forEach(key => {
+                const val = envObj[key];
+                const labelText = LABEL_CHAVES_ENV[key] || key;
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'form-group';
+                fieldDiv.style.marginBottom = '0';
+
+                fieldDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="margin-bottom: 0; font-size: 12px;">${labelText} <span style="opacity: 0.5; font-size: 11px; text-transform: none;">(${key})</span></label>
+                        <button type="button" class="btn-toggle-eye" data-key="${key}" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 12px; padding: 0; width: auto;">👁️ Mostrar</button>
+                    </div>
+                    <div style="position: relative;">
+                        <input type="password" id="env_input_${key}" value="${escapeHtml(val)}" data-envkey="${key}" style="padding-right: 40px; font-family: monospace; font-size: 13px;">
+                    </div>
+                `;
+
+                container.appendChild(fieldDiv);
+
+                const toggleBtn = fieldDiv.querySelector('.btn-toggle-eye');
+                const inputEl = fieldDiv.querySelector(`#env_input_${key}`);
+
+                toggleBtn.addEventListener('click', () => {
+                    if (inputEl.type === 'password') {
+                        inputEl.type = 'text';
+                        toggleBtn.textContent = '🙈 Ocultar';
+                    } else {
+                        inputEl.type = 'password';
+                        toggleBtn.textContent = '👁️ Mostrar';
+                    }
+                });
+            });
+        }
+
+        async function salvarEnv() {
+            const btnSave = document.getElementById('btnSaveEnv');
+            const inputs = document.querySelectorAll('[data-envkey]');
+            const newEnv = {};
+
+            inputs.forEach(inp => {
+                const k = inp.getAttribute('data-envkey');
+                newEnv[k] = inp.value.trim();
+            });
+
+            try {
+                if (btnSave) {
+                    btnSave.disabled = true;
+                    btnSave.textContent = 'Salvando...';
+                }
+
+                const r = await fetch('/admin/api/env', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Key': adminKey
+                    },
+                    body: JSON.stringify({ env: newEnv })
+                });
+
+                if (!r.ok) throw new Error();
+                const data = await r.json();
+
+                if (data.status === 'success') {
+                    showToast(data.message || 'Variáveis de ambiente (.env) atualizadas com sucesso!');
+                    carregarEnv();
+                } else {
+                    showToast(data.error || 'Erro ao salvar .env', 'error');
+                }
+            } catch (e) {
+                showToast('Falha de conexão ao salvar .env', 'error');
+            } finally {
+                if (btnSave) {
+                    btnSave.disabled = false;
+                    btnSave.textContent = '💾 Salvar e Recarregar Tokens';
+                }
+            }
+        }
+
+        const btnSaveEnv = document.getElementById('btnSaveEnv');
+        if (btnSaveEnv) {
+            btnSaveEnv.addEventListener('click', salvarEnv);
         }
 
         // Renderizar status global

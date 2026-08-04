@@ -5147,6 +5147,65 @@ async def run_sse_with_auth(self_mcp) -> None:
         except Exception as e:
             return JSONResponse({"error": f"Failed to retrieve logs: {str(e)}"}, status_code=500)
 
+    async def admin_api_env_get(request):
+        if not await admin_api_auth(request):
+            return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+        
+        env_dict = {}
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            env_dict[k.strip()] = v.strip()
+            except Exception as e:
+                return JSONResponse({"error": f"Failed to read .env: {str(e)}"}, status_code=500)
+        return JSONResponse({"status": "success", "env": env_dict})
+
+    async def admin_api_env_post(request):
+        if not await admin_api_auth(request):
+            return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+            
+        new_env_data = body.get("env")
+        if not isinstance(new_env_data, dict):
+            return JSONResponse({"error": "Field 'env' dictionary is required"}, status_code=400)
+            
+        lines = []
+        existing_keys = set()
+        if os.path.exists(env_path):
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    stripped = line.strip()
+                    if stripped and not stripped.startswith("#") and "=" in stripped:
+                        k, _ = stripped.split("=", 1)
+                        k = k.strip()
+                        if k in new_env_data:
+                            lines.append(f"{k}={new_env_data[k]}\n")
+                            existing_keys.add(k)
+                        else:
+                            lines.append(line)
+                    else:
+                        lines.append(line)
+        
+        for k, v in new_env_data.items():
+            if k not in existing_keys:
+                lines.append(f"{k}={v}\n")
+                
+        try:
+            with open(env_path, "w", encoding="utf-8") as f:
+                f.writelines(lines)
+            
+            load_dotenv(env_path, override=True)
+            return JSONResponse({"status": "success", "message": "Variáveis de ambiente (.env) atualizadas e recarregadas com sucesso!"})
+        except Exception as e:
+            return JSONResponse({"error": f"Failed to write .env: {str(e)}"}, status_code=500)
+
     admin_port_env = os.environ.get("ADMIN_PORT")
     admin_port = None
     if admin_port_env:
@@ -5183,6 +5242,8 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
                 Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
+                Route("/admin/api/env", endpoint=admin_api_env_get, methods=["GET"]),
+                Route("/admin/api/env", endpoint=admin_api_env_post, methods=["POST"]),
                 Route("/admin/api/cache/clear", endpoint=admin_api_cache_clear, methods=["POST"]),
                 Route("/admin/api/cache/download", endpoint=admin_api_cache_download, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
@@ -5237,6 +5298,8 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
                 Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
+                Route("/admin/api/env", endpoint=admin_api_env_get, methods=["GET"]),
+                Route("/admin/api/env", endpoint=admin_api_env_post, methods=["POST"]),
                 Route("/admin/api/cache/clear", endpoint=admin_api_cache_clear, methods=["POST"]),
                 Route("/admin/api/cache/download", endpoint=admin_api_cache_download, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
