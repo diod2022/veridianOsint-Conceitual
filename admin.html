@@ -8,8 +8,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js CDN para gráficos do Dashboard Gerencial -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js local com fallback CDN para gráficos do Dashboard Gerencial -->
+    <script src="/admin/chart.min.js"></script>
+    <script>
+        if (typeof Chart === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>');
+        }
+    </script>
     <style>
         :root {
             --bg-color: #0b0b0e;
@@ -1321,6 +1326,11 @@
                     periodBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     activePeriod = btn.getAttribute('data-period');
+                    // Limpar datas customizadas para não conflitar com o período
+                    const dStart = document.getElementById('analyticsDateStart');
+                    const dEnd = document.getElementById('analyticsDateEnd');
+                    if (dStart) dStart.value = '';
+                    if (dEnd) dEnd.value = '';
                     carregarAnalytics();
                 });
             });
@@ -1334,10 +1344,10 @@
         async function carregarAnalytics() {
             if (!adminKey) return;
             
-            const dateStart = document.getElementById('analyticsDateStart').value;
-            const dateEnd = document.getElementById('analyticsDateEnd').value;
-            const usuarioSel = document.getElementById('analyticsUserSelect').value;
-            const toolSel = document.getElementById('analyticsToolSelect').value;
+            const dateStart = document.getElementById('analyticsDateStart')?.value || '';
+            const dateEnd = document.getElementById('analyticsDateEnd')?.value || '';
+            const usuarioSel = document.getElementById('analyticsUserSelect')?.value || '';
+            const toolSel = document.getElementById('analyticsToolSelect')?.value || '';
             
             let queryParams = new URLSearchParams();
             queryParams.set('period', activePeriod);
@@ -1359,7 +1369,8 @@
                 document.getElementById('kpiActiveUsers').textContent = data.kpis.active_users_count || 0;
                 document.getElementById('kpiCacheRate').textContent = `${data.kpis.cache_rate_percent || 0}%`;
                 
-                const topToolFormatted = data.kpis.top_tool ? (FERRAMENTAS_MAP[data.kpis.top_tool] || data.kpis.top_tool) : 'N/A';
+                const topToolRaw = data.kpis.top_tool;
+                const topToolFormatted = (topToolRaw && topToolRaw !== 'N/A' && topToolRaw !== '') ? (FERRAMENTAS_MAP[topToolRaw] || topToolRaw) : 'N/A';
                 document.getElementById('kpiTopTool').textContent = topToolFormatted;
                 
                 // Popular dropdowns de filtros
@@ -1519,7 +1530,7 @@
             const tabPanes = document.querySelectorAll('.tab-pane');
             if (tabBtns.length === 0) return;
 
-            const activeTabSaved = sessionStorage.getItem('veridian_active_tab') || 'tab-fontes';
+            const activeTabSaved = sessionStorage.getItem('veridian_active_tab') || 'tab-analytics';
 
             function ativarAba(tabId) {
                 tabBtns.forEach(btn => {
@@ -1539,6 +1550,12 @@
                 });
 
                 sessionStorage.setItem('veridian_active_tab', tabId);
+
+                if (tabId === 'tab-analytics') {
+                    setTimeout(() => {
+                        carregarAnalytics();
+                    }, 60);
+                }
             }
 
             tabBtns.forEach(btn => {
