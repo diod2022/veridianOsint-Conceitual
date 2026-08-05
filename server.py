@@ -5206,6 +5206,157 @@ async def run_sse_with_auth(self_mcp) -> None:
         except Exception as e:
             return JSONResponse({"error": f"Failed to write .env: {str(e)}"}, status_code=500)
 
+    async def admin_api_analytics(request):
+        if not await admin_api_auth(request):
+            return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+            
+        period = request.query_params.get("period", "7d")
+        date_start = request.query_params.get("date_start")
+        date_end = request.query_params.get("date_end")
+        usuario_filter = request.query_params.get("usuario")
+        tool_filter = request.query_params.get("tool_name")
+        
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc)
+        
+        sql_where = []
+        params = []
+        
+        if period == "1d":
+            cutoff = (now - datetime.timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            sql_where.append("timestamp >= ?")
+            params.append(cutoff)
+        elif period == "7d":
+            cutoff = (now - datetime.timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            sql_where.append("timestamp >= ?")
+            params.append(cutoff)
+        elif period == "30d":
+            cutoff = (now - datetime.timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            sql_where.append("timestamp >= ?")
+            params.append(cutoff)
+        elif period == "custom" or (date_start or date_end):
+            if date_start:
+                sql_where.append("timestamp >= ?")
+                params.append(f"{date_start}T00:00:00Z")
+            if date_end:
+                sql_where.append("timestamp <= ?")
+                params.append(f"{date_end}T23:59:59Z")
+                
+        if usuario_filter:
+            sql_where.append("usuario = ?")
+            params.append(usuario_filter)
+            
+        if tool_filter:
+            sql_where.append("tool_name = ?")
+            params.append(tool_filter)
+            
+        where_clause = ""
+        if sql_where:
+            where_clause = " WHERE " + " AND ".join(sql_where)
+            
+        cache_where = f"{where_clause} AND (tool_name LIKE '%ler_cache%' OR arguments LIKE '%cache_id%')" if where_clause else " WHERE (tool_name LIKE '%ler_cache%' OR arguments LIKE '%cache_id%')"
+        tool_not_null_where = f"{where_clause} AND tool_name IS NOT NULL" if where_clause else " WHERE tool_name IS NOT NULL"
+
+        try:
+            conn = sqlite3.connect(DB_LOGS_FILE)
+            cursor = conn.cursor()
+            
+            # 1. Total Queries
+            cursor.execute(f"SELECT COUNT(*) FROM mcp_logs{where_clause}", params)
+            total_queries = cursor.fetchone()[0]
+            
+            # 2. Distinct Users
+            cursor.execute(f"SELECT COUNT(DISTINCT usuario) FROM mcp_logs{where_clause}", params)
+            active_users_count = cursor.fetchone()[0]
+            
+            # 3. Cache Hits
+            cursor.execute(f"SELECT COUNT(*) FROM mcp_logs{cache_where}", params)
+            cache_hits_count = cursor.fetchone()[0]
+            
+            # 4. Top Tool
+            cursor.execute(f"SELECT tool_name, COUNT(*) as cnt FROM mcp_logs{tool_not_null_where} GROUP BY tool_name ORDER BY cnt DESC LIMIT 1", params)
+            row_top = cursor.fetchone()
+            top_tool = row_top[0] if row_top else "N/A"
+            
+            # 5. Timeline Series (by YYYY-MM-DD)
+            cursor.execute(f"SELECT SUBSTR(timestamp, 1, 10) as dt, COUNT(*) FROM mcp_logs{where_clause} GROUP BY dt ORDER BY dt ASC", params)
+            timeline_rows = cursor.fetchall()
+            timeline = [{"date": r[0], "count": r[1]} for r in timeline_rows]
+            
+            # 6. By User
+            cursor.execute(f"SELECT usuario, COUNT(*) as cnt FROM mcp_logs{where_clause} GROUP BY usuario ORDER BY cnt DESC", params)
+            user_rows = cursor.fetchall()
+            by_user = [{"usuario": r[0] or "Desconhecido", "count": r[1]} for r in user_rows]
+            
+            # 7. By Tool
+            cursor.execute(f"SELECT tool_name, COUNT(*) as cnt FROM mcp_logs{tool_not_null_where} GROUP BY tool_name ORDER BY cnt DESC LIMIT 10", params)
+            tool_rows = cursor.fetchall()
+            by_tool = [{"tool_name": r[0], "count": r[1]} for r in tool_rows]
+            
+            # 8. By Provider
+            provider_counts = {}
+            cursor.execute(f"SELECT tool_name, COUNT(*) FROM mcp_logs{tool_not_null_where} GROUP BY tool_name", params)
+            for t_name, count in cursor.fetchall():
+                prov = "Outros"
+                t_lower = t_name.lower()
+                if "bigdata" in t_lower or "cadastro_cpf" in t_lower or "cadastro_cnpj" in t_lower or "processos_judiciais" in t_lower:
+                    prov = "BigDataCorp"
+                elif "escavador" in t_lower or "oab" in t_lower:
+                    prov = "Escavador (OAB)"
+                elif "unitfour" in t_lower or "parentes" in t_lower or "mandados" in t_lower or "placa" in t_lower:
+                    prov = "Unitfour"
+                elif "csint" in t_lower or "vazamento" in t_lower or "breach" in t_lower:
+                    prov = "CSINT.pro"
+                elif "instagram" in t_lower:
+                    prov = "Instagram (Hiker)"
+                elif "linkedin" in t_lower:
+                    prov = "LinkedIn (Harvest)"
+                elif "facebook" in t_lower or "lighthouse" in t_lower or "darknet" in t_lower or "facial" in t_lower:
+                    prov = "Lighthouse OSINT"
+                elif "whois" in t_lower:
+                    prov = "WhoisXML"
+                elif "serper" in t_lower or "google" in t_lower or "dorks" in t_lower or "tavily" in t_lower or "firecrawl" in t_lower:
+                    prov = "Pesquisa Web / Dorks"
+                elif "cache" in t_lower:
+                    prov = "Cache Local"
+                    
+                provider_counts[prov] = provider_counts.get(prov, 0) + count
+                
+            by_provider = [{"provider": k, "count": v} for k, v in sorted(provider_counts.items(), key=lambda x: x[1], reverse=True)]
+            
+            # Listas para filtros
+            cursor.execute("SELECT DISTINCT usuario FROM mcp_logs WHERE usuario IS NOT NULL")
+            all_users = [r[0] for r in cursor.fetchall() if r[0]]
+            
+            cursor.execute("SELECT DISTINCT tool_name FROM mcp_logs WHERE tool_name IS NOT NULL")
+            all_tools = [r[0] for r in cursor.fetchall() if r[0]]
+            
+            conn.close()
+            
+            cache_rate = round((cache_hits_count / total_queries * 100), 1) if total_queries > 0 else 0.0
+            
+            return JSONResponse({
+                "status": "success",
+                "kpis": {
+                    "total_queries": total_queries,
+                    "active_users_count": active_users_count,
+                    "cache_hits_count": cache_hits_count,
+                    "cache_rate_percent": cache_rate,
+                    "top_tool": top_tool
+                },
+                "timeline": timeline,
+                "by_user": by_user,
+                "by_tool": by_tool,
+                "by_provider": by_provider,
+                "all_users": all_users,
+                "all_tools": all_tools
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JSONResponse({"error": f"Failed to calculate analytics: {str(e)}"}, status_code=500)
+
     admin_port_env = os.environ.get("ADMIN_PORT")
     admin_port = None
     if admin_port_env:
@@ -5244,6 +5395,7 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
                 Route("/admin/api/env", endpoint=admin_api_env_get, methods=["GET"]),
                 Route("/admin/api/env", endpoint=admin_api_env_post, methods=["POST"]),
+                Route("/admin/api/analytics", endpoint=admin_api_analytics, methods=["GET"]),
                 Route("/admin/api/cache/clear", endpoint=admin_api_cache_clear, methods=["POST"]),
                 Route("/admin/api/cache/download", endpoint=admin_api_cache_download, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
@@ -5300,6 +5452,7 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
                 Route("/admin/api/env", endpoint=admin_api_env_get, methods=["GET"]),
                 Route("/admin/api/env", endpoint=admin_api_env_post, methods=["POST"]),
+                Route("/admin/api/analytics", endpoint=admin_api_analytics, methods=["GET"]),
                 Route("/admin/api/cache/clear", endpoint=admin_api_cache_clear, methods=["POST"]),
                 Route("/admin/api/cache/download", endpoint=admin_api_cache_download, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),

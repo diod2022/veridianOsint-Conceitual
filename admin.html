@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN para gráficos do Dashboard Gerencial -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-color: #0b0b0e;
@@ -20,6 +22,28 @@
             --success: #10b981;
             --error: #ef4444;
             --warning: #f59e0b;
+        }
+
+        .btn-period {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: auto;
+        }
+        .btn-period:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .btn-period.active {
+            background: var(--accent-primary);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         * {
@@ -647,12 +671,16 @@
 
         <!-- NAVEGAÇÃO POR SUBTELAS (TABS NAV) -->
         <div class="tabs-nav">
-            <button class="tab-btn active" data-tab="tab-fontes">
+            <button class="tab-btn active" data-tab="tab-analytics">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                Visão Gerencial (Analytics)
+            </button>
+            <button class="tab-btn" data-tab="tab-fontes">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
                 Fontes & Consultas
             </button>
             <button class="tab-btn" data-tab="tab-usuarios">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 1 0 7.75"/></svg>
                 Usuários & Acessos
             </button>
             <button class="tab-btn" data-tab="tab-env">
@@ -669,8 +697,122 @@
             </button>
         </div>
 
+        <!-- SUBTELA 0: VISÃO GERENCIAL & ANALYTICS -->
+        <div id="tab-analytics" class="tab-pane active">
+            <!-- Barra Superior de Filtros Gerenciais -->
+            <div class="section-card" style="margin-bottom: 20px;">
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px;">
+                    <div>
+                        <h2 class="section-title" style="margin-bottom: 4px; border: none; padding: 0;">Filtros de Análise & Período</h2>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Filtre métricas por intervalo de datas, usuário ou provedor</p>
+                    </div>
+
+                    <!-- Botões Rápidos de Período -->
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button class="btn-period" data-period="1d">1 Dia (Hoje)</button>
+                        <button class="btn-period active" data-period="7d">7 Dias</button>
+                        <button class="btn-period" data-period="30d">30 Dias</button>
+                        <button class="btn-period" data-period="all">Todo Histórico</button>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                    <div>
+                        <label style="font-size: 11px; margin-bottom: 4px;">Data Inicial</label>
+                        <input type="date" id="analyticsDateStart" style="padding: 8px 12px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; margin-bottom: 4px;">Data Final</label>
+                        <input type="date" id="analyticsDateEnd" style="padding: 8px 12px; font-size: 13px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; margin-bottom: 4px;">Usuário</label>
+                        <select id="analyticsUserSelect" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 12px; color: var(--text-primary); font-size: 13px;">
+                            <option value="">Todos os Usuários</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; margin-bottom: 4px;">Ferramenta / Provedor</label>
+                        <select id="analyticsToolSelect" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 12px; color: var(--text-primary); font-size: 13px;">
+                            <option value="">Todas as Ferramentas</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button id="btnApplyAnalyticsFilters" style="width: 100%; padding: 8px; font-size: 13px; height: 36px;">🔍 Aplicar Filtros</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Cards Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div class="kpi-card" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); padding: 18px; border-radius: 14px;">
+                    <div style="font-size: 12px; color: #a5b4fc; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Total de Consultas</div>
+                    <div id="kpiTotalQueries" style="font-size: 32px; font-weight: 700; color: #ffffff;">-</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Execuções registradas</div>
+                </div>
+                <div class="kpi-card" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); padding: 18px; border-radius: 14px;">
+                    <div style="font-size: 12px; color: #6ee7b7; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Usuários Ativos</div>
+                    <div id="kpiActiveUsers" style="font-size: 32px; font-weight: 700; color: #ffffff;">-</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Identidades únicas</div>
+                </div>
+                <div class="kpi-card" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); padding: 18px; border-radius: 14px;">
+                    <div style="font-size: 12px; color: #fde68a; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Taxa em Cache</div>
+                    <div id="kpiCacheRate" style="font-size: 32px; font-weight: 700; color: #ffffff;">-</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Créditos economizados</div>
+                </div>
+                <div class="kpi-card" style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.2); padding: 18px; border-radius: 14px;">
+                    <div style="font-size: 12px; color: #fbcfe8; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Provedor Mais Usado</div>
+                    <div id="kpiTopTool" style="font-size: 16px; font-weight: 700; color: #ffffff; min-height: 38px; display: flex; align-items: center; word-break: break-word;">-</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Líder de requisições</div>
+                </div>
+            </div>
+
+            <!-- Dashboard Charts Grid (2x2) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+                <!-- Gráfico 1: Volume Temporal -->
+                <div class="section-card">
+                    <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        📈 Volume Temporal de Consultas
+                    </h3>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="chartTimelineCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico 2: Consultas por Usuário -->
+                <div class="section-card">
+                    <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        👥 Consultas por Usuário
+                    </h3>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="chartUserCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico 3: Distribuição por Provedor -->
+                <div class="section-card">
+                    <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        🛠️ Volume por Provedor de Dados
+                    </h3>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="chartProviderCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico 4: Composição das Requisições -->
+                <div class="section-card">
+                    <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        ⚡ Composição (API Direta vs Cache)
+                    </h3>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="chartRequestTypeCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- SUBTELA 1: FONTES & CONSULTAS -->
-        <div id="tab-fontes" class="tab-pane active">
+        <div id="tab-fontes" class="tab-pane">
             <div class="section-card">
                 <h2 class="section-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1151,9 +1293,15 @@
         const btnPrevPage = document.getElementById('btnPrevPage');
         const btnNextPage = document.getElementById('btnNextPage');
 
-        // Estado dos Logs
+        // Estado dos Logs e Analytics
         let logOffset = 0;
         const logLimit = 30;
+
+        let activePeriod = '7d';
+        let chartTimelineInstance = null;
+        let chartUserInstance = null;
+        let chartProviderInstance = null;
+        let chartRequestTypeInstance = null;
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
@@ -1163,7 +1311,208 @@
             }
             renderizarCheckboxPermissoes();
             inicializarAbas();
+            inicializarEventosAnalytics();
         });
+
+        function inicializarEventosAnalytics() {
+            const periodBtns = document.querySelectorAll('.btn-period');
+            periodBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    periodBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    activePeriod = btn.getAttribute('data-period');
+                    carregarAnalytics();
+                });
+            });
+
+            const btnApplyFilters = document.getElementById('btnApplyAnalyticsFilters');
+            if (btnApplyFilters) {
+                btnApplyFilters.addEventListener('click', () => carregarAnalytics());
+            }
+        }
+
+        async function carregarAnalytics() {
+            if (!adminKey) return;
+            
+            const dateStart = document.getElementById('analyticsDateStart').value;
+            const dateEnd = document.getElementById('analyticsDateEnd').value;
+            const usuarioSel = document.getElementById('analyticsUserSelect').value;
+            const toolSel = document.getElementById('analyticsToolSelect').value;
+            
+            let queryParams = new URLSearchParams();
+            queryParams.set('period', activePeriod);
+            if (dateStart) queryParams.set('date_start', dateStart);
+            if (dateEnd) queryParams.set('date_end', dateEnd);
+            if (usuarioSel) queryParams.set('usuario', usuarioSel);
+            if (toolSel) queryParams.set('tool_name', toolSel);
+            
+            try {
+                const res = await fetch(`/admin/api/analytics?${queryParams.toString()}`, {
+                    headers: { 'X-Admin-Key': adminKey }
+                });
+                
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                // Preencher KPIs
+                document.getElementById('kpiTotalQueries').textContent = (data.kpis.total_queries || 0).toLocaleString();
+                document.getElementById('kpiActiveUsers').textContent = data.kpis.active_users_count || 0;
+                document.getElementById('kpiCacheRate').textContent = `${data.kpis.cache_rate_percent || 0}%`;
+                
+                const topToolFormatted = data.kpis.top_tool ? (FERRAMENTAS_MAP[data.kpis.top_tool] || data.kpis.top_tool) : 'N/A';
+                document.getElementById('kpiTopTool').textContent = topToolFormatted;
+                
+                // Popular dropdowns de filtros
+                const userSelect = document.getElementById('analyticsUserSelect');
+                if (userSelect && userSelect.options.length <= 1 && data.all_users) {
+                    data.all_users.forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = u;
+                        opt.textContent = u;
+                        userSelect.appendChild(opt);
+                    });
+                }
+                
+                const toolSelect = document.getElementById('analyticsToolSelect');
+                if (toolSelect && toolSelect.options.length <= 1 && data.all_tools) {
+                    data.all_tools.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t;
+                        opt.textContent = FERRAMENTAS_MAP[t] || t;
+                        toolSelect.appendChild(opt);
+                    });
+                }
+                
+                // Renderizar Gráficos
+                renderizarGraficos(data);
+                
+            } catch (err) {
+                console.error("Erro ao carregar analytics:", err);
+            }
+        }
+
+        function renderizarGraficos(data) {
+            if (typeof Chart === 'undefined') return;
+
+            // 1. Chart Timeline (Line)
+            const ctxTimeline = document.getElementById('chartTimelineCanvas')?.getContext('2d');
+            if (ctxTimeline) {
+                if (chartTimelineInstance) chartTimelineInstance.destroy();
+                
+                const timelineLabels = data.timeline.map(t => t.date);
+                const timelineValues = data.timeline.map(t => t.count);
+                
+                chartTimelineInstance = new Chart(ctxTimeline, {
+                    type: 'line',
+                    data: {
+                        labels: timelineLabels,
+                        datasets: [{
+                            label: 'Consultas Realizadas',
+                            data: timelineValues,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#818cf8',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' } },
+                            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            // 2. Chart User (Doughnut)
+            const ctxUser = document.getElementById('chartUserCanvas')?.getContext('2d');
+            if (ctxUser) {
+                if (chartUserInstance) chartUserInstance.destroy();
+                
+                const userLabels = data.by_user.map(u => u.usuario);
+                const userValues = data.by_user.map(u => u.count);
+                
+                chartUserInstance = new Chart(ctxUser, {
+                    type: 'doughnut',
+                    data: {
+                        labels: userLabels,
+                        datasets: [{
+                            data: userValues,
+                            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'right', labels: { color: '#f3f4f6', font: { family: 'Outfit', size: 12 } } } }
+                    }
+                });
+            }
+
+            // 3. Chart Provider (Bar Horizontal)
+            const ctxProvider = document.getElementById('chartProviderCanvas')?.getContext('2d');
+            if (ctxProvider) {
+                if (chartProviderInstance) chartProviderInstance.destroy();
+                
+                const providerLabels = data.by_provider.map(p => p.provider);
+                const providerValues = data.by_provider.map(p => p.count);
+                
+                chartProviderInstance = new Chart(ctxProvider, {
+                    type: 'bar',
+                    data: {
+                        labels: providerLabels,
+                        datasets: [{
+                            label: 'Consultas',
+                            data: providerValues,
+                            backgroundColor: '#10b981',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af' }, beginAtZero: true },
+                            y: { grid: { display: false }, ticks: { color: '#f3f4f6' } }
+                        }
+                    }
+                });
+            }
+
+            // 4. Chart Request Type (Pie: Direct API vs Cache)
+            const ctxRequestType = document.getElementById('chartRequestTypeCanvas')?.getContext('2d');
+            if (ctxRequestType) {
+                if (chartRequestTypeInstance) chartRequestTypeInstance.destroy();
+                
+                const cacheHits = data.kpis.cache_hits_count || 0;
+                const apiCalls = (data.kpis.total_queries || 0) - cacheHits;
+                
+                chartRequestTypeInstance = new Chart(ctxRequestType, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Consulta Direta na API', 'Leitura de Cache Local'],
+                        datasets: [{
+                            data: [apiCalls < 0 ? 0 : apiCalls, cacheHits],
+                            backgroundColor: ['#6366f1', '#f59e0b'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#f3f4f6', font: { family: 'Outfit', size: 12 } } } }
+                    }
+                });
+            }
+        }
 
         function inicializarAbas() {
             const tabBtns = document.querySelectorAll('.tab-btn');
@@ -1444,6 +1793,7 @@
 
                 renderizarTogglesGlobais(data.fontes_ativas, data.consultas_ativas);
                 renderizarTabelaUsuarios(data.chaves);
+                carregarAnalytics();
                 carregarLogs();
                 carregarEnv();
 
