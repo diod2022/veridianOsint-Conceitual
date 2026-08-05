@@ -4787,21 +4787,12 @@ async def run_sse_with_auth(self_mcp) -> None:
             response = Response(f"Erro ao ler página admin: {str(e)}", status_code=500)
             await response(scope, receive, send)
 
-    async def serve_chart_js(scope, receive, send):
+    async def serve_chart_js_endpoint(request):
         caminho_chart = os.path.join(os.path.dirname(os.path.abspath(__file__)), "chart.min.js")
         if not os.path.exists(caminho_chart):
-            response = Response("chart.min.js não encontrado", status_code=404)
-            await response(scope, receive, send)
-            return
-        try:
-            with open(caminho_chart, "r", encoding="utf-8") as f:
-                content = f.read()
-            from starlette.responses import Response
-            response = Response(content, media_type="application/javascript")
-            await response(scope, receive, send)
-        except Exception as e:
-            response = Response(f"Erro ao ler chart.min.js: {str(e)}", status_code=500)
-            await response(scope, receive, send)
+            return Response("chart.min.js não encontrado", status_code=404)
+        from starlette.responses import FileResponse
+        return FileResponse(caminho_chart, media_type="application/javascript")
 
     async def admin_api_auth(request) -> bool:
         chave_admin = obter_chave_admin()
@@ -5414,7 +5405,8 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/analytics", endpoint=admin_api_analytics, methods=["GET"]),
                 Route("/admin/api/cache/clear", endpoint=admin_api_cache_clear, methods=["POST"]),
                 Route("/admin/api/cache/download", endpoint=admin_api_cache_download, methods=["GET"]),
-                Mount("/admin/chart.min.js", app=serve_chart_js),
+                Route("/admin/chart.min.js", endpoint=serve_chart_js_endpoint, methods=["GET"]),
+                Route("/chart.min.js", endpoint=serve_chart_js_endpoint, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
             ],
             middleware=[
@@ -5472,7 +5464,8 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/analytics", endpoint=admin_api_analytics, methods=["GET"]),
                 Route("/admin/api/cache/clear", endpoint=admin_api_cache_clear, methods=["POST"]),
                 Route("/admin/api/cache/download", endpoint=admin_api_cache_download, methods=["GET"]),
-                Mount("/admin/chart.min.js", app=serve_chart_js),
+                Route("/admin/chart.min.js", endpoint=serve_chart_js_endpoint, methods=["GET"]),
+                Route("/chart.min.js", endpoint=serve_chart_js_endpoint, methods=["GET"]),
                 Mount("/admin", app=serve_admin_page),
             ],
             middleware=[
