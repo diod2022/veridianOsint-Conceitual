@@ -258,6 +258,56 @@
             transform: translateX(20px);
         }
 
+        /* Navegação por Subtelas (Tabs Nav) */
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 14px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            width: auto;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background: var(--accent-primary);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
         /* Gestão de Chaves/Usuários */
         .btn-add {
             background: transparent;
@@ -595,12 +645,36 @@
             <button id="logoutBtn" class="btn-logout">Sair</button>
         </div>
 
-        <div class="dashboard-grid">
-            <!-- Coluna Esquerda: Status Global -->
+        <!-- NAVEGAÇÃO POR SUBTELAS (TABS NAV) -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" data-tab="tab-fontes">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Fontes & Consultas
+            </button>
+            <button class="tab-btn" data-tab="tab-usuarios">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Usuários & Acessos
+            </button>
+            <button class="tab-btn" data-tab="tab-env">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                Chaves de API (.env)
+            </button>
+            <button class="tab-btn" data-tab="tab-cache">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Armazenamento & Cache
+            </button>
+            <button class="tab-btn" data-tab="tab-logs">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Auditoria & Logs
+            </button>
+        </div>
+
+        <!-- SUBTELA 1: FONTES & CONSULTAS -->
+        <div id="tab-fontes" class="tab-pane active">
             <div class="section-card">
                 <h2 class="section-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    Ativação Global
+                    Ativação Global de Fontes e Sub-consultas OSINT
                 </h2>
                 
                 <div id="globalToggles">
@@ -608,13 +682,15 @@
                     <div style="color: var(--text-secondary); text-align: center; padding: 20px;">Carregando fontes...</div>
                 </div>
             </div>
+        </div>
 
-            <!-- Coluna Direita: Usuários -->
+        <!-- SUBTELA 2: USUÁRIOS & ACESSOS -->
+        <div id="tab-usuarios" class="tab-pane">
             <div class="section-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
                     <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        Gestão de Usuários
+                        Gestão de Usuários e Chaves MCP
                     </h2>
                     <button id="openAddModalBtn" class="btn-add" style="width: auto; padding: 6px 12px; margin-bottom: 0;">+ Novo Usuário</button>
                 </div>
@@ -639,94 +715,100 @@
                 </div>
             </div>
         </div>
-<div id="cache_management_card"></div>
-        <!-- Gerenciamento de Cache -->
-        <div class="section-card" style="margin-top: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-                <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    Gerenciamento de Cache de Consultas
-                </h2>
-                <button id="btnClearCache" class="btn-logout" style="width: auto; padding: 6px 12px; margin-bottom: 0; background: #e1372d; color: white; border: none;">Limpar Todo o Cache</button>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Arquivos de Cache</div>
-                        <div id="cacheFileCount" style="font-size: 24px; font-weight: bold; color: var(--text-primary);">Carregando...</div>
-                    </div>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="opacity: 0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+
+        <!-- SUBTELA 3: CHAVES DE API (.ENV) -->
+        <div id="tab-env" class="tab-pane">
+            <div class="section-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                    <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                        Chaves de API & Conexões (.env)
+                    </h2>
+                    <button id="btnSaveEnv" class="btn-add" style="width: auto; padding: 8px 16px; margin-bottom: 0; background: var(--accent-primary); color: white; border: none; font-weight: 600;">💾 Salvar e Recarregar Tokens</button>
                 </div>
-                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Espaço Utilizado</div>
-                        <div id="cacheTotalSize" style="font-size: 24px; font-weight: bold; color: var(--text-primary);">Carregando...</div>
-                    </div>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="opacity: 0.5;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+                    Gerencie as chaves de acesso aos provedores de dados externos. Ao clicar em salvar, o arquivo <code style="color: #a5b4fc;">.env</code> é atualizado no disco e as variáveis são recarregadas na memória imediatamente sem parar o servidor.
+                </p>
+                <div id="envFieldsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
+                    <div style="color: var(--text-secondary); grid-column: 1/-1; text-align: center; padding: 20px;">Carregando variáveis de ambiente...</div>
                 </div>
             </div>
         </div>
 
-        <!-- Gerenciador de Chaves de API (.env) -->
-        <div class="section-card" style="margin-top: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-                <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                    Chaves de API & Conexões (.env)
-                </h2>
-                <button id="btnSaveEnv" class="btn-add" style="width: auto; padding: 8px 16px; margin-bottom: 0; background: var(--accent-primary); color: white; border: none; font-weight: 600;">💾 Salvar e Recarregar Tokens</button>
-            </div>
-            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
-                Gerencie as chaves de acesso aos provedores de dados externos. Ao clicar em salvar, o arquivo <code style="color: #a5b4fc;">.env</code> é atualizado no disco e as variáveis são recarregadas na memória imediatamente sem parar o servidor.
-            </p>
-            <div id="envFieldsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px;">
-                <div style="color: var(--text-secondary); grid-column: 1/-1; text-align: center; padding: 20px;">Carregando variáveis de ambiente...</div>
+        <!-- SUBTELA 4: ARMAZENAMENTO & CACHE -->
+        <div id="tab-cache" class="tab-pane">
+            <div class="section-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                    <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Gerenciamento de Cache de Consultas
+                    </h2>
+                    <button id="btnClearCache" class="btn-logout" style="width: auto; padding: 6px 12px; margin-bottom: 0; background: #e1372d; color: white; border: none;">Limpar Todo o Cache</button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Arquivos de Cache</div>
+                            <div id="cacheFileCount" style="font-size: 24px; font-weight: bold; color: var(--text-primary);">Carregando...</div>
+                        </div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="opacity: 0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Espaço Utilizado</div>
+                            <div id="cacheTotalSize" style="font-size: 24px; font-weight: bold; color: var(--text-primary);">Carregando...</div>
+                        </div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="opacity: 0.5;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Histórico de Auditoria (Full Width) -->
-        <div class="section-card" style="margin-top: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-                <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    Auditoria de Buscas (OSINT Logs)
-                </h2>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="logUserFilter" placeholder="Filtrar usuário..." style="width: 150px; padding: 6px 12px; margin-bottom: 0; font-size: 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
-                    <input type="text" id="logToolFilter" placeholder="Filtrar tool..." style="width: 150px; padding: 6px 12px; margin-bottom: 0; font-size: 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
-                    <button id="btnFilterLogs" class="btn-add" style="width: auto; padding: 6px 12px; margin-bottom: 0;">Filtrar</button>
-                    <button id="btnRefreshLogs" class="btn-logout" style="width: auto; padding: 6px 12px; margin-bottom: 0; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);">Atualizar</button>
+        <!-- SUBTELA 5: AUDITORIA & LOGS -->
+        <div id="tab-logs" class="tab-pane">
+            <div class="section-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                    <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        Auditoria de Buscas (OSINT Logs)
+                    </h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="logUserFilter" placeholder="Filtrar usuário..." style="width: 150px; padding: 6px 12px; margin-bottom: 0; font-size: 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
+                        <input type="text" id="logToolFilter" placeholder="Filtrar tool..." style="width: 150px; padding: 6px 12px; margin-bottom: 0; font-size: 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-primary);">
+                        <button id="btnFilterLogs" class="btn-add" style="width: auto; padding: 6px 12px; margin-bottom: 0;">Filtrar</button>
+                        <button id="btnRefreshLogs" class="btn-logout" style="width: auto; padding: 6px 12px; margin-bottom: 0; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);">Atualizar</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="user-table-container" style="max-height: 400px; overflow-y: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 150px;">Data/Hora (UTC)</th>
-                            <th style="width: 150px;">Usuário</th>
-                            <th style="width: 120px;">Prefixo Chave</th>
-                            <th style="width: 200px;">Ferramenta</th>
-                            <th>Parâmetros da Busca</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logTableBody">
-                        <!-- Gerado dinamicamente -->
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhum registro encontrado.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Paginação dos Logs -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border-color);">
-                <div style="color: var(--text-secondary); font-size: 14px;" id="logPaginationInfo">
-                    Mostrando 0-0 de 0 registros
+                <div class="user-table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 150px;">Data/Hora (UTC)</th>
+                                <th style="width: 150px;">Usuário</th>
+                                <th style="width: 120px;">Prefixo Chave</th>
+                                <th style="width: 200px;">Ferramenta</th>
+                                <th>Parâmetros da Busca</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            <!-- Gerado dinamicamente -->
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhum registro encontrado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div style="display: flex; gap: 5px;">
-                    <button id="btnPrevPage" class="btn-logout" style="width: auto; padding: 4px 10px; margin-bottom: 0; font-size: 12px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);" disabled>Anterior</button>
-                    <button id="btnNextPage" class="btn-logout" style="width: auto; padding: 4px 10px; margin-bottom: 0; font-size: 12px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);" disabled>Próxima</button>
+
+                <!-- Paginação dos Logs -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                    <div style="color: var(--text-secondary); font-size: 14px;" id="logPaginationInfo">
+                        Mostrando 0-0 de 0 registros
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button id="btnPrevPage" class="btn-logout" style="width: auto; padding: 4px 10px; margin-bottom: 0; font-size: 12px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);" disabled>Anterior</button>
+                        <button id="btnNextPage" class="btn-logout" style="width: auto; padding: 4px 10px; margin-bottom: 0; font-size: 12px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);" disabled>Próxima</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1080,7 +1162,45 @@
                 verificarLogin(true);
             }
             renderizarCheckboxPermissoes();
+            inicializarAbas();
         });
+
+        function inicializarAbas() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            if (tabBtns.length === 0) return;
+
+            const activeTabSaved = sessionStorage.getItem('veridian_active_tab') || 'tab-fontes';
+
+            function ativarAba(tabId) {
+                tabBtns.forEach(btn => {
+                    if (btn.getAttribute('data-tab') === tabId) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                tabPanes.forEach(pane => {
+                    if (pane.id === tabId) {
+                        pane.classList.add('active');
+                    } else {
+                        pane.classList.remove('active');
+                    }
+                });
+
+                sessionStorage.setItem('veridian_active_tab', tabId);
+            }
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.getAttribute('data-tab');
+                    ativarAba(target);
+                });
+            });
+
+            ativarAba(activeTabSaved);
+        }
 
         // Eventos
         loginBtn.addEventListener('click', () => verificarLogin());
