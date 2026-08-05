@@ -1374,25 +1374,7 @@
                 document.getElementById('kpiTopTool').textContent = topToolFormatted;
                 
                 // Popular dropdowns de filtros
-                const userSelect = document.getElementById('analyticsUserSelect');
-                if (userSelect && userSelect.options.length <= 1 && data.all_users) {
-                    data.all_users.forEach(u => {
-                        const opt = document.createElement('option');
-                        opt.value = u;
-                        opt.textContent = u;
-                        userSelect.appendChild(opt);
-                    });
-                }
-                
-                const toolSelect = document.getElementById('analyticsToolSelect');
-                if (toolSelect && toolSelect.options.length <= 1 && data.all_tools) {
-                    data.all_tools.forEach(t => {
-                        const opt = document.createElement('option');
-                        opt.value = t;
-                        opt.textContent = FERRAMENTAS_MAP[t] || t;
-                        toolSelect.appendChild(opt);
-                    });
-                }
+                popularDropdownsFiltro(data.all_users, data.all_tools);
                 
                 // Renderizar Gráficos
                 renderizarGraficos(data);

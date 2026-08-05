@@ -5271,7 +5271,7 @@ async def run_sse_with_auth(self_mcp) -> None:
             where_clause = " WHERE " + " AND ".join(sql_where)
             
         cache_where = f"{where_clause} AND (tool_name LIKE '%ler_cache%' OR arguments LIKE '%cache_id%')" if where_clause else " WHERE (tool_name LIKE '%ler_cache%' OR arguments LIKE '%cache_id%')"
-        tool_not_null_where = f"{where_clause} AND tool_name IS NOT NULL" if where_clause else " WHERE tool_name IS NOT NULL"
+        tool_not_null_where = f"{where_clause} AND tool_name IS NOT NULL AND tool_name != ''" if where_clause else " WHERE tool_name IS NOT NULL AND tool_name != ''"
 
         try:
             conn = sqlite3.connect(DB_LOGS_FILE)
@@ -5292,7 +5292,7 @@ async def run_sse_with_auth(self_mcp) -> None:
             # 4. Top Tool
             cursor.execute(f"SELECT tool_name, COUNT(*) as cnt FROM mcp_logs{tool_not_null_where} GROUP BY tool_name ORDER BY cnt DESC LIMIT 1", params)
             row_top = cursor.fetchone()
-            top_tool = row_top[0] if row_top else "N/A"
+            top_tool = row_top[0] if row_top and row_top[0] else "N/A"
             
             # 5. Timeline Series (by YYYY-MM-DD)
             cursor.execute(f"SELECT SUBSTR(timestamp, 1, 10) as dt, COUNT(*) FROM mcp_logs{where_clause} GROUP BY dt ORDER BY dt ASC", params)
@@ -5340,12 +5340,12 @@ async def run_sse_with_auth(self_mcp) -> None:
                 
             by_provider = [{"provider": k, "count": v} for k, v in sorted(provider_counts.items(), key=lambda x: x[1], reverse=True)]
             
-            # Listas para filtros
-            cursor.execute("SELECT DISTINCT usuario FROM mcp_logs WHERE usuario IS NOT NULL")
-            all_users = [r[0] for r in cursor.fetchall() if r[0]]
+            # Listas para filtros (pega todos os usuários e ferramentas registrados no banco)
+            cursor.execute("SELECT DISTINCT usuario FROM mcp_logs WHERE usuario IS NOT NULL AND usuario != ''")
+            all_users = [r[0] for r in cursor.fetchall() if r[0] and str(r[0]).strip()]
             
-            cursor.execute("SELECT DISTINCT tool_name FROM mcp_logs WHERE tool_name IS NOT NULL")
-            all_tools = [r[0] for r in cursor.fetchall() if r[0]]
+            cursor.execute("SELECT DISTINCT tool_name FROM mcp_logs WHERE tool_name IS NOT NULL AND tool_name != ''")
+            all_tools = [r[0] for r in cursor.fetchall() if r[0] and str(r[0]).strip()]
             
             conn.close()
             
