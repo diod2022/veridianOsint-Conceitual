@@ -154,25 +154,14 @@ Este documento é o **inventário canônico e detalhado** de todas as capacidade
 
 ---
 
-### 2.9. Dossiê Canônico e Enriquecimento Automático
-
-| Nome White-label (`MCP`) | Função Interna | Parâmetros de Entrada | Descrição & Retorno Esperado |
-| :--- | :--- | :--- | :--- |
-| `veridian_gerar_dossie` | `investigador_gerar_dossie` | `cpf` (str/int)<br>`salvar_laudo` (bool, padrão True) | **Consolidação Pericial (Zero Créditos)**: Cruza todas as consultas locais de um CPF, deduplica contatos, calcula pontuação de confiança e emite laudo em Markdown. |
-| `veridian_enriquecer_dossie` | `investigador_enriquecer_dossie` | `cpf` (str/int)<br>`max_emails` / `max_telefones` / `max_cnpjs` (int)<br>`apenas_corroborados` (bool)<br>`incluir_vazamentos` (bool) | **Enriquecimento Autônomo**: Roda em lote análise de reputação SEON e vazamentos para todos os contatos do dossiê e gera timeline para empresas ligadas. |
-
----
-
 ## 3. Recursos Nativos MCP (MCP Resources)
 
 Os recursos nativos permitem que LLMs leiam dados consolidados ou de status sem gastar chamadas de ferramentas (`tool_call`).
 
 | URI do Recurso | Parâmetros na URI | Tipo de Conteúdo | Descrição & Utilidade |
 | :--- | :--- | :--- | :--- |
-| `osint://dossie/{cpf}` | `{cpf}`: CPF com 11 dígitos | `text/markdown` | Retorna diretamente o Laudo Pericial Consolidado do alvo em formato Markdown estruturado. |
 | `osint://cache/{cache_id}` | `{cache_id}`: ID do cache (ex: `bigdata_12345678900`) | `application/json` | Permite inspecionar o JSON original de qualquer consulta previamente realizada. |
 | `osint://status` | _Nenhum_ | `application/json` | Retorna o status em tempo real do servidor, versão do protocolo, provedores ativos e telemetria de 24h. |
-| `osint://cpfs-em-cache` | _Nenhum_ | `application/json` | Lista todos os CPFs que possuem coletas de dados salvas no cache local. |
 
 ---
 
@@ -182,7 +171,7 @@ Templates de prompts guiados para direcionar LLMs na condução de investigaçõ
 
 | Nome do Prompt | Argumentos | Objetivo & Metodologia Executada |
 | :--- | :--- | :--- |
-| `investigar_pessoa_fisica` | `cpf` (obrigatório)<br>`prioridade` (opcional) | Conduz a triagem cadastral de PF, checagem de mandados de prisão, antecedentes criminais, enquadramento PEP, vínculos e geração de dossiê consolidado. |
+| `investigar_pessoa_fisica` | `cpf` (obrigatório)<br>`prioridade` (opcional) | Conduz a triagem cadastral de PF, checagem de mandados de prisão, antecedentes criminais, enquadramento PEP e vínculos. |
 | `investigar_pessoa_juridica` | `cnpj` (obrigatório) | Auditoria de CNPJ: consulta cadastral, mapeamento de sócios e tomadores de decisão (QSA), empresas ligadas e timeline de evolução societária. |
 | `investigar_advogado_oab` | `oab_numero` (obrigatório)<br>`oab_estado` (obrigatório) | Instrução rigorosa para mapear processos judiciais no Escavador exclusivamente via número de OAB e UF. |
 | `investigar_redes_sociais` | `alvo` (obrigatório)<br>`plataforma` (opcional) | Fluxo investigativo integrado cruzando presença digital no Instagram, LinkedIn, TikTok e Facebook. |
@@ -193,8 +182,9 @@ Templates de prompts guiados para direcionar LLMs na condução de investigaçõ
 
 ## 5. Resumo Numérico das Capacidades
 
-- **Total de Ferramentas (Tools):** 79
-- **Total de Recursos Nativos (Resources):** 4
+- **Total de Ferramentas (Tools):** 77
+- **Total de Recursos Nativos (Resources):** 2
 - **Total de Prompts Nativos (Prompts):** 6
 - **Provedores de Inteligência Integrados:** BigDataCorp, Unitfour, Escavador, CSINT.pro, HikerAPI, Harvest API, Lighthouse / FaceCheck / Search4Faces, SociaVault, WhoisXML, Tavily, Firecrawl, Serper.dev e Internet Archive.
 - **Protocolo Suportado:** FastMCP 1.2+ / Model Context Protocol Spec (transportes STDIO e SSE com autenticação por chave de API).
+

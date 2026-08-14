@@ -7,15 +7,15 @@ def prompt_investigar_pessoa_fisica(cpf: str, prioridade: str = "completa") -> s
 Você é um analista de inteligência pericial e OSINT encarregado de investigar o alvo CPF: '{cpf}'.
 
 Siga RIGOROSAMENTE esta metodologia:
-1. **Validação e Cache**: Verifique se já existem dados locais consultando 'veridian_consultar_cadastro_cpf' ou lendo o resource `osint://dossie/{cpf}`.
+1. **Validação e Cache**: Verifique se já existem dados locais consultando 'veridian_consultar_cadastro_cpf' ou lendo o resource `osint://cache/bigdata_{cpf}`.
 2. **Dados Básicos e Cadastrais**: Se necessário nova coleta, consulte dados básicos e contatos com 'veridian_consultar_cadastro_cpf' ou 'veridian_consultar_dados_cadastrais_cpf'.
 3. **Avaliação de Riscos e Compliance**:
    - Verifique mandados de prisão com 'veridian_mandados_prisao'.
    - Verifique antecedentes criminais com 'veridian_antecedentes_criminais'.
    - Verifique enquadramento como PEP (Pessoa Exposta Politicamente) com 'veridian_verificar_pep_cpf'.
 4. **Vínculos e Sociedades**: Mapeie pessoas ligadas e empresas associadas com 'veridian_ver_parentes_e_socios_cpf'.
-5. **Processos Judiciais**: Se houver indícios de litígios, fatie a categoria 'bdclawsuits'.
-6. **Consolidação Final**: Execute 'veridian_gerar_dossie' para emitir o laudo consolidado com pontuação de confiança e fontes corroboradas.
+5. **Processos Judiciais**: Se houver indícios de litígios, consulte 'veridian_ver_categoria' com dataset_code='bdclawsuits'.
+6. **Apresentação dos Resultados**: Sintetize todos os achados em um relatório estruturado, destacando alertas de risco e fontes consultadas.
 """
 
 @mcp.prompt("investigar_pessoa_juridica")

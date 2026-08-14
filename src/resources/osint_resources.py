@@ -5,16 +5,6 @@ from src.core.config import CACHE_DIR
 from src.core.cache import obter_caminho_cache_seguro
 from src.core.db import obter_estatisticas_analytics
 from src.core.auth import carregar_config_global
-from src.providers import dossie_builder
-
-@mcp.resource("osint://dossie/{cpf}")
-async def obter_dossie_resource(cpf: str) -> str:
-    """Retorna o Dossiê Canônico consolidado em formato Markdown pericial."""
-    d_obj = dossie_builder.consolidar_cpf(cpf, cache_dir=CACHE_DIR)
-    d = d_obj.to_dict()
-    if not d.get("fontes_consultadas"):
-        return f"# Dossiê de Investigação — CPF {cpf}\n\nNenhuma consulta encontrada no cache local para este CPF."
-    return dossie_builder.dossie_para_markdown(d)
 
 @mcp.resource("osint://cache/{cache_id}")
 async def obter_cache_resource(cache_id: str) -> str:
@@ -47,9 +37,3 @@ async def obter_status_servidor() -> str:
         }
     }
     return json.dumps(status_info, ensure_ascii=False, indent=2)
-
-@mcp.resource("osint://cpfs-em-cache")
-async def listar_cpfs_em_cache() -> str:
-    """Lista todos os CPFs que já possuem dados salvos no cache local."""
-    cpfs = dossie_builder.cpfs_disponiveis_no_cache(CACHE_DIR)
-    return json.dumps({"total_cpfs": len(cpfs), "cpfs": cpfs}, ensure_ascii=False, indent=2)

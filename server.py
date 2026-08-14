@@ -98,10 +98,6 @@ from src.tools.osint_tools import (
     wayback_listar_imagens,
     wayback_listar_snapshots
 )
-from src.tools.dossie_tools import (
-    investigador_gerar_dossie,
-    investigador_enriquecer_dossie
-)
 
 def main():
     transport_mode = os.environ.get("FASTMCP_TRANSPORT", "stdio")

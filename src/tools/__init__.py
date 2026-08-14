@@ -6,8 +6,7 @@ from src.tools import (
     cadastrais_tools,
     judiciais_tools,
     redes_sociais_tools,
-    osint_tools,
-    dossie_tools
+    osint_tools
 )
 
 __all__ = [
@@ -15,6 +14,5 @@ __all__ = [
     "cadastrais_tools",
     "judiciais_tools",
     "redes_sociais_tools",
-    "osint_tools",
-    "dossie_tools"
+    "osint_tools"
 ]
