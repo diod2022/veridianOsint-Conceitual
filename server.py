@@ -1845,12 +1845,26 @@ async def instagram_pesquisar_perfis(query: str) -> dict:
             return {"error": f"Erro na HikerAPI (pesquisa de contas): {str(e)}"}
 
 @mcp.tool()
-async def instagram_ver_seguidores(user_id: str | int) -> dict:
+async def instagram_ver_seguidores(
+    user_id: str | int,
+    page_id: str | None = None,
+    tipo: str = "ambos",
+    page_id_followers: str | None = None,
+    page_id_following: str | None = None,
+    cursor: str | None = None,
+    max_id: str | None = None
+) -> dict:
     """
-    Extrai a primeira página de seguidores (e quem o alvo segue) usando o user_id.
+    Extrai seguidores e/ou contas seguidas de um perfil do Instagram usando o user_id, com suporte a paginação.
     
     Args:
         user_id: O ID interno do usuário (obtido com instagram_buscar_usuario).
+        page_id: Opcional. O cursor de paginação (valor de 'next_page_id' da consulta anterior) para carregar as próximas páginas.
+        tipo: Opcional. 'ambos' (padrão - busca seguidores e quem ele segue), 'followers' (apenas seguidores) ou 'following' (apenas quem ele segue).
+        page_id_followers: Opcional. Cursor específico de paginação para seguidores.
+        page_id_following: Opcional. Cursor específico de paginação para quem o usuário segue.
+        cursor: Opcional. Alias alternativo para 'page_id'.
+        max_id: Opcional. Alias alternativo para 'page_id' (compatibilidade com 'next_max_id').
     """
     user_id = str(user_id)
     if not HIKER_TOKEN:
@@ -1858,43 +1872,67 @@ async def instagram_ver_seguidores(user_id: str | int) -> dict:
         
     headers = {"x-access-key": HIKER_TOKEN, "Accept": "application/json"}
     
+    # Resolver cursores de paginação com fallbacks amigáveis
+    fol_cursor = page_id_followers or page_id or cursor or max_id
+    fll_cursor = page_id_following or page_id or cursor or max_id
+    tipo_normalizado = (tipo or "ambos").lower().strip()
+    
     async with httpx.AsyncClient() as client:
         try:
-            # Fazemos a busca de seguidores
-            resp_followers = await client.get(
-                f"{HIKER_BASE_URL}/v2/user/followers",
-                headers=headers,
-                params={"user_id": user_id},
-                timeout=30.0
-            )
-            
-            # Fazemos a busca de quem o usuário segue
-            resp_following = await client.get(
-                f"{HIKER_BASE_URL}/v2/user/following",
-                headers=headers,
-                params={"user_id": user_id},
-                timeout=30.0
-            )
-            
             resultado = {}
-            if resp_followers.status_code == 200:
-                resultado["followers"] = resp_followers.json()
-            if resp_following.status_code == 200:
-                resultado["following"] = resp_following.json()
+            
+            # Buscar seguidores se tipo for 'ambos', 'followers' ou 'seguidores'
+            if tipo_normalizado in ["ambos", "followers", "seguidores"]:
+                params_fol = {"user_id": user_id}
+                if fol_cursor:
+                    params_fol["page_id"] = str(fol_cursor)
+                    
+                resp_followers = await client.get(
+                    f"{HIKER_BASE_URL}/v2/user/followers",
+                    headers=headers,
+                    params=params_fol,
+                    timeout=30.0
+                )
+                if resp_followers.status_code == 200:
+                    resultado["followers"] = resp_followers.json()
+            
+            # Buscar quem o usuário segue se tipo for 'ambos', 'following' ou 'seguindo'
+            if tipo_normalizado in ["ambos", "following", "seguindo"]:
+                params_fll = {"user_id": user_id}
+                if fll_cursor:
+                    params_fll["page_id"] = str(fll_cursor)
+                    
+                resp_following = await client.get(
+                    f"{HIKER_BASE_URL}/v2/user/following",
+                    headers=headers,
+                    params=params_fll,
+                    timeout=30.0
+                )
+                if resp_following.status_code == 200:
+                    resultado["following"] = resp_following.json()
                 
             if not resultado:
                 return {"error": "Falha ao obter seguidores e seguindo"}
-            return salvar_cache_universal(f"ig_followers_{user_id}", resultado)
+                
+            chave_cache = f"ig_followers_{user_id}_{tipo_normalizado}_pfol_{fol_cursor or '1'}_pfll_{fll_cursor or '1'}"
+            return salvar_cache_universal(chave_cache, resultado)
         except httpx.HTTPError as e:
             return {"error": f"Erro na HikerAPI (seguidores): {str(e)}"}
 
 @mcp.tool()
-async def instagram_ver_posts(user_id: str | int) -> dict:
+async def instagram_ver_posts(
+    user_id: str | int,
+    page_id: str | None = None,
+    end_cursor: str | None = None
+) -> dict:
     """
     Puxa os posts recentes do feed do usuário. Útil para análise de fotos, legendas e locais.
+    Suporta paginação usando o parâmetro 'page_id' ou 'end_cursor'.
     
     Args:
         user_id: O ID interno do usuário.
+        page_id: Opcional. O cursor para obter a próxima página de posts (retornado na resposta anterior).
+        end_cursor: Opcional. Alias alternativo para page_id.
     """
     user_id = str(user_id)
     if not HIKER_TOKEN:
@@ -1902,16 +1940,22 @@ async def instagram_ver_posts(user_id: str | int) -> dict:
         
     headers = {"x-access-key": HIKER_TOKEN, "Accept": "application/json"}
     
+    cursor_usado = end_cursor or page_id
+    params = {"user_id": user_id}
+    if cursor_usado:
+        params["end_cursor"] = str(cursor_usado)
+        
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
                 f"{HIKER_BASE_URL}/v1/user/medias/chunk",
                 headers=headers,
-                params={"user_id": user_id},
+                params=params,
                 timeout=30.0
             )
             response.raise_for_status()
-            return salvar_cache_universal(f"ig_posts_{user_id}", response.json())
+            chave_cache = f"ig_posts_{user_id}_p_{cursor_usado or '1'}"
+            return salvar_cache_universal(chave_cache, response.json())
         except httpx.HTTPError as e:
             return {"error": f"Erro na HikerAPI (ver posts): {str(e)}"}
 
