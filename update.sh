@@ -34,7 +34,7 @@ fi
 echo "[PROCESS] Procurando processos rodando na porta ${MCP_PORT}..."
 PID=$(lsof -t -i:${MCP_PORT})
 
-if [ -not -z "$PID" ] || [ ! -z "$PID" ]; then
+if [ -n "$PID" ]; then
     echo "[PROCESS] Encontrado processo(s) com PID(s): ${PID}"
     echo "[PROCESS] Encerrando processos antigos..."
     kill -15 ${PID} 2>/dev/null
