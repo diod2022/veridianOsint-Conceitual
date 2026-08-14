@@ -20,6 +20,10 @@ mcp_config.json
 cache_consultas/
 dossie_*_enriquecido.json
 dossie_*_enriquecido.md
+teste_*.json
+resultado_*.json
+teste/oab_*.json
+teste/oab_*.csv
 
 # Sistema e caches do Python
 __pycache__/
@@ -28,9 +32,9 @@ __pycache__/
 *.pyd
 .DS_Store
 Thumbs.db
+.pytest_cache/
 
 # Logs e relatórios temporários
 *.log
 npx_out.log
 mcp_logs.db
-
