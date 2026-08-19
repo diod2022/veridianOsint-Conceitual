@@ -7,8 +7,10 @@ from src.core.auth import (
     obter_nome_whitelabel,
     limpar_descricao_whitelabel,
     limpar_resultado_whitelabel,
-    verificar_permissao_fonte
+    verificar_permissao_fonte,
+    carregar_config_global
 )
+from mcp.types import Tool as MCPTool
 
 # Instância unificada do FastMCP
 mcp = FastMCP(
@@ -49,7 +51,8 @@ def custom_tool(*args, **kwargs):
             nome_fonte = "wayback"
 
         # Mascara o nome da ferramenta dinamicamente
-        kwargs["name"] = obter_nome_whitelabel(nome_funcao)
+        whitelabel_name = obter_nome_whitelabel(nome_funcao)
+        kwargs["name"] = whitelabel_name
         
         # Mascara a descrição da ferramenta dinamicamente se fornecida no decorator
         if "description" in kwargs:
@@ -57,7 +60,7 @@ def custom_tool(*args, **kwargs):
 
         @functools.wraps(func)
         async def wrapper(*func_args, **func_kwargs):
-            if nome_fonte:
+            if nome_fonte or nome_funcao:
                 permissao = verificar_permissao_fonte(nome_fonte, nome_funcao)
                 if permissao:
                     return permissao
@@ -66,7 +69,85 @@ def custom_tool(*args, **kwargs):
             return limpar_resultado_whitelabel(result)
 
         wrapper.__doc__ = limpar_descricao_whitelabel(func.__doc__)
-        return original_tool(*args, **kwargs)(wrapper)
+        wrapper._orig_func_name = nome_funcao
+        wrapper._source_name = nome_fonte
+        wrapper._whitelabel_name = whitelabel_name
+
+        res = original_tool(*args, **kwargs)(wrapper)
+
+        registered_tool = mcp._tool_manager.get_tool(whitelabel_name)
+        if registered_tool:
+            registered_tool._orig_func_name = nome_funcao
+            registered_tool._source_name = nome_fonte
+            registered_tool._whitelabel_name = whitelabel_name
+
+        return res
     return decorator
 
 mcp.tool = custom_tool
+
+async def custom_list_tools() -> list[MCPTool]:
+    """Lista ferramentas disponíveis no MCP filtrando consultas e fontes desativadas."""
+    config = carregar_config_global()
+    fontes_ativas = config.get("fontes_ativas", {})
+    consultas_ativas = config.get("consultas_ativas", {})
+
+    tools = mcp._tool_manager.list_tools()
+    active_tools = []
+
+    for info in tools:
+        orig_name = (
+            getattr(info, "_orig_func_name", None)
+            or getattr(getattr(info, "fn", None), "_orig_func_name", None)
+            or getattr(getattr(info, "fn", None), "__name__", None)
+        )
+        source_name = (
+            getattr(info, "_source_name", None)
+            or getattr(getattr(info, "fn", None), "_source_name", None)
+        )
+        tool_name = info.name
+
+        if not source_name and orig_name:
+            for prefix, fonte in [
+                ("whois_", "whois"),
+                ("csint_", "csint"),
+                ("bigdata_", "bigdata"),
+                ("unitfour_", "unitfour"),
+                ("instagram_", "instagram"),
+                ("tiktok_", "instagram"),
+                ("linkedin_", "linkedin"),
+                ("lighthouse_", "lighthouse"),
+                ("escavador_", "escavador"),
+                ("tavily_", "tavily"),
+                ("firecrawl_", "firecrawl"),
+                ("serper_", "serper"),
+                ("wayback_", "wayback"),
+            ]:
+                if orig_name.startswith(prefix):
+                    source_name = fonte
+                    break
+
+        # Se a fonte inteira estiver desativada, não propaga
+        if source_name and fontes_ativas.get(source_name) is False:
+            continue
+
+        # Se a consulta específica estiver desativada pelo nome original ou whitelabel, não propaga
+        if orig_name and consultas_ativas.get(orig_name) is False:
+            continue
+        if tool_name and consultas_ativas.get(tool_name) is False:
+            continue
+
+        active_tools.append(
+            MCPTool(
+                name=info.name,
+                description=info.description,
+                inputSchema=info.parameters,
+            )
+        )
+
+    return active_tools
+
+# Sobrescreve list_tools no FastMCP e registra no servidor MCP interno
+mcp.list_tools = custom_list_tools
+mcp._mcp_server.list_tools()(custom_list_tools)
+

@@ -152,15 +152,19 @@ def extrair_token(request) -> Optional[str]:
         
     return None
 
-def verificar_permissao_fonte(nome_fonte: str, nome_consulta: str = None) -> Optional[dict]:
+def verificar_permissao_fonte(nome_fonte: Optional[str] = None, nome_consulta: Optional[str] = None) -> Optional[dict]:
     config = carregar_config_global()
-    fontes_ativas = config.get("fontes_ativas", {})
-    if fontes_ativas.get(nome_fonte) is False:
-        return {"error": f"Fonte '{nome_fonte}' desativada globalmente pelo administrador."}
+    if nome_fonte:
+        fontes_ativas = config.get("fontes_ativas", {})
+        if fontes_ativas.get(nome_fonte) is False:
+            return {"error": f"Fonte '{nome_fonte}' desativada globalmente pelo administrador."}
 
     if nome_consulta:
         consultas_ativas = config.get("consultas_ativas", {})
         if consultas_ativas.get(nome_consulta) is False:
+            return {"error": f"Consulta '{nome_consulta}' desativada globalmente pelo administrador."}
+        whitelabel = obter_nome_whitelabel(nome_consulta)
+        if whitelabel and consultas_ativas.get(whitelabel) is False:
             return {"error": f"Consulta '{nome_consulta}' desativada globalmente pelo administrador."}
 
     try:
@@ -176,7 +180,7 @@ def verificar_permissao_fonte(nome_fonte: str, nome_consulta: str = None) -> Opt
         return {"error": "Sessão inválida ou expirada."}
 
     permissoes = session_info.get("permissoes", ["*"])
-    if "*" not in permissoes and nome_fonte not in permissoes:
+    if "*" not in permissoes and nome_fonte and nome_fonte not in permissoes:
         if nome_consulta and nome_consulta in permissoes:
             pass
         else:
