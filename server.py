@@ -35,10 +35,25 @@ from src.tools.cache_tools import (
     investigador_obter_cache_compactado
 )
 from src.tools.cadastrais_tools import (
-    bigdata_consultar_cpf,
-    bigdata_ver_categoria,
-    bigdata_consultar_cnpj,
-    bigdata_ver_categoria_cnpj,
+    bigdata_cpf_dados_basicos,
+    bigdata_cpf_telefones,
+    bigdata_cpf_emails,
+    bigdata_cpf_enderecos,
+    bigdata_cpf_processos,
+    bigdata_cpf_empresas_e_socios,
+    bigdata_cpf_parentes_e_relacionados,
+    bigdata_cpf_historico_cadastral,
+    bigdata_cpf_dados_profissionais,
+    bigdata_cpf_dados_politicos,
+    bigdata_cpf_beneficios_sociais,
+    bigdata_cpf_presenca_online,
+    bigdata_cnpj_dados_basicos,
+    bigdata_cnpj_telefones,
+    bigdata_cnpj_emails,
+    bigdata_cnpj_enderecos,
+    bigdata_cnpj_quadro_societario,
+    bigdata_cnpj_processos,
+    bigdata_cnpj_evolucao_historica,
     unitfour_consultar_cpf,
     unitfour_pessoas_ligadas,
     unitfour_mandados_prisao,
@@ -55,8 +70,7 @@ from src.tools.cadastrais_tools import (
 )
 from src.tools.judiciais_tools import (
     escavador_buscar_processos_oab,
-    bigdata_consultar_processo,
-    bigdata_cnpj_alteracoes
+    bigdata_consultar_processo
 )
 from src.tools.redes_sociais_tools import (
     instagram_buscar_usuario,

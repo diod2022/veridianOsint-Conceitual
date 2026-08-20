@@ -18,11 +18,15 @@ async def test_mcp_registration():
     assert len(prompts) >= 4, f"Esperava pelo menos 4 prompts nativos, encontrou {len(prompts)}"
     
     tool_names = [t.name for t in tools]
-    assert "veridian_consultar_cadastro_cpf" in tool_names
+    assert "veridian_cpf_dados_basicos" in tool_names
+    assert "veridian_cpf_telefones" in tool_names
+    assert "veridian_cnpj_dados_basicos" in tool_names
     assert "veridian_buscar_processos_oab" in tool_names
     assert "veridian_mandados_prisao" in tool_names
     
-    # Valida que as ferramentas de dossiê foram removidas conforme solicitado
+    # Valida que as ferramentas legadas/agregadas foram removidas
+    assert "veridian_consultar_cadastro_cpf" not in tool_names
+    assert "veridian_consultar_cadastro_cnpj" not in tool_names
     assert "veridian_gerar_dossie" not in tool_names
     assert "veridian_enriquecer_dossie" not in tool_names
 

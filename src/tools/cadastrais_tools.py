@@ -2,31 +2,6 @@ from typing import Union, Optional
 from src.app import mcp
 from src.providers import bigdatacorp, unitfour
 
-@mcp.tool()
-async def bigdata_consultar_cpf(cpf: Union[str, int], datasets: str = "bdcbasicdata") -> dict:
-    """
-    Realiza consulta de Pessoa Física (CPF) na BigDataCorp, buscando um ou mais datasets.
-    O CPF pode ser enviado com qualquer tipo de máscara (pontos, traços, etc) e com/sem zeros à esquerda.
-    Salva os dados massivos no cache local e retorna as chaves disponíveis.
-    
-    Args:
-        cpf: O CPF a ser consultado (com ou sem máscara).
-        datasets: Lista de datasets separados por vírgula (ex: 'bdcbasicdata,bdcphones').
-    """
-    return await bigdatacorp.consultar_cpf(cpf, datasets)
-
-@mcp.tool()
-async def bigdata_ver_categoria(cpf: Union[str, int], dataset_code: str) -> dict:
-    """
-    Retorna apenas a fatia de dados correspondente a um código específico do cache do CPF.
-    O CPF pode ser enviado com qualquer tipo de máscara (pontos, traços, etc) e com/sem zeros à esquerda.
-    
-    Args:
-        cpf: O CPF do investigado (com ou sem máscara).
-        dataset_code: O código do dataset desejado (ex: 'bdcphones', 'bdcbasicdata', 'bdclawsuits').
-    """
-    return await bigdatacorp.ver_categoria_cpf(cpf, dataset_code)
-
 # ==============================================================================
 # FERRAMENTAS GRANULARES BIGDATACORP - PESSOA FÍSICA (CPF)
 # ==============================================================================
@@ -161,31 +136,6 @@ async def bigdata_cpf_presenca_online(cpf: Union[str, int]) -> dict:
 # ==============================================================================
 # FERRAMENTAS BIGDATACORP - PESSOA JURÍDICA (CNPJ)
 # ==============================================================================
-
-@mcp.tool()
-async def bigdata_consultar_cnpj(cnpj: Union[str, int], datasets: str = "bdccompanybasicdata") -> dict:
-    """
-    Realiza consulta de Pessoa Jurídica (CNPJ) na BigDataCorp, buscando um ou mais datasets.
-    O CNPJ pode ser enviado com qualquer tipo de máscara (pontos, barras, traços, etc) e com/sem zeros à esquerda.
-    Salva os dados massivos no cache local e retorna as chaves disponíveis.
-    
-    Args:
-        cnpj: O CNPJ da empresa (com ou sem máscara).
-        datasets: Lista de datasets separados por vírgula (ex: 'bdccompanybasicdata,bdccompanyphones').
-    """
-    return await bigdatacorp.consultar_cnpj(cnpj, datasets)
-
-@mcp.tool()
-async def bigdata_ver_categoria_cnpj(cnpj: Union[str, int], dataset_code: str) -> dict:
-    """
-    Retorna apenas a fatia de dados correspondente a um código específico do cache do CNPJ.
-    O CNPJ pode ser enviado com qualquer tipo de máscara (pontos, barras, traços, etc) e com/sem zeros à esquerda.
-    
-    Args:
-        cnpj: O CNPJ da empresa (com ou sem máscara).
-        dataset_code: O código do dataset desejado (ex: 'bdccompanybasicdata', 'bdccompanyevolution').
-    """
-    return await bigdatacorp.ver_categoria_cnpj(cnpj, dataset_code)
 
 @mcp.tool()
 async def bigdata_cnpj_dados_basicos(cnpj: Union[str, int]) -> dict:

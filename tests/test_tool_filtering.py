@@ -15,7 +15,7 @@ async def test_tool_filtered_when_query_disabled():
             "escavador": True
         },
         "consultas_ativas": {
-            "bigdata_consultar_cpf": False
+            "bigdata_cpf_dados_basicos": False
         }
     }
     
@@ -23,11 +23,11 @@ async def test_tool_filtered_when_query_disabled():
         tools = await mcp.list_tools()
         tool_names = [t.name for t in tools]
         
-        # bigdata_consultar_cpf -> veridian_consultar_cadastro_cpf deve estar AUSENTE
-        assert "veridian_consultar_cadastro_cpf" not in tool_names
+        # bigdata_cpf_dados_basicos -> veridian_cpf_dados_basicos deve estar AUSENTE
+        assert "veridian_cpf_dados_basicos" not in tool_names
         # Outras consultas de bigdata devem continuar PRESENTES
-        assert "veridian_ver_categoria" in tool_names
-        assert "veridian_consultar_cadastro_cnpj" in tool_names
+        assert "veridian_cpf_telefones" in tool_names
+        assert "veridian_cnpj_dados_basicos" in tool_names
 
 @pytest.mark.asyncio
 async def test_tool_filtered_when_source_disabled():
@@ -47,7 +47,7 @@ async def test_tool_filtered_when_source_disabled():
         # escavador_buscar_processos_oab -> veridian_buscar_processos_oab
         assert "veridian_buscar_processos_oab" not in tool_names
         # Consultas de bigdata devem estar presentes
-        assert "veridian_consultar_cadastro_cpf" in tool_names
+        assert "veridian_cpf_dados_basicos" in tool_names
 
 @pytest.mark.asyncio
 async def test_tool_filtered_by_whitelabel_name():
@@ -57,7 +57,7 @@ async def test_tool_filtered_by_whitelabel_name():
             "bigdata": True
         },
         "consultas_ativas": {
-            "veridian_consultar_cadastro_cpf": False
+            "veridian_cpf_telefones": False
         }
     }
     
@@ -65,7 +65,7 @@ async def test_tool_filtered_by_whitelabel_name():
         tools = await mcp.list_tools()
         tool_names = [t.name for t in tools]
         
-        assert "veridian_consultar_cadastro_cpf" not in tool_names
+        assert "veridian_cpf_telefones" not in tool_names
 
 @pytest.mark.asyncio
 async def test_tool_execution_blocked_when_disabled():
@@ -75,12 +75,12 @@ async def test_tool_execution_blocked_when_disabled():
             "bigdata": True
         },
         "consultas_ativas": {
-            "bigdata_consultar_cpf": False
+            "bigdata_cpf_dados_basicos": False
         }
     }
     
     with patch("src.core.auth.carregar_config_global", return_value=mock_config):
-        result = await mcp.call_tool("veridian_consultar_cadastro_cpf", {"cpf": "12345678900"})
+        result = await mcp.call_tool("veridian_cpf_dados_basicos", {"cpf": "12345678900"})
         assert len(result) >= 1
         # Verifica se o erro foi retornado no texto
         content_text = result[0].text
