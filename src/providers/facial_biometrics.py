@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import io
 import re
@@ -174,7 +175,7 @@ async def carregar_imagem(entrada: str) -> Tuple[Optional[Any], Optional[str]]:
 
     return None, f"Formato de imagem não reconhecido para o valor fornecido: {entrada_limpa[:50]}..."
 
-def _detectar_faces_em_matriz(detector, img_bgr: np.ndarray) -> List[np.ndarray]:
+def _detectar_faces_em_matriz(detector, img_bgr: Any) -> list:
     """Detecta faces na imagem ajustando dinamicamente a resolução de entrada do detector."""
     h, w, _ = img_bgr.shape
     detector.setInputSize((w, h))
