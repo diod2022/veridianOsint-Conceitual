@@ -317,27 +317,6 @@ async def lighthouse_image_facecheck(photo_url: Optional[str] = None, photo_b64:
     return await lighthouse.image_facecheck(photo_url, photo_b64, photo_fileid)
 
 @mcp.tool()
-async def lighthouse_image_search4faces(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
-    """
-    Realiza reconhecimento facial em perfis de redes sociais (Search4Faces) via Lampyre.
-    """
-    return await lighthouse.image_search4faces(photo_url, photo_b64, photo_fileid)
-
-@mcp.tool()
-async def lighthouse_image_similarfaces(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
-    """
-    Realiza busca reversa por faces similares na web via Lampyre.
-    """
-    return await lighthouse.image_similarfaces(photo_url, photo_b64, photo_fileid)
-
-@mcp.tool()
-async def lighthouse_image_socialvisor(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
-    """
-    Realiza busca reversa de perfil em redes sociais por imagem (SocialVisor) via Lampyre.
-    """
-    return await lighthouse.image_socialvisor(photo_url, photo_b64, photo_fileid)
-
-@mcp.tool()
 async def lighthouse_image_geolocation(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
     """
     Deduz a geolocalização estimada de uma foto através de inteligência artificial geoespacial via Lampyre.

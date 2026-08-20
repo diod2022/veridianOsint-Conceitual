@@ -213,57 +213,6 @@ async def image_facecheck(photo_url: Optional[str] = None, photo_b64: Optional[s
         chave_cache=f"lighthouse_image_facecheck_{hash_id}"
     )
 
-async def image_search4faces(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
-    """Busca reversa facial em redes sociais (VK, TikTok, ClubHouse) com Search4faces via Lampyre."""
-    if not photo_url and not photo_b64 and not photo_fileid:
-        return {"error": "Você deve informar pelo menos um dos parâmetros: 'photo_url', 'photo_b64' ou 'photo_fileid'."}
-    task_info = {}
-    if photo_url: task_info["photo_url"] = photo_url
-    if photo_b64: task_info["photo_b64"] = photo_b64
-    if photo_fileid: task_info["photo_fileid"] = photo_fileid
-    
-    param_str = photo_url or photo_b64 or photo_fileid
-    hash_id = hashlib.md5(param_str.encode("utf-8")).hexdigest()
-    return await async_executar_tarefa_lighthouse(
-        job_name="image_search4faces_v1",
-        task_info=task_info,
-        chave_cache=f"lighthouse_image_search4faces_{hash_id}"
-    )
-
-async def image_similarfaces(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
-    """Busca reversa de faces similares na web via Lampyre."""
-    if not photo_url and not photo_b64 and not photo_fileid:
-        return {"error": "Você deve informar pelo menos um dos parâmetros: 'photo_url', 'photo_b64' ou 'photo_fileid'."}
-    task_info = {}
-    if photo_url: task_info["photo_url"] = photo_url
-    if photo_b64: task_info["photo_b64"] = photo_b64
-    if photo_fileid: task_info["photo_fileid"] = photo_fileid
-    
-    param_str = photo_url or photo_b64 or photo_fileid
-    hash_id = hashlib.md5(param_str.encode("utf-8")).hexdigest()
-    return await async_executar_tarefa_lighthouse(
-        job_name="image_similarfaces_v1",
-        task_info=task_info,
-        chave_cache=f"lighthouse_image_similarfaces_{hash_id}"
-    )
-
-async def image_socialvisor(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
-    """Busca de perfil em redes sociais por imagem via Lampyre."""
-    if not photo_url and not photo_b64 and not photo_fileid:
-        return {"error": "Você deve informar pelo menos um dos parâmetros: 'photo_url', 'photo_b64' ou 'photo_fileid'."}
-    task_info = {}
-    if photo_url: task_info["photo_url"] = photo_url
-    if photo_b64: task_info["photo_b64"] = photo_b64
-    if photo_fileid: task_info["photo_fileid"] = photo_fileid
-    
-    param_str = photo_url or photo_b64 or photo_fileid
-    hash_id = hashlib.md5(param_str.encode("utf-8")).hexdigest()
-    return await async_executar_tarefa_lighthouse(
-        job_name="image_socialvisor_v1",
-        task_info=task_info,
-        chave_cache=f"lighthouse_image_socialvisor_{hash_id}"
-    )
-
 async def image_geolocation(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
     """Estimativa de geolocalização e marcos geográficos por IA a partir de imagem."""
     if not photo_url and not photo_b64 and not photo_fileid:
