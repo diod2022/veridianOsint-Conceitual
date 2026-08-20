@@ -116,6 +116,64 @@ MAPA_RESULT_KEYS_PJ = {
     "historybasicdata": "bdccompanyhistorical"
 }
 
+# Mapeamento de datasets para ferramentas granulares (para validação de consultas_ativas no mcp_config.json)
+DATASET_TOOL_NAMES_PF = {
+    "bdcbasicdata": ["bigdata_cpf_dados_basicos", "veridian_cpf_dados_basicos", "bigdata_consultar_cpf", "veridian_consultar_cadastro_cpf"],
+    "bdcphones": ["bigdata_cpf_telefones", "veridian_cpf_telefones"],
+    "bdcemails": ["bigdata_cpf_emails", "veridian_cpf_emails"],
+    "bdcaddresses": ["bigdata_cpf_enderecos", "veridian_cpf_enderecos"],
+    "bdclawsuits": ["bigdata_cpf_processos", "veridian_cpf_processos"],
+    "bdcrelatedcompanies": ["bigdata_cpf_empresas_e_socios", "veridian_cpf_empresas_e_socios"],
+    "bdccompanies": ["bigdata_cpf_empresas_e_socios", "veridian_cpf_empresas_e_socios"],
+    "bdcbusinessrelationships": ["bigdata_cpf_empresas_e_socios", "veridian_cpf_empresas_e_socios"],
+    "bdcpartnerships": ["bigdata_cpf_empresas_e_socios", "veridian_cpf_empresas_e_socios"],
+    "bdcrelatedpeople": ["bigdata_cpf_parentes_e_relacionados", "veridian_cpf_parentes_e_relacionados"],
+    "bdchistorical": ["bigdata_cpf_historico_cadastral", "veridian_cpf_historico_cadastral"],
+    "bdcprofessional": ["bigdata_cpf_dados_profissionais", "veridian_cpf_dados_profissionais"],
+    "bdcpolitics": ["bigdata_cpf_dados_politicos", "veridian_cpf_dados_politicos"],
+    "bdcfamilysocialbenefits": ["bigdata_cpf_beneficios_sociais", "veridian_cpf_beneficios_sociais"],
+    "bdconlinepresence": ["bigdata_cpf_presenca_online", "veridian_cpf_presenca_online"]
+}
+
+DATASET_TOOL_NAMES_PJ = {
+    "bdccompanybasicdata": ["bigdata_cnpj_dados_basicos", "veridian_cnpj_dados_basicos", "bigdata_consultar_cnpj", "veridian_consultar_cadastro_cnpj"],
+    "bdccompanyphones": ["bigdata_cnpj_telefones", "veridian_cnpj_telefones"],
+    "bdccompanyemails": ["bigdata_cnpj_emails", "veridian_cnpj_emails"],
+    "bdccompanyaddresses": ["bigdata_cnpj_enderecos", "veridian_cnpj_enderecos"],
+    "bdccompanyrelationships": ["bigdata_cnpj_quadro_societario", "veridian_cnpj_quadro_societario"],
+    "bdclawsuits": ["bigdata_cnpj_processos", "veridian_cnpj_processos"],
+    "bdccompanyevolution": ["bigdata_cnpj_evolucao_historica", "veridian_cnpj_evolucao_historica"],
+    "bdccompanyhistorical": ["bigdata_cnpj_historico", "veridian_cnpj_historico"]
+}
+
+def is_dataset_ativo(dataset_code: str, tipo: str = "pf") -> bool:
+    """Verifica se o dataset está ativo nas configurações globais (consultas_ativas / fontes_ativas)."""
+    try:
+        from src.core.auth import carregar_config_global
+        config = carregar_config_global()
+    except Exception:
+        return True
+        
+    fontes_ativas = config.get("fontes_ativas", {})
+    if fontes_ativas.get("bigdata") is False:
+        return False
+        
+    consultas_ativas = config.get("consultas_ativas", {})
+    code_norm = dataset_code.strip().lower()
+    
+    # 1. Checa o código do dataset direto
+    if consultas_ativas.get(code_norm) is False:
+        return False
+        
+    # 2. Checa as ferramentas associadas
+    mapping = DATASET_TOOL_NAMES_PF if tipo == "pf" else DATASET_TOOL_NAMES_PJ
+    tool_names = mapping.get(code_norm, [])
+    for t_name in tool_names:
+        if consultas_ativas.get(t_name) is False:
+            return False
+            
+    return True
+
 def get_nested_case_insensitive(data: dict, path: str) -> Any:
     if not isinstance(data, dict):
         return None
@@ -326,6 +384,17 @@ async def consultar_cpf(cpf: Union[str, int], datasets: str = "bdcbasicdata") ->
                 print(f"[CACHE ERROR] Falha ao inspecionar cache existente do CPF {cpf_limpo}: {e}", file=sys.stderr, flush=True)
 
         lista_codigos = [c.strip().lower() for c in datasets.split(",") if c.strip()]
+        lista_codigos_ativos = [c for c in lista_codigos if is_dataset_ativo(c, "pf")]
+        if not lista_codigos_ativos:
+            return {
+                "status": "erro",
+                "codigo_erro": "CONSULTA_DESATIVADA",
+                "etapa": "validacao_permissao",
+                "fornecedor": "Veridian",
+                "mensagem": "Todos os datasets solicitados estão desativados pelo administrador nas configurações do MCP.",
+                "retentavel": False
+            }
+        lista_codigos = lista_codigos_ativos
         datasets_faltantes = [c for c in lista_codigos if c not in datasets_existentes]
 
         # Se todos os datasets pedidos já estão no cache, retorna cache hit imediatamente
@@ -480,6 +549,15 @@ async def consultar_cpf(cpf: Union[str, int], datasets: str = "bdcbasicdata") ->
 async def ver_categoria_cpf(cpf: Union[str, int], dataset_code: str) -> dict:
     cpf_limpo = normalizar_cpf(cpf)
     codigo_limpo = dataset_code.strip().lower()
+    
+    # Mapeia aliases flexíveis (ex: 'processes', 'extendedphones', 'companies') para o código de dataset canônico
+    codigo_canonico = MAPA_RESULT_KEYS_PF.get(codigo_limpo, codigo_limpo)
+    if codigo_canonico not in MAPA_DATASETS_PF:
+        for k, v in MAPA_DATASETS_PF.items():
+            if v == codigo_limpo or v.replace("_", "") == codigo_limpo.replace("_", ""):
+                codigo_canonico = k
+                break
+                
     chave_cache = f"bigdata_{cpf_limpo}"
     cache_file = obter_caminho_cache_seguro(chave_cache)
     
@@ -491,10 +569,15 @@ async def ver_categoria_cpf(cpf: Union[str, int], dataset_code: str) -> dict:
         except Exception:
             dados_completos = None
 
-    # Se o cache não existe ou o dataset pedido não foi consultado ainda, busca sob demanda
+    # Se o cache não existe ou o dataset pedido não foi consultado ainda, busca sob demanda na API
     meta_datasets = set((dados_completos.get("_metadata") or {}).get("datasets_consultados", [])) if dados_completos else set()
-    if not dados_completos or (codigo_limpo not in meta_datasets and codigo_limpo in MAPA_DATASETS_PF):
-        res_busca = await consultar_cpf(cpf, datasets=codigo_limpo)
+    precisa_consultar = (
+        not dados_completos or
+        (codigo_canonico in MAPA_DATASETS_PF and codigo_canonico not in meta_datasets)
+    )
+    
+    if precisa_consultar and codigo_canonico in MAPA_DATASETS_PF:
+        res_busca = await consultar_cpf(cpf, datasets=codigo_canonico)
         if res_busca.get("status") == "erro":
             return res_busca
         cache_file = obter_caminho_cache_seguro(chave_cache)
@@ -512,7 +595,7 @@ async def ver_categoria_cpf(cpf: Union[str, int], dataset_code: str) -> dict:
     return {
         "status": "sucesso",
         "cache_id": chave_cache,
-        "dataset": codigo_limpo,
+        "dataset": codigo_canonico if codigo_canonico in MAPA_DATASETS_PF else codigo_limpo,
         codigo_limpo: resultado
     }
 
@@ -581,6 +664,17 @@ async def consultar_cnpj(cnpj: Union[str, int], datasets: str = "bdccompanybasic
                 print(f"[CACHE ERROR] Falha ao inspecionar cache existente do CNPJ {cnpj_limpo}: {e}", file=sys.stderr, flush=True)
 
         lista_codigos = [c.strip().lower() for c in datasets.split(",") if c.strip()]
+        lista_codigos_ativos = [c for c in lista_codigos if is_dataset_ativo(c, "pj")]
+        if not lista_codigos_ativos:
+            return {
+                "status": "erro",
+                "codigo_erro": "CONSULTA_DESATIVADA",
+                "etapa": "validacao_permissao",
+                "fornecedor": "Veridian",
+                "mensagem": "Todos os datasets solicitados estão desativados pelo administrador nas configurações do MCP.",
+                "retentavel": False
+            }
+        lista_codigos = lista_codigos_ativos
         datasets_faltantes = [c for c in lista_codigos if c not in datasets_existentes]
 
         if dados_cache and not datasets_faltantes:
@@ -693,6 +787,14 @@ async def consultar_cnpj(cnpj: Union[str, int], datasets: str = "bdccompanybasic
 async def ver_categoria_cnpj(cnpj: Union[str, int], dataset_code: str) -> dict:
     cnpj_limpo = normalizar_cnpj(cnpj)
     codigo_limpo = dataset_code.strip().lower()
+    
+    codigo_canonico = MAPA_RESULT_KEYS_PJ.get(codigo_limpo, codigo_limpo)
+    if codigo_canonico not in MAPA_DATASETS_PJ:
+        for k, v in MAPA_DATASETS_PJ.items():
+            if v == codigo_limpo or v.replace("_", "") == codigo_limpo.replace("_", ""):
+                codigo_canonico = k
+                break
+                
     chave_cache = f"bigdata_cnpj_{cnpj_limpo}"
     cache_file = obter_caminho_cache_seguro(chave_cache)
     
@@ -705,8 +807,13 @@ async def ver_categoria_cnpj(cnpj: Union[str, int], dataset_code: str) -> dict:
             dados_completos = None
 
     meta_datasets = set((dados_completos.get("_metadata") or {}).get("datasets_consultados", [])) if dados_completos else set()
-    if not dados_completos or (codigo_limpo not in meta_datasets and codigo_limpo in MAPA_DATASETS_PJ):
-        res_busca = await consultar_cnpj(cnpj, datasets=codigo_limpo)
+    precisa_consultar = (
+        not dados_completos or
+        (codigo_canonico in MAPA_DATASETS_PJ and codigo_canonico not in meta_datasets)
+    )
+    
+    if precisa_consultar and codigo_canonico in MAPA_DATASETS_PJ:
+        res_busca = await consultar_cnpj(cnpj, datasets=codigo_canonico)
         if res_busca.get("status") == "erro":
             return res_busca
         cache_file = obter_caminho_cache_seguro(chave_cache)
@@ -724,7 +831,7 @@ async def ver_categoria_cnpj(cnpj: Union[str, int], dataset_code: str) -> dict:
     return {
         "status": "sucesso",
         "cache_id": chave_cache,
-        "dataset": codigo_limpo,
+        "dataset": codigo_canonico if codigo_canonico in MAPA_DATASETS_PJ else codigo_limpo,
         codigo_limpo: resultado
     }
 
@@ -796,4 +903,42 @@ async def consultar_processo(numero_processo: Union[str, int], dataset_code: str
             "mensagem": f"Erro ao consultar processo no BigDataCorp: {str(e)}",
             "retentavel": False
         }
+
+async def consultar_categoria_cpf(cpf: Union[str, int], dataset_code: str) -> dict:
+    """
+    Executa a consulta de um dataset específico de PF na BigDataCorp e retorna a fatia correspondente.
+    Verifica se a consulta está habilitada no MCP.
+    """
+    if not is_dataset_ativo(dataset_code, "pf"):
+        return {
+            "status": "erro",
+            "codigo_erro": "CONSULTA_DESATIVADA",
+            "etapa": "validacao_permissao",
+            "fornecedor": "Veridian",
+            "mensagem": f"A consulta do dataset '{dataset_code}' está desativada nas configurações do MCP.",
+            "retentavel": False
+        }
+    res_consulta = await consultar_cpf(cpf, datasets=dataset_code)
+    if res_consulta.get("status") == "erro":
+        return res_consulta
+    return await ver_categoria_cpf(cpf, dataset_code=dataset_code)
+
+async def consultar_categoria_cnpj(cnpj: Union[str, int], dataset_code: str) -> dict:
+    """
+    Executa a consulta de um dataset específico de PJ na BigDataCorp e retorna a fatia correspondente.
+    Verifica se a consulta está habilitada no MCP.
+    """
+    if not is_dataset_ativo(dataset_code, "pj"):
+        return {
+            "status": "erro",
+            "codigo_erro": "CONSULTA_DESATIVADA",
+            "etapa": "validacao_permissao",
+            "fornecedor": "Veridian",
+            "mensagem": f"A consulta do dataset '{dataset_code}' está desativada nas configurações do MCP.",
+            "retentavel": False
+        }
+    res_consulta = await consultar_cnpj(cnpj, datasets=dataset_code)
+    if res_consulta.get("status") == "erro":
+        return res_consulta
+    return await ver_categoria_cnpj(cnpj, dataset_code=dataset_code)
 

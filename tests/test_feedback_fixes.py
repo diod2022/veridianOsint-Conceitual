@@ -383,3 +383,94 @@ async def test_bigdata_processo_status_negativo():
         assert res.get("codigo_erro") == "BIGDATA_-148"
         assert "INVALID LAWSUITS PARAMETER" in res.get("mensagem")
 
+@pytest.mark.asyncio
+async def test_whitelabel_cache_id_resolutions():
+    """Valida que cache_ids gerados pelo mascaramento de white-label (Veridian_ligados_..., Veridian_busca_nome_...) resolvem com perfeição."""
+    cpf_teste = "23302234805"
+    p1 = obter_caminho_cache_seguro(f"bigdata_{cpf_teste}")
+    p2 = obter_caminho_cache_seguro(f"unitfour_ligados_{cpf_teste}")
+    p3 = obter_caminho_cache_seguro("unitfour_busca_nome_miguel_dau")
+    
+    for p in (p1, p2, p3):
+        if p and os.path.exists(p):
+            try: os.remove(p)
+            except Exception: pass
+
+    try:
+        salvar_cache_universal(f"bigdata_{cpf_teste}", {"Result": [{"BasicData": {"Name": "Teste"}}]})
+        salvar_cache_universal(f"unitfour_ligados_{cpf_teste}", {"ligados": [{"nome": "Parente 1"}]})
+        salvar_cache_universal("unitfour_busca_nome_miguel_dau", {"pessoas": [{"nome": "Miguel Dau"}]})
+
+        # Testa resolução com prefixo Veridian (gerado pelo white-label)
+        r_ligados = obter_caminho_cache_seguro(f"Veridian_ligados_{cpf_teste}")
+        assert r_ligados is not None
+        assert r_ligados.endswith(f"unitfour_ligados_{cpf_teste}.json")
+
+        r_nome = obter_caminho_cache_seguro("Veridian_busca_nome_miguel_dau")
+        assert r_nome is not None
+        assert r_nome.endswith("unitfour_busca_nome_miguel_dau.json")
+
+        r_cpf = obter_caminho_cache_seguro(f"Veridian_{cpf_teste}")
+        assert r_cpf is not None
+        assert r_cpf.endswith(f"bigdata_{cpf_teste}.json")
+
+        # Testa leitura via investigador_ler_cache usando o cache_id mascarado
+        from src.tools.cache_tools import investigador_ler_cache
+        res_cache = await investigador_ler_cache(f"Veridian_ligados_{cpf_teste}")
+        assert "ligados" in res_cache or res_cache.get("status") == "sucesso"
+    finally:
+        for p in (p1, p2, p3):
+            if p and os.path.exists(p):
+                try: os.remove(p)
+                except Exception: pass
+
+@pytest.mark.asyncio
+async def test_ver_categoria_cpf_fetches_processes_and_phones_on_demand():
+    """Valida que chamar ver_categoria_cpf com 'Processes' quando o cache só tem 'BasicData' busca 'bdclawsuits' na API e retorna os processos, não BasicData."""
+    cpf_teste = "96765585834"
+    p = obter_caminho_cache_seguro(f"bigdata_{cpf_teste}")
+    if p and os.path.exists(p):
+        try: os.remove(p)
+        except Exception: pass
+
+    # Cache inicial apenas com BasicData
+    dados_iniciais = {
+        "_metadata": {"datasets_consultados": ["bdcbasicdata"]},
+        "Result": [
+            {
+                "BasicData": {"Name": "Miguel Dau", "TaxIdNumber": cpf_teste}
+            }
+        ]
+    }
+    salvar_cache_universal(f"bigdata_{cpf_teste}", dados_iniciais)
+
+    mock_api_proc_resp = {
+        "Status": {"Code": 0, "Message": "OK"},
+        "Result": [
+            {
+                "Processes": {
+                    "TotalLawsuits": 3,
+                    "Lawsuits": [{"Number": "111"}, {"Number": "222"}, {"Number": "333"}]
+                }
+            }
+        ]
+    }
+
+    try:
+        with patch("src.providers.bigdatacorp.get_bigdata_token", return_value="fake_token"), \
+             patch("src.providers.bigdatacorp.resilient_request") as mock_req:
+            mock_req.return_value = MagicMock(status_code=200, json=lambda: mock_api_proc_resp)
+
+            # Chama ver_categoria_cpf para "Processes"
+            res = await bigdatacorp.ver_categoria_cpf(cpf_teste, "Processes")
+            assert res.get("status") == "sucesso"
+            assert "Processes" in res or "bdclawsuits" in res or "processes" in res
+            proc_data = res.get("Processes") or res.get("bdclawsuits") or res.get("processes")
+            assert proc_data.get("TotalLawsuits") == 3
+            # Garante que NUNCA repetiu BasicData
+            assert "BasicData" not in proc_data
+    finally:
+        if p and os.path.exists(p):
+            try: os.remove(p)
+            except Exception: pass
+

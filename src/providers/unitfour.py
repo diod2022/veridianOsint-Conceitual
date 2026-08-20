@@ -227,7 +227,7 @@ async def busca_avancada_nome(nome: str, bairro: str = None, cidade: str = None,
                 params=params
             )
             response.raise_for_status()
-            nome_limpo = "".join(c for c in nome_str if c.isalnum() or c == " ").strip().replace(" ", "_")
+            nome_limpo = "".join(c for c in nome_str if c.isalnum() or c == " ").strip().lower().replace(" ", "_")
             return salvar_cache_universal(f"unitfour_busca_nome_{nome_limpo}", response.json())
         except Exception as e:
             return {"error": f"Erro ao realizar busca avançada por nome na Unitfour: {str(e)}"}
@@ -253,7 +253,7 @@ async def busca_avancada_telefone(ddd: Union[str, int], telefone: Union[str, int
 async def busca_avancada_email(email: Union[str, int]) -> dict:
     if not os.environ.get("UNITFOUR_TOKEN"):
         return {"error": "UNITFOUR_TOKEN não configurado no .env"}
-    email_str = str(email).strip()
+    email_str = str(email).strip().lower()
     
     async with get_semaphore("unitfour"):
         try:

@@ -51,9 +51,68 @@ def obter_caminho_cache_seguro(cache_id: str) -> Optional[str]:
     if os.path.exists(caminho_json) and validar_caminho_seguro(caminho_limite, caminho_json):
         return caminho_json
 
+    clean_lower = clean_id.lower()
+
+    # 2.5 Resolução para prefixos Veridian gerados pelo white-label
+    if clean_lower.startswith("veridian_") or clean_lower.startswith("veridian"):
+        sub = re.sub(r'^veridian_?', '', clean_lower)
+        sub_digitos = re.sub(r'\D', '', sub)
+        
+        candidatos_veridian = []
+        if "ligado" in sub or "socio" in sub or "parente" in sub:
+            if sub_digitos:
+                candidatos_veridian.append(f"unitfour_ligados_{sub_digitos}.json")
+        elif "mandado" in sub:
+            if sub_digitos:
+                candidatos_veridian.append(f"unitfour_mandados_{sub_digitos}.json")
+        elif "antecedente" in sub or "criminal" in sub:
+            if sub_digitos:
+                candidatos_veridian.append(f"unitfour_antecedentes_{sub_digitos}.json")
+        elif "pep" in sub:
+            if sub_digitos:
+                candidatos_veridian.append(f"unitfour_pep_{sub_digitos}.json")
+        elif "busca_nome_" in sub or "nome_" in sub:
+            nome_slug = re.sub(r'^(busca_)?(avancada_)?nome_', '', sub)
+            candidatos_veridian.append(f"unitfour_busca_nome_{nome_slug}.json")
+        elif "oab" in sub:
+            uf_m = re.search(r'\b(ac|al|ap|am|ba|ce|df|es|go|ma|mt|ms|mg|pa|pb|pr|pe|pi|rj|rn|rs|ro|rr|sc|sp|se|to)\b', sub)
+            num_m = re.search(r'\b(\d{1,7})\b', sub)
+            if uf_m and num_m:
+                candidatos_veridian.append(f"escavador_oab_{uf_m.group(1)}_{num_m.group(1)}.json")
+        elif "processo" in sub or "cnj" in sub:
+            if sub_digitos:
+                candidatos_veridian.append(f"processo_cnj_{sub_digitos}.json")
+        elif "cnpj" in sub:
+            if sub_digitos:
+                candidatos_veridian.extend([
+                    f"bigdata_cnpj_{sub_digitos}.json",
+                    f"unitfour_cnpj_{sub_digitos}.json",
+                    f"unitfour_tomadores_{sub_digitos}.json",
+                    f"unitfour_empresas_ligadas_{sub_digitos}.json"
+                ])
+        elif "cpf" in sub or len(sub_digitos) == 11:
+            if sub_digitos:
+                candidatos_veridian.extend([
+                    f"bigdata_{sub_digitos}.json",
+                    f"unitfour_cpf_{sub_digitos}.json",
+                    f"unitfour_ligados_{sub_digitos}.json"
+                ])
+                
+        # Tenta também sub direto com prefixos de provedor
+        candidatos_veridian.extend([
+            f"unitfour_{sub}.json",
+            f"bigdata_{sub}.json",
+            f"escavador_{sub}.json",
+            f"{sub}.json"
+        ])
+        
+        for cand in candidatos_veridian:
+            p = os.path.abspath(os.path.join(CACHE_DIR, cand))
+            if os.path.exists(p) and validar_caminho_seguro(caminho_limite, p):
+                return p
+
     # 3. Resolução por dígitos (CPF, CNPJ, CNJ)
     digitos = re.sub(r'\D', '', clean_id)
-    clean_lower = clean_id.lower()
     prefixos_conhecidos = (
         "bigdata_cnpj_", "bigdata_", "unitfour_cpf_", "unitfour_ligados_", "unitfour_mandados_",
         "unitfour_pep_", "unitfour_antecedentes_", "unitfour_tomadores_", "unitfour_empresas_ligadas_",

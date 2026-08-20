@@ -27,6 +27,141 @@ async def bigdata_ver_categoria(cpf: Union[str, int], dataset_code: str) -> dict
     """
     return await bigdatacorp.ver_categoria_cpf(cpf, dataset_code)
 
+# ==============================================================================
+# FERRAMENTAS GRANULARES BIGDATACORP - PESSOA FÍSICA (CPF)
+# ==============================================================================
+
+@mcp.tool()
+async def bigdata_cpf_dados_basicos(cpf: Union[str, int]) -> dict:
+    """
+    Consulta os dados cadastrais básicos de uma Pessoa Física (CPF).
+    Retorna: Nome completo, CPF, Data de Nascimento, Idade, Situação Cadastral na Receita, Nome da Mãe, Sexo, Signo e Data de Atualização.
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcbasicdata")
+
+@mcp.tool()
+async def bigdata_cpf_telefones(cpf: Union[str, int]) -> dict:
+    """
+    Consulta a lista de telefones fixos e celulares vinculados a um CPF.
+    Retorna: Números com DDD, tipo (celular/fixo), operadora, data de observação e indicadores de atualidade.
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcphones")
+
+@mcp.tool()
+async def bigdata_cpf_emails(cpf: Union[str, int]) -> dict:
+    """
+    Consulta a lista de e-mails vinculados a um CPF.
+    Retorna: Endereços de e-mail, domínio, provedor e data de observação.
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcemails")
+
+@mcp.tool()
+async def bigdata_cpf_enderecos(cpf: Union[str, int]) -> dict:
+    """
+    Consulta o histórico de endereços residenciais e comerciais vinculados a um CPF.
+    Retorna: Tipo de logradouro, endereço, número, complemento, bairro, cidade, UF, CEP e data de observação.
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcaddresses")
+
+@mcp.tool()
+async def bigdata_cpf_processos(cpf: Union[str, int]) -> dict:
+    """
+    Consulta todos os processos judiciais vinculados ao CPF (polo ativo, passivo ou terceiro).
+    Retorna: Total de processos, número CNJ, tribunal, assunto, partes e histórico de andamentos.
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdclawsuits")
+
+@mcp.tool()
+async def bigdata_cpf_empresas_e_socios(cpf: Union[str, int]) -> dict:
+    """
+    Consulta participações societárias, empresas vinculadas e relações comerciais de um CPF.
+    Retorna: CNPJ, Razão Social, Nome Fantasia, Qualificação/Cargo societário, % de participação e situação cadastral das empresas.
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcrelatedcompanies")
+
+@mcp.tool()
+async def bigdata_cpf_parentes_e_relacionados(cpf: Union[str, int]) -> dict:
+    """
+    Consulta parentes e possíveis pessoas ligadas a um CPF.
+    Retorna: Nome, CPF mascarado e grau de parentesco (mãe, pai, cônjuge, irmãos, etc).
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcrelatedpeople")
+
+@mcp.tool()
+async def bigdata_cpf_historico_cadastral(cpf: Union[str, int]) -> dict:
+    """
+    Consulta o histórico de alterações cadastrais de um CPF (evolução de nomes, datas e registros).
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdchistorical")
+
+@mcp.tool()
+async def bigdata_cpf_dados_profissionais(cpf: Union[str, int]) -> dict:
+    """
+    Consulta histórico de vínculos empregatícios, ocupação profissional, CBO e faixa de renda estimada de um CPF.
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcprofessional")
+
+@mcp.tool()
+async def bigdata_cpf_dados_politicos(cpf: Union[str, int]) -> dict:
+    """
+    Consulta histórico político e eleitoral de um CPF (candidaturas, doações, filiações partidárias).
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcpolitics")
+
+@mcp.tool()
+async def bigdata_cpf_beneficios_sociais(cpf: Union[str, int]) -> dict:
+    """
+    Consulta histórico de programas e benefícios sociais governamentais vinculados ao CPF (KYC / CadÚnico).
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdcfamilysocialbenefits")
+
+@mcp.tool()
+async def bigdata_cpf_presenca_online(cpf: Union[str, int]) -> dict:
+    """
+    Consulta presença digital, redes sociais e sites associados ao CPF.
+    
+    Args:
+        cpf: O CPF a ser consultado (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cpf(cpf, "bdconlinepresence")
+
+# ==============================================================================
+# FERRAMENTAS BIGDATACORP - PESSOA JURÍDICA (CNPJ)
+# ==============================================================================
+
 @mcp.tool()
 async def bigdata_consultar_cnpj(cnpj: Union[str, int], datasets: str = "bdccompanybasicdata") -> dict:
     """
@@ -51,6 +186,81 @@ async def bigdata_ver_categoria_cnpj(cnpj: Union[str, int], dataset_code: str) -
         dataset_code: O código do dataset desejado (ex: 'bdccompanybasicdata', 'bdccompanyevolution').
     """
     return await bigdatacorp.ver_categoria_cnpj(cnpj, dataset_code)
+
+@mcp.tool()
+async def bigdata_cnpj_dados_basicos(cnpj: Union[str, int]) -> dict:
+    """
+    Consulta os dados cadastrais básicos de uma Empresa (CNPJ).
+    Retorna: Razão Social, Nome Fantasia, CNPJ, Situação Cadastral na Receita, Data de Abertura, Capital Social, Natureza Jurídica e CNAE principal/secundários.
+    
+    Args:
+        cnpj: O CNPJ da empresa (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cnpj(cnpj, "bdccompanybasicdata")
+
+@mcp.tool()
+async def bigdata_cnpj_telefones(cnpj: Union[str, int]) -> dict:
+    """
+    Consulta a lista de telefones corporativos vinculados a um CNPJ.
+    Retorna: Telefones com DDD, tipo e atualidade.
+    
+    Args:
+        cnpj: O CNPJ da empresa (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cnpj(cnpj, "bdccompanyphones")
+
+@mcp.tool()
+async def bigdata_cnpj_emails(cnpj: Union[str, int]) -> dict:
+    """
+    Consulta a lista de e-mails corporativos e de contato vinculados a um CNPJ.
+    
+    Args:
+        cnpj: O CNPJ da empresa (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cnpj(cnpj, "bdccompanyemails")
+
+@mcp.tool()
+async def bigdata_cnpj_enderecos(cnpj: Union[str, int]) -> dict:
+    """
+    Consulta os endereços da sede e filiais de uma Empresa (CNPJ).
+    Retorna: Logradouro, número, complemento, bairro, cidade, UF e CEP.
+    
+    Args:
+        cnpj: O CNPJ da empresa (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cnpj(cnpj, "bdccompanyaddresses")
+
+@mcp.tool()
+async def bigdata_cnpj_quadro_societario(cnpj: Union[str, int]) -> dict:
+    """
+    Consulta o Quadro de Sócios e Administradores (QSA), participações e empresas coligadas de um CNPJ.
+    Retorna: Nomes dos sócios, qualificações, % de participação e vínculos corporativos.
+    
+    Args:
+        cnpj: O CNPJ da empresa (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cnpj(cnpj, "bdccompanyrelationships")
+
+@mcp.tool()
+async def bigdata_cnpj_processos(cnpj: Union[str, int]) -> dict:
+    """
+    Consulta processos judiciais nos quais a Pessoa Jurídica (CNPJ) figura como parte.
+    Retorna: Quantidade total, número CNJ, tribunal, polos e movimentações.
+    
+    Args:
+        cnpj: O CNPJ da empresa (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cnpj(cnpj, "bdclawsuits")
+
+@mcp.tool()
+async def bigdata_cnpj_evolucao_historica(cnpj: Union[str, int]) -> dict:
+    """
+    Consulta a evolução histórica cadastral da empresa (alterações de razão social, capital social, endereço e quadro societário).
+    
+    Args:
+        cnpj: O CNPJ da empresa (com ou sem máscara).
+    """
+    return await bigdatacorp.consultar_categoria_cnpj(cnpj, "bdccompanyevolution")
 
 @mcp.tool()
 async def unitfour_consultar_cpf(cpf: Union[str, int]) -> dict:
