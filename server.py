@@ -96,6 +96,8 @@ from src.tools.redes_sociais_tools import (
     lighthouse_fb_uid_info,
     lighthouse_image_facecheck,
     lighthouse_image_search4faces,
+    lighthouse_image_similarfaces,
+    lighthouse_image_socialvisor,
     lighthouse_image_geolocation
 )
 from src.tools.osint_tools import (

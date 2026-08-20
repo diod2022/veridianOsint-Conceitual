@@ -265,6 +265,12 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
                 sub_nome = "reconhecimento_facial_amplo"
             elif prefixo == "lighthouse_" and sub_nome == "image_search4faces":
                 sub_nome = "reconhecimento_facial_redes_sociais"
+            elif prefixo == "lighthouse_" and sub_nome == "image_similarfaces":
+                sub_nome = "reconhecimento_facial_similar"
+            elif prefixo == "lighthouse_" and sub_nome == "image_socialvisor":
+                sub_nome = "reconhecimento_facial_socialvisor"
+            elif prefixo == "lighthouse_" and sub_nome == "image_geolocation":
+                sub_nome = "geolocalizacao_imagem"
                 
             return f"veridian_{sub_nome}"
             

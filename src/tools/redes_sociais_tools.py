@@ -217,7 +217,7 @@ async def tiktok_buscar_usuarios(query: str, cursor: Optional[int] = None, trim:
     """
     return await tiktok.buscar_usuarios(query, cursor, trim)
 
-# --- Facebook & Lighthouse Images ---
+# --- Facebook & Lighthouse Images (Lampyre API 1.0) ---
 @mcp.tool()
 async def lighthouse_fb_uid_info(facebook_profile_uid: Union[str, int]) -> dict:
     """
@@ -261,67 +261,11 @@ async def lighthouse_fb_uid_friends(facebook_profile_uid: Union[str, int]) -> di
     return await lighthouse.fb_uid_friends(facebook_profile_uid)
 
 @mcp.tool()
-async def lighthouse_fb_uid_photos(facebook_profile_uid: Union[str, int]) -> dict:
+async def lighthouse_fb_uid_full_friends(facebook_profile_uid: Union[str, int]) -> dict:
     """
-    Recupera fotos públicas de um perfil do Facebook.
+    Lista amigos completos de um perfil do Facebook.
     """
-    return await lighthouse.fb_uid_photos(facebook_profile_uid)
-
-@mcp.tool()
-async def lighthouse_fb_uid_albums(facebook_profile_uid: Union[str, int]) -> dict:
-    """
-    Lista álbuns de fotos de um perfil do Facebook.
-    """
-    return await lighthouse.fb_uid_albums(facebook_profile_uid)
-
-@mcp.tool()
-async def lighthouse_fb_uid_live_streams(facebook_profile_uid: Union[str, int]) -> dict:
-    """
-    Busca transmissões ao vivo de um perfil do Facebook.
-    """
-    return await lighthouse.fb_uid_live_streams(facebook_profile_uid)
-
-@mcp.tool()
-async def lighthouse_fb_uid_games(facebook_profile_uid: Union[str, int]) -> dict:
-    """
-    Lista jogos e aplicativos atrelados ao perfil do Facebook.
-    """
-    return await lighthouse.fb_uid_games(facebook_profile_uid)
-
-@mcp.tool()
-async def lighthouse_fb_uid_groups(facebook_profile_uid: Union[str, int]) -> dict:
-    """
-    Lista grupos públicos em que o perfil do Facebook participa.
-    """
-    return await lighthouse.fb_uid_groups(facebook_profile_uid)
-
-@mcp.tool()
-async def lighthouse_fb_search_posts(query: str, options: Optional[dict] = None) -> dict:
-    """
-    Busca publicações globais abertas no Facebook por palavras-chave.
-    """
-    return await lighthouse.fb_search_posts(query, options)
-
-@mcp.tool()
-async def lighthouse_fb_search_comments(query: str, options: Optional[dict] = None) -> dict:
-    """
-    Busca comentários abertos no Facebook por palavras-chave.
-    """
-    return await lighthouse.fb_search_comments(query, options)
-
-@mcp.tool()
-async def lighthouse_fb_search_places(query: str, options: Optional[dict] = None) -> dict:
-    """
-    Busca locais e check-ins no Facebook.
-    """
-    return await lighthouse.fb_search_places(query, options)
-
-@mcp.tool()
-async def lighthouse_fb_search_events(query: str, options: Optional[dict] = None) -> dict:
-    """
-    Busca eventos públicos no Facebook.
-    """
-    return await lighthouse.fb_search_events(query, options)
+    return await lighthouse.fb_uid_full_friends(facebook_profile_uid)
 
 @mcp.tool()
 async def lighthouse_fb_email_restore(email: str) -> dict:
@@ -338,6 +282,13 @@ async def lighthouse_fb_phone_restore(phone: Union[str, int]) -> dict:
     return await lighthouse.fb_phone_restore(phone)
 
 @mcp.tool()
+async def lighthouse_fb_username_restore(username: str) -> dict:
+    """
+    Busca reversa no Facebook por username/handle para encontrar o perfil e UID.
+    """
+    return await lighthouse.fb_username_restore(username)
+
+@mcp.tool()
 async def lighthouse_fb_uid_darknet(facebook_profile_uid: Union[str, int]) -> dict:
     """
     Cruza o UID do perfil do Facebook com bases de inteligência da Darknet.
@@ -345,29 +296,50 @@ async def lighthouse_fb_uid_darknet(facebook_profile_uid: Union[str, int]) -> di
     return await lighthouse.fb_uid_darknet(facebook_profile_uid)
 
 @mcp.tool()
-async def lighthouse_fb_phone_to_name(phone: Union[str, int]) -> dict:
+async def lighthouse_fb_email_darknet(email: str) -> dict:
     """
-    Busca o nome registrado no Facebook a partir de um número de telefone.
+    Cruza o e-mail do Facebook com bases de inteligência da Darknet.
     """
-    return await lighthouse.fb_phone_to_name(phone)
+    return await lighthouse.fb_email_darknet(email)
+
+@mcp.tool()
+async def lighthouse_fb_phone_darknet(phone: Union[str, int]) -> dict:
+    """
+    Cruza o telefone do Facebook com bases de inteligência da Darknet.
+    """
+    return await lighthouse.fb_phone_darknet(phone)
 
 @mcp.tool()
 async def lighthouse_image_facecheck(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
     """
-    Realiza reconhecimento facial avançado na internet usando o FaceCheck.ID.
+    Realiza reconhecimento facial avançado na internet aberta usando o FaceCheck.ID via Lampyre.
     """
     return await lighthouse.image_facecheck(photo_url, photo_b64, photo_fileid)
 
 @mcp.tool()
 async def lighthouse_image_search4faces(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
     """
-    Realiza reconhecimento facial em perfis de redes sociais (Search4Faces).
+    Realiza reconhecimento facial em perfis de redes sociais (Search4Faces) via Lampyre.
     """
     return await lighthouse.image_search4faces(photo_url, photo_b64, photo_fileid)
 
 @mcp.tool()
+async def lighthouse_image_similarfaces(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
+    """
+    Realiza busca reversa por faces similares na web via Lampyre.
+    """
+    return await lighthouse.image_similarfaces(photo_url, photo_b64, photo_fileid)
+
+@mcp.tool()
+async def lighthouse_image_socialvisor(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
+    """
+    Realiza busca reversa de perfil em redes sociais por imagem (SocialVisor) via Lampyre.
+    """
+    return await lighthouse.image_socialvisor(photo_url, photo_b64, photo_fileid)
+
+@mcp.tool()
 async def lighthouse_image_geolocation(photo_url: Optional[str] = None, photo_b64: Optional[str] = None, photo_fileid: Optional[str] = None) -> dict:
     """
-    Deduz a geolocalização estimada de uma foto através de inteligência artificial geoespacial.
+    Deduz a geolocalização estimada de uma foto através de inteligência artificial geoespacial via Lampyre.
     """
     return await lighthouse.image_geolocation(photo_url, photo_b64, photo_fileid)
