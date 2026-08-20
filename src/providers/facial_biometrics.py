@@ -5,11 +5,21 @@ import sys
 import base64
 import hashlib
 import asyncio
-import numpy as np
 from typing import Union, Optional, Dict, Any, List, Tuple
-from PIL import Image
 
-import cv2
+try:
+    import numpy as np
+    import cv2
+    from PIL import Image
+    _BIOMETRIA_DISPONIVEL = True
+    _BIOMETRIA_ERRO_IMPORT = ""
+except Exception as _e:
+    np = None
+    cv2 = None
+    Image = None
+    _BIOMETRIA_DISPONIVEL = False
+    _BIOMETRIA_ERRO_IMPORT = str(_e)
+
 from src.core.config import CACHE_DIR, BASE_DIR
 from src.core.http_client import http_client, resilient_request, get_semaphore
 from src.core.security import validar_url_segura_ssrf
@@ -56,6 +66,12 @@ async def _garantir_modelos_baixados() -> bool:
 async def obter_modelos():
     """Retorna os singletons de detector (YuNet) e reconhecedor (SFace)."""
     global _detector_instance, _recognizer_instance
+    if not _BIOMETRIA_DISPONIVEL:
+        raise RuntimeError(
+            f"Bibliotecas de visão computacional (NumPy/OpenCV) indisponíveis neste host ({_BIOMETRIA_ERRO_IMPORT}). "
+            "Dica para VPS: execute 'pip install \"numpy<2\" opencv-python-headless'."
+        )
+
     if _detector_instance is not None and _recognizer_instance is not None:
         return _detector_instance, _recognizer_instance
 
@@ -85,7 +101,7 @@ async def obter_modelos():
         
         return _detector_instance, _recognizer_instance
 
-async def carregar_imagem(entrada: str) -> Tuple[Optional[np.ndarray], Optional[str]]:
+async def carregar_imagem(entrada: str) -> Tuple[Optional[Any], Optional[str]]:
     """
     Carrega e decodifica uma imagem a partir de:
     - URL Web (HTTP/HTTPS com proteção SSRF e streaming limitado)
@@ -93,6 +109,9 @@ async def carregar_imagem(entrada: str) -> Tuple[Optional[np.ndarray], Optional[
     - Caminho de arquivo local ou cache_id
     Retorna (matriz_bgr, mensagem_erro).
     """
+    if not _BIOMETRIA_DISPONIVEL:
+        return None, f"Módulo de biometria facial indisponível: {_BIOMETRIA_ERRO_IMPORT}"
+
     if not entrada or not isinstance(entrada, str):
         return None, "Entrada de imagem vazia ou em formato inválido."
         
@@ -132,7 +151,12 @@ async def carregar_imagem(entrada: str) -> Tuple[Optional[np.ndarray], Optional[
             max_bytes = 10 * 1024 * 1024  # 10 MB
             conteudo_bytes = bytearray()
             
-            async with http_client.stream("GET", entrada_limpa, follow_redirects=True, timeout=20.0) as resp:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                "Referer": "https://www.google.com/"
+            }
+            async with http_client.stream("GET", entrada_limpa, headers=headers, follow_redirects=True, timeout=20.0) as resp:
                 if resp.status_code != 200:
                     return None, f"Falha ao baixar imagem (HTTP {resp.status_code}): {resp.reason_phrase}"
                 async for chunk in resp.aiter_bytes(chunk_size=65536):
