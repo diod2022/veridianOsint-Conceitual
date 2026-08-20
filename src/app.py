@@ -122,6 +122,7 @@ async def custom_list_tools() -> list[MCPTool]:
                 ("firecrawl_", "firecrawl"),
                 ("serper_", "serper"),
                 ("wayback_", "wayback"),
+                ("biometria_", "biometria"),
             ]:
                 if orig_name.startswith(prefix):
                     source_name = fonte

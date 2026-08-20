@@ -1007,10 +1007,15 @@
             "tavily": "Pesquisa Web (Veridian)",
             "firecrawl": "Extração de Sites (Veridian)",
             "serper": "Busca Estruturada & Dorks (Veridian)",
-            "wayback": "Histórico de Páginas Web (Veridian)"
+            "wayback": "Histórico de Páginas Web (Veridian)",
+            "biometria": "Biometria & Visão Facial (Veridian)"
         };
 
         const CONSULTAS_POR_FONTE = {
+            "biometria": [
+                "biometria_comparar_faces",
+                "biometria_detectar_faces"
+            ],
             "bigdata": [
                 "bigdata_cpf_dados_basicos",
                 "bigdata_cpf_telefones",
@@ -1120,6 +1125,12 @@
         };
 
         const TRADUCAO_CONSULTAS = {
+            // Biometria Facial Local
+            "biometria_comparar_faces": "Face Match 1:1 (Comparação Facial Local)",
+            "biometria_detectar_faces": "Detecção & Mapeamento de Faces em Fotos",
+            "veridian_comparar_faces": "Face Match 1:1 (Comparação Facial Local)",
+            "veridian_detectar_faces": "Detecção & Mapeamento de Faces em Fotos",
+
             // Nomes originais de configuração BigDataCorp Granulares
             "bigdata_cpf_dados_basicos": "CPF - Dados Cadastrais Básicos",
             "bigdata_cpf_telefones": "CPF - Telefones & Contatos",

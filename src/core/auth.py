@@ -192,7 +192,7 @@ def verificar_permissao_fonte(nome_fonte: Optional[str] = None, nome_consulta: O
 # SISTEMA DE WHITE-LABELING (MASCARAMENTO DE FORNECEDORES)
 # ==============================================================================
 def obter_nome_whitelabel(nome_funcao: str) -> str:
-    for prefixo in ["whois_", "csint_", "bigdata_", "unitfour_", "instagram_", "tiktok_", "linkedin_", "lighthouse_", "escavador_", "investigador_"]:
+    for prefixo in ["whois_", "csint_", "bigdata_", "unitfour_", "instagram_", "tiktok_", "linkedin_", "lighthouse_", "escavador_", "investigador_", "biometria_"]:
         if nome_funcao.startswith(prefixo):
             sub_nome = nome_funcao[len(prefixo):]
             if prefixo == "csint_" and sub_nome == "busca_universal":

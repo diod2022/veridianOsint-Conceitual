@@ -112,6 +112,10 @@ from src.tools.osint_tools import (
     wayback_listar_imagens,
     wayback_listar_snapshots
 )
+from src.tools.biometria_tools import (
+    biometria_comparar_faces,
+    biometria_detectar_faces
+)
 
 def main():
     transport_mode = os.environ.get("FASTMCP_TRANSPORT", "stdio")
