@@ -41,12 +41,19 @@ async def tavily_buscar_web(query: str, search_depth: str = "basic") -> str:
             return f"Falha na consulta ao Tavily: {e}"
 
 import io
-import pypdf
+try:
+    import pypdf
+except ImportError:
+    pypdf = None
+
 from src.core.security import validar_url_segura_ssrf
 from src.core.http_client import http_client
 
 async def _extrair_texto_pdf_direto(url_alvo: str) -> str:
     """Download direto com streaming limitado (max 15MB) e extração de texto via pypdf."""
+    if pypdf is None:
+        return f"### Documento PDF: {url_alvo}\n\nAviso: A biblioteca 'pypdf' não está instalada no ambiente do servidor para extração de texto em PDF."
+        
     try:
         max_bytes = 15 * 1024 * 1024  # 15 MB
         conteudo_bytes = bytearray()
