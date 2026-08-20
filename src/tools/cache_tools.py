@@ -23,10 +23,31 @@ async def investigador_ler_cache(cache_id: str, chave: Optional[str] = None, sli
     """
     cache_file = obter_caminho_cache_seguro(cache_id)
     if not cache_file or not os.path.exists(cache_file):
-        return {"error": f"Cache '{cache_id}' não encontrado ou caminho inválido."}
+        return {
+            "status": "erro",
+            "codigo_erro": "CACHE_NAO_ENCONTRADO",
+            "etapa": "leitura_cache",
+            "fornecedor": "Veridian",
+            "mensagem": f"Cache '{cache_id}' não encontrado ou caminho inválido.",
+            "retentavel": False,
+            "detalhes": {
+                "cache_id_solicitado": cache_id,
+                "sugestao": "Verifique se a ferramenta de busca (CPF, CNPJ, OAB, etc) foi executada com sucesso antes de requisitar a leitura do cache."
+            }
+        }
     
-    with open(cache_file, "r", encoding="utf-8") as f:
-        dados = json.load(f)
+    try:
+        with open(cache_file, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+    except Exception as e:
+        return {
+            "status": "erro",
+            "codigo_erro": "CORRUPCAO_CACHE",
+            "etapa": "leitura_cache",
+            "fornecedor": "Veridian",
+            "mensagem": f"Falha ao desserializar JSON do cache '{cache_id}': {str(e)}",
+            "retentavel": False
+        }
         
     alvo = dados
     if chave:
@@ -36,14 +57,30 @@ async def investigador_ler_cache(cache_id: str, chave: Optional[str] = None, sli
             elif chave in dados:
                 alvo = dados[chave]
             else:
-                return {"error": f"Chave '{chave}' não encontrada. Verifique as chaves disponíveis no cache."}
+                chaves_disp = list(dados["Result"][0].keys()) if ("Result" in dados and isinstance(dados["Result"], list) and len(dados["Result"]) > 0) else list(dados.keys())
+                return {
+                    "status": "erro",
+                    "codigo_erro": "CHAVE_NAO_ENCONTRADA",
+                    "etapa": "leitura_cache",
+                    "fornecedor": "Veridian",
+                    "mensagem": f"Chave '{chave}' não encontrada no cache '{cache_id}'.",
+                    "chaves_disponiveis": [k for k in chaves_disp if not k.startswith("_")]
+                }
         else:
-            return {"error": "O cache raiz é uma lista, não um dicionário. Não use o parâmetro 'chave'."}
+            return {
+                "status": "erro",
+                "codigo_erro": "ESTRUTURA_INVALIDA",
+                "etapa": "leitura_cache",
+                "fornecedor": "Veridian",
+                "mensagem": "O cache raiz é uma lista, não um dicionário. Não use o parâmetro 'chave'."
+            }
             
     if isinstance(alvo, list):
         total = len(alvo)
         fatia = alvo[slice_start:slice_end]
         return {
+            "status": "sucesso",
+            "cache_id": cache_id,
             "paginacao": f"Mostrando itens {slice_start} a {min(slice_end, total)} de {total}",
             "dados": fatia
         }

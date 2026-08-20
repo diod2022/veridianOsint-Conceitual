@@ -40,39 +40,128 @@ async def tavily_buscar_web(query: str, search_depth: str = "basic") -> str:
         except Exception as e:
             return f"Falha na consulta ao Tavily: {e}"
 
+import io
+import pypdf
+from src.core.security import validar_url_segura_ssrf
+from src.core.http_client import http_client
+
+async def _extrair_texto_pdf_direto(url_alvo: str) -> str:
+    """Download direto com streaming limitado (max 15MB) e extração de texto via pypdf."""
+    try:
+        max_bytes = 15 * 1024 * 1024  # 15 MB
+        conteudo_bytes = bytearray()
+        
+        async with http_client.stream("GET", url_alvo, follow_redirects=True, timeout=20.0) as resp:
+            if resp.status_code != 200:
+                return f"Falha ao baixar documento PDF (HTTP {resp.status_code}): {resp.reason_phrase}"
+                
+            async for chunk in resp.aiter_bytes(chunk_size=65536):
+                conteudo_bytes.extend(chunk)
+                if len(conteudo_bytes) > max_bytes:
+                    return f"Documento PDF excede o limite máximo de segurança (15 MB). Download abortado."
+                    
+        pdf_stream = io.BytesIO(conteudo_bytes)
+        reader = pypdf.PdfReader(pdf_stream)
+        total_paginas = len(reader.pages)
+        
+        if total_paginas == 0:
+            return f"### Documento PDF: {url_alvo}\n\nO arquivo PDF baixado não contém nenhuma página válida."
+            
+        paginas_texto = []
+        max_paginas_ler = min(total_paginas, 50)
+        
+        for idx in range(max_paginas_ler):
+            p = reader.pages[idx]
+            txt = (p.extract_text() or "").strip()
+            if txt:
+                paginas_texto.append(f"#### Página {idx + 1}\n{txt}")
+                
+        texto_completo = "\n\n".join(paginas_texto)
+        
+        if not texto_completo.strip():
+            return (
+                f"### Documento PDF: {url_alvo}\n\n"
+                f"O arquivo possui {total_paginas} página(s) ({len(conteudo_bytes)} bytes), porém é um "
+                f"PDF rasterizado/escaneado composto exclusivamente por imagens, sem camada de texto OCR detectável."
+            )
+            
+        header = f"### Documento PDF Extraído: {url_alvo}\n*Total de páginas: {total_paginas} (exibindo primeiras {len(paginas_texto)})*\n\n"
+        resultado = header + texto_completo
+        
+        limite_caracteres = 40000
+        if len(resultado) > limite_caracteres:
+            resultado = resultado[:limite_caracteres] + "\n\n...[Conteúdo truncado para evitar estouro de contexto]..."
+            
+        return resultado
+    except Exception as e:
+        return f"Falha na extração de texto do PDF: {str(e)}"
+
 async def firecrawl_raspar_pagina(url_alvo: str) -> str:
+    url_limpa = (url_alvo or "").strip()
+    if not url_limpa:
+        return "Erro: Nenhuma URL informada para raspagem."
+
+    # Validação de segurança contra SSRF
+    eh_segura, motivo_ssrf = validar_url_segura_ssrf(url_limpa)
+    if not eh_segura:
+        return f"Erro de Segurança (SSRF Bloqueado): {motivo_ssrf}"
+
+    # Se a URL aponta explicitamente para um PDF, usa o extrator de PDF nativo
+    if url_limpa.lower().split("?")[0].endswith(".pdf"):
+        return await _extrair_texto_pdf_direto(url_limpa)
+
     api_key = os.environ.get("FIRECRAWL_API_KEY", "")
     if not api_key:
-        return "Erro: Chave FIRECRAWL_API_KEY não configurada no .env"
+        # Fallback para download direto caso não haja chave do Firecrawl
+        return await _extrair_texto_pdf_direto(url_limpa)
         
-    url = "https://api.firecrawl.dev/v1/scrape"
+    url_firecrawl = "https://api.firecrawl.dev/v1/scrape"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     payload = {
-        "url": url_alvo,
+        "url": url_limpa,
         "formats": ["markdown"]
     }
     
     async with get_semaphore("web"):
         try:
-            response = await resilient_request("POST", url, json=payload, headers=headers)
+            response = await resilient_request("POST", url_firecrawl, json=payload, headers=headers)
             if response.status_code != 200:
+                # Tenta fallback de extração direta
+                fallback = await _extrair_texto_pdf_direto(url_limpa)
+                if fallback and not fallback.startswith("Falha"):
+                    return fallback
                 return f"Erro ao raspar com Firecrawl (HTTP {response.status_code}): {response.text}"
                 
             data = response.json()
             if not data.get("success"):
-                return f"Falha na raspagem: {data.get('error', 'Erro desconhecido')}"
+                fallback = await _extrair_texto_pdf_direto(url_limpa)
+                if fallback and not fallback.startswith("Falha"):
+                    return fallback
+                return f"Falha na raspagem Firecrawl: {data.get('error', 'Erro desconhecido')}"
                 
-            markdown_content = data.get("data", {}).get("markdown", "")
+            markdown_content = (data.get("data", {}).get("markdown") or "").strip()
+            
+            # Se o Firecrawl retornou vazio, tenta o fallback local
+            if not markdown_content:
+                fallback = await _extrair_texto_pdf_direto(url_limpa)
+                if fallback and not fallback.startswith("Falha") and not "PDF" in fallback:
+                    return fallback
+                return f"### Raspagem Web: {url_limpa}\n\nA página foi acessada com sucesso (HTTP 200), porém não retornou conteúdo textual legível (página vazia ou renderizada dinamicamente no navegador)."
+                
             limite_caracteres = 40000
             if len(markdown_content) > limite_caracteres:
                 return markdown_content[:limite_caracteres] + "\n\n...[Conteúdo truncado para evitar estouro de contexto]..."
                 
             return markdown_content
         except Exception as e:
+            fallback = await _extrair_texto_pdf_direto(url_limpa)
+            if fallback and not fallback.startswith("Falha"):
+                return fallback
             return f"Falha na consulta ao Firecrawl: {e}"
+
 
 async def serper_buscar_web_dorks(alvo: str, categoria: str = "arquivos_expostos") -> dict:
     api_key = os.environ.get("SERPER_API_KEY", "")

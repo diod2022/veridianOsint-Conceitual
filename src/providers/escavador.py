@@ -194,3 +194,145 @@ async def buscar_processos_oab(
         })
     else:
         return salvar_cache_universal(chave_cache, dados_p1)
+
+async def consultar_processo_cnj(numero_cnj: Union[str, int]) -> dict:
+    """
+    Consulta os detalhes completos de um processo judicial por número CNJ na API Escavador v2.
+    Retorna polos (ativo/passivo), advogados, OABs, tribunal e histórico de movimentações.
+    """
+    from src.core.security import normalizar_cnj, validar_cnj
+    
+    cnj_formatado, cnj_digitos = normalizar_cnj(numero_cnj)
+    
+    # Se tiver 20 dígitos, valida o DV matematicamente
+    if len(cnj_digitos) == 20 and not validar_cnj(cnj_digitos):
+        return {
+            "status": "erro",
+            "codigo_erro": "CNJ_INVALIDO",
+            "etapa": "validacao_local",
+            "fornecedor": "Veridian",
+            "mensagem": f"Número CNJ '{numero_cnj}' é matematicamente inválido (dígitos verificadores incorretos segundo a Resolução CNJ nº 65/2008).",
+            "retentavel": False,
+            "detalhes": {"cnj_informado": str(numero_cnj)}
+        }
+        
+    chave_cache = f"processo_cnj_{cnj_digitos if len(cnj_digitos) >= 10 else re.sub(r'[^a-zA-Z0-9]', '_', str(numero_cnj))}"
+    cache_hit = checar_cache_universal(chave_cache)
+    if cache_hit:
+        return cache_hit
+
+    token = _get_token()
+    if not token:
+        return {
+            "status": "erro",
+            "codigo_erro": "CREDENCIAIS_AUSENTES",
+            "etapa": "autenticacao",
+            "fornecedor": "Escavador",
+            "mensagem": "Chave ESCAVADOR_API_KEY não configurada no .env para consulta processual por CNJ.",
+            "retentavel": False
+        }
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept": "application/json"
+    }
+
+    # Tenta consultar pelo CNJ formatado e se 404 pelo CNJ puro
+    cnj_busca = cnj_formatado if len(cnj_digitos) == 20 else str(numero_cnj).strip()
+    url = f"https://api.escavador.com/api/v2/processos/numero_cnj/{urllib.parse.quote(cnj_busca)}"
+
+    try:
+        async with get_semaphore("escavador"):
+            response = await resilient_request("GET", url, headers=headers)
+    except Exception as e:
+        return {
+            "status": "erro",
+            "codigo_erro": "FALHA_CONEXAO",
+            "etapa": "requisicao_api",
+            "fornecedor": "Escavador",
+            "mensagem": f"Falha de conexão com a API do Escavador: {str(e)}",
+            "retentavel": True
+        }
+
+    if response.status_code == 404:
+        # Se 404 com CNJ formatado, tenta com apenas dígitos
+        if cnj_busca != cnj_digitos and len(cnj_digitos) == 20:
+            url_alt = f"https://api.escavador.com/api/v2/processos/numero_cnj/{urllib.parse.quote(cnj_digitos)}"
+            try:
+                async with get_semaphore("escavador"):
+                    resp_alt = await resilient_request("GET", url_alt, headers=headers)
+                    if resp_alt.status_code == 200:
+                        response = resp_alt
+                        cnj_busca = cnj_digitos
+            except Exception:
+                pass
+
+    if response.status_code == 404:
+        return {
+            "status": "sem_resultados",
+            "codigo_erro": "PROCESSO_NAO_ENCONTRADO",
+            "fornecedor": "Escavador",
+            "mensagem": f"Processo CNJ {cnj_busca} não foi encontrado na base de dados.",
+            "detalhes": {"numero_cnj": cnj_busca}
+        }
+
+    if response.status_code == 403:
+        # Segredo de Justiça
+        return {
+            "status": "sucesso",
+            "segredo_de_justica": True,
+            "numero_cnj": cnj_busca,
+            "mensagem": "Processo localizado, porém tramita em SEGREDO DE JUSTIÇA (acesso restrito aos autos).",
+            "cache_id": chave_cache
+        }
+
+    if response.status_code != 200:
+        return {
+            "status": "erro",
+            "codigo_erro": f"ESCAVADOR_HTTP_{response.status_code}",
+            "etapa": "requisicao_api",
+            "fornecedor": "Escavador",
+            "mensagem": f"Erro na consulta à API Escavador: HTTP {response.status_code}",
+            "detalhes": response.text
+        }
+
+    dados = response.json()
+    
+    # Extrai resumo estruturado
+    partes = dados.get("partes") or []
+    polo_ativo = dados.get("titulo_polo_ativo") or "Não informado"
+    polo_passivo = dados.get("titulo_polo_passivo") or "Não informado"
+    
+    advogados_encontrados = []
+    for parte in partes:
+        for adv in (parte.get("advogados") or []):
+            adv_nome = adv.get("nome")
+            adv_oab = adv.get("oab") or f"{adv.get('oab_numero', '')}/{adv.get('oab_estado', '')}".strip("/")
+            if adv_nome:
+                advogados_encontrados.append({"nome": adv_nome, "oab": adv_oab})
+
+    movimentacoes = dados.get("movimentacoes") or []
+    ultimas_movs = []
+    for m in movimentacoes[:5]:
+        ultimas_movs.append({
+            "data": m.get("data"),
+            "conteudo": m.get("conteudo") or m.get("texto") or "Sem descrição"
+        })
+
+    dados_enriquecidos = {
+        "status": "sucesso",
+        "numero_cnj": dados.get("numero_cnj") or cnj_busca,
+        "polo_ativo": polo_ativo,
+        "polo_passivo": polo_passivo,
+        "tribunal": (dados.get("unidade_origem") or {}).get("tribunal_sigla") or dados.get("tribunal") or "Não informado",
+        "data_inicio": dados.get("data_inicio") or "Não informada",
+        "total_movimentacoes": len(movimentacoes),
+        "advogados": advogados_encontrados,
+        "ultimas_movimentacoes": ultimas_movs,
+        "dados_brutos": dados,
+        "cache_id": chave_cache
+    }
+
+    return salvar_cache_universal(chave_cache, dados_enriquecidos)
+
