@@ -133,7 +133,10 @@ async def carregar_imagem(entrada: str) -> Tuple[Optional[Any], Optional[str]]:
             return None, f"Falha ao decodificar imagem Base64: {e}"
 
     # 2. Caso Arquivo Local ou Cache ID
-    caminho_local = obter_caminho_cache_seguro(entrada_limpa) or entrada_limpa
+    caminho_local = entrada_limpa
+    if not (os.path.exists(caminho_local) and os.path.isfile(caminho_local)):
+        caminho_local = obter_caminho_cache_seguro(entrada_limpa) or entrada_limpa
+
     if os.path.exists(caminho_local) and os.path.isfile(caminho_local):
         try:
             img_bgr = cv2.imread(caminho_local, cv2.IMREAD_COLOR)
