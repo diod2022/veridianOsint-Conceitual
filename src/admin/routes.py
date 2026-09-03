@@ -27,6 +27,16 @@ from src.core.auth import (
     verificar_token,
     extrair_token
 )
+from src.core.db import (
+    listar_usuarios_db,
+    salvar_usuario_db,
+    deletar_usuario_db,
+    adicionar_creditos_atomico,
+    alternar_status_consultas,
+    alternar_perfil_usuario,
+    obter_extrato_usuario,
+    obter_usuario_db
+)
 from src.core.cache import obter_caminho_cache_seguro_ext
 
 def obter_chave_admin() -> Optional[str]:
@@ -71,31 +81,25 @@ async def admin_api_status(request: Request):
     if not await admin_api_auth(request):
         return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
     config = carregar_config_global()
-    chaves_brutas = {}
-    try:
-        if os.path.exists(KEYS_FILE):
-            with open(KEYS_FILE, "r", encoding="utf-8") as f:
-                dados = json.load(f)
-            if isinstance(dados, dict):
-                for usr, info in dados.items():
-                    if isinstance(info, dict) and "key" in info:
-                        chaves_brutas[info["key"]] = {
-                            "usuario": usr,
-                            "description": info.get("description", ""),
-                            "permissoes": info.get("permissoes", ["*"])
-                        }
-                    elif isinstance(info, str):
-                        chaves_brutas[info] = {"usuario": usr, "description": "", "permissoes": ["*"]}
-    except Exception:
-        pass
     
-    cached = carregar_chaves_autorizadas()
-    for token, info in cached.items():
-        if token not in chaves_brutas:
-            chaves_brutas[token] = {
-                "usuario": info.get("usuario"),
-                "description": info.get("description", ""),
-                "permissoes": info.get("permissoes", ["*"])
+    # Carrega usuários diretamente do SQLite (Single Source of Truth)
+    usuarios_db = listar_usuarios_db()
+    chaves_brutas = {}
+    for u in usuarios_db:
+        tok = u.get("token") or u.get("key")
+        if tok:
+            chaves_brutas[tok] = {
+                "usuario": u["usuario"],
+                "key": tok,
+                "token": tok,
+                "description": u.get("description", ""),
+                "tipo_perfil": u.get("tipo_perfil", "creditos"),
+                "saldo_creditos": u.get("saldo_creditos", 0),
+                "consultas_habilitadas": u.get("consultas_habilitadas", True),
+                "total_consultas": u.get("total_consultas", 0),
+                "total_paginacoes": u.get("total_paginacoes", 0),
+                "permissoes": u.get("permissoes", ["*"]),
+                "created_at": u.get("created_at", "")
             }
             
     cache_files = 0
@@ -266,35 +270,77 @@ async def admin_api_keys_add(request: Request):
         body = await request.json()
     except Exception:
         return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+        
     usuario = body.get("usuario")
     token = body.get("token")
     permissoes = body.get("permissoes", ["*"])
+    tipo_perfil = body.get("tipo_perfil", "creditos")
+    saldo_creditos = int(body.get("saldo_creditos", 100)) if tipo_perfil == "creditos" else 0
+    consultas_habilitadas = bool(body.get("consultas_habilitadas", True))
+    
     if not usuario:
         return JSONResponse({"error": "usuario is required"}, status_code=400)
+    if usuario == "admin":
+        tipo_perfil = "ilimitado"
+        saldo_creditos = 0
+        consultas_habilitadas = True
     if not token:
         token = "mcp_key_" + secrets.token_hex(20)
-    dados = {}
-    if os.path.exists(KEYS_FILE):
-        try:
+
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    
+    # 1. Salva no SQLite (Single Source of Truth) com saldo 0 inicialmente
+    u_data = {
+        "usuario": usuario,
+        "token": token,
+        "description": f"Chave criada via Painel Administrativo",
+        "tipo_perfil": tipo_perfil,
+        "saldo_creditos": 0,
+        "consultas_habilitadas": consultas_habilitadas,
+        "total_consultas": 0,
+        "total_paginacoes": 0,
+        "permissoes": permissoes,
+        "created_at": now
+    }
+    salvo = salvar_usuario_db(u_data)
+    if not salvo:
+        return JSONResponse({"error": "Falha ao gravar usuário no banco de dados SQLite."}, status_code=500)
+
+    # 2. Se tiver saldo inicial e perfil de créditos, registra recarga inicial no Ledger
+    if saldo_creditos > 0 and tipo_perfil == "creditos":
+        adicionar_creditos_atomico(usuario, saldo_creditos, "Saldo inicial concedido na criação", "admin")
+
+    # 3. Sincroniza KEYS_FILE para manter compatibilidade e backup
+    try:
+        dados = {}
+        if os.path.exists(KEYS_FILE):
             with open(KEYS_FILE, "r", encoding="utf-8") as f:
                 dados = json.load(f)
             if not isinstance(dados, dict):
                 dados = {}
-        except Exception:
-            dados = {}
-    dados[usuario] = {
-        "key": token,
-        "description": f"Chave criada via Painel Administrativo",
-        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "permissoes": permissoes
-    }
-    try:
+        dados[usuario] = {
+            "key": token,
+            "description": u_data["description"],
+            "created_at": now,
+            "tipo_perfil": tipo_perfil,
+            "saldo_creditos": saldo_creditos,
+            "consultas_habilitadas": consultas_habilitadas,
+            "permissoes": permissoes
+        }
         with open(KEYS_FILE, "w", encoding="utf-8") as f:
             json.dump(dados, f, ensure_ascii=False, indent=2)
-        carregar_chaves_autorizadas()
-        return JSONResponse({"status": "success", "token": token, "usuario": usuario})
     except Exception as e:
-        return JSONResponse({"error": f"Failed to write keys file: {str(e)}"}, status_code=500)
+        print(f"[WARN] Falha ao sincronizar backup {KEYS_FILE}: {e}", file=sys.stderr)
+
+    carregar_chaves_autorizadas()
+    return JSONResponse({
+        "status": "success",
+        "token": token,
+        "usuario": usuario,
+        "tipo_perfil": tipo_perfil,
+        "saldo_creditos": saldo_creditos,
+        "consultas_habilitadas": consultas_habilitadas
+    })
 
 async def admin_api_keys_delete(request: Request):
     if not await admin_api_auth(request):
@@ -306,34 +352,133 @@ async def admin_api_keys_delete(request: Request):
     token = body.get("token")
     if not token:
         return JSONResponse({"error": "token is required"}, status_code=400)
-    dados = {}
-    if os.path.exists(KEYS_FILE):
-        try:
+
+    # Deleta do SQLite (protegendo o admin)
+    usuario_removido = deletar_usuario_db(token)
+    if not usuario_removido:
+        return JSONResponse({"error": "Token não encontrado ou usuário admin protegido contra exclusão."}, status_code=404)
+
+    # Sincroniza KEYS_FILE
+    try:
+        dados = {}
+        if os.path.exists(KEYS_FILE):
             with open(KEYS_FILE, "r", encoding="utf-8") as f:
                 dados = json.load(f)
-            if not isinstance(dados, dict):
-                dados = {}
-        except Exception:
-            dados = {}
-    usuario_removido = None
-    for usr, info in list(dados.items()):
-        if isinstance(info, dict) and info.get("key") == token:
-            usuario_removido = usr
-            del dados[usr]
-            break
-        elif isinstance(info, str) and info == token:
-            usuario_removido = usr
-            del dados[usr]
-            break
-    if not usuario_removido:
-        return JSONResponse({"error": "Token not found in keys file"}, status_code=404)
-    try:
-        with open(KEYS_FILE, "w", encoding="utf-8") as f:
-            json.dump(dados, f, ensure_ascii=False, indent=2)
-        carregar_chaves_autorizadas()
-        return JSONResponse({"status": "success", "usuario": usuario_removido})
+            if isinstance(dados, dict) and usuario_removido in dados:
+                del dados[usuario_removido]
+                with open(KEYS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(dados, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        return JSONResponse({"error": f"Failed to write keys file: {str(e)}"}, status_code=500)
+        print(f"[WARN] Falha ao sincronizar deleção no {KEYS_FILE}: {e}", file=sys.stderr)
+
+    carregar_chaves_autorizadas()
+    return JSONResponse({"status": "success", "usuario": usuario_removido})
+
+async def admin_api_users_credits(request: Request):
+    """Adiciona ou ajusta créditos de um usuário e grava no Ledger."""
+    if not await admin_api_auth(request):
+        return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+
+    usuario = body.get("usuario")
+    try:
+        quantidade = int(body.get("quantidade", 0))
+    except (ValueError, TypeError):
+        return JSONResponse({"error": "quantidade deve ser um número inteiro."}, status_code=400)
+    motivo = body.get("motivo") or "Ajuste administrativo de créditos"
+
+    if not usuario:
+        return JSONResponse({"error": "usuario is required"}, status_code=400)
+    if quantidade <= 0:
+        return JSONResponse({"error": "A quantidade de créditos deve ser maior que zero."}, status_code=400)
+
+    sucesso, msg, novo_saldo = adicionar_creditos_atomico(usuario, quantidade, motivo, "admin")
+    if not sucesso:
+        return JSONResponse({"error": msg}, status_code=400)
+
+    carregar_chaves_autorizadas()
+    return JSONResponse({
+        "status": "success",
+        "usuario": usuario,
+        "creditos_adicionados": quantidade,
+        "saldo_atual": novo_saldo,
+        "mensagem": msg
+    })
+
+async def admin_api_users_toggle_query(request: Request):
+    """Habilita ou desabilita a capacidade de consultas para um usuário."""
+    if not await admin_api_auth(request):
+        return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+
+    usuario = body.get("usuario")
+    habilitado = body.get("habilitado")
+    if not usuario or habilitado is None:
+        return JSONResponse({"error": "usuario and habilitado (bool) are required"}, status_code=400)
+
+    sucesso = alternar_status_consultas(usuario, bool(habilitado))
+    if not sucesso:
+        return JSONResponse({"error": f"Falha ao alterar status de consultas para '{usuario}'."}, status_code=400)
+
+    carregar_chaves_autorizadas()
+    return JSONResponse({
+        "status": "success",
+        "usuario": usuario,
+        "consultas_habilitadas": bool(habilitado)
+    })
+
+async def admin_api_users_profile(request: Request):
+    """Alterna o perfil do usuário entre 'creditos' e 'ilimitado'."""
+    if not await admin_api_auth(request):
+        return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+
+    usuario = body.get("usuario")
+    tipo_perfil = body.get("tipo_perfil")
+    if not usuario or tipo_perfil not in ("creditos", "ilimitado"):
+        return JSONResponse({"error": "usuario and tipo_perfil ('creditos'|'ilimitado') are required"}, status_code=400)
+
+    sucesso = alternar_perfil_usuario(usuario, tipo_perfil)
+    if not sucesso:
+        return JSONResponse({"error": f"Falha ao alterar perfil para '{usuario}'."}, status_code=400)
+
+    carregar_chaves_autorizadas()
+    return JSONResponse({
+        "status": "success",
+        "usuario": usuario,
+        "tipo_perfil": tipo_perfil
+    })
+
+async def admin_api_users_statement(request: Request):
+    """Consulta o extrato do Ledger de créditos do usuário ou geral."""
+    if not await admin_api_auth(request):
+        return JSONResponse({"error": "Unauthorized admin key"}, status_code=401)
+
+    usuario = request.query_params.get("usuario")
+    limit_val = request.query_params.get("limit", "50")
+    offset_val = request.query_params.get("offset", "0")
+    try:
+        limit = max(1, min(200, int(limit_val)))
+        offset = max(0, int(offset_val))
+    except ValueError:
+        limit, offset = 50, 0
+
+    extrato = obter_extrato_usuario(usuario, limit, offset)
+    return JSONResponse({
+        "status": "success",
+        "usuario": usuario,
+        "total_registros": len(extrato),
+        "extrato": extrato
+    })
 
 async def admin_api_logs(request: Request):
     if not await admin_api_auth(request):

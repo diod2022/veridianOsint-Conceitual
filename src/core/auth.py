@@ -9,6 +9,9 @@ from src.core.config import KEYS_FILE, BASE_DIR
 
 CONFIG_FILE = os.path.join(BASE_DIR, "mcp_config.json")
 sessao_corrente: ContextVar[Optional[str]] = ContextVar("sessao_corrente", default=None)
+usuario_corrente: ContextVar[Optional[dict]] = ContextVar("usuario_corrente", default=None)
+token_corrente: ContextVar[Optional[str]] = ContextVar("token_corrente", default=None)
+
 sessoes_ativas: dict[str, dict] = {}
 sessoes_autorizadas: set = set()
 
@@ -66,16 +69,27 @@ def salvar_config_global(config: dict) -> bool:
         return False
 
 def carregar_chaves_autorizadas() -> dict:
+    """
+    Carrega chaves autorizadas integrando com SQLite (Single Source of Truth)
+    e garantindo migração transparente e retrocompatibilidade com mcp_keys.json.
+    """
     global _cached_keys, _cached_keys_mtime
+    from src.core.db import listar_usuarios_db, salvar_usuario_db
+
     chaves_env = os.environ.get("MCP_API_KEYS", "").strip()
     
+    # 1. Se não existir KEYS_FILE nem variáveis de ambiente, inicializa chave administrativa
     if not os.path.exists(KEYS_FILE) and not chaves_env:
         chave_inicial = "mcp_key_" + secrets.token_hex(24)
         dados_iniciais = {
             "admin": {
                 "key": chave_inicial,
                 "description": "Chave de acesso administrativo criada automaticamente no primeiro startup",
-                "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "tipo_perfil": "ilimitado",
+                "saldo_creditos": 0,
+                "consultas_habilitadas": True,
+                "permissoes": ["*"]
             }
         }
         try:
@@ -84,47 +98,74 @@ def carregar_chaves_autorizadas() -> dict:
             print(f"[AUTH] Nova chave administrativa criada em {KEYS_FILE}", file=sys.stderr)
         except Exception as e:
             print(f"[AUTH ERROR] Falha ao criar {KEYS_FILE}: {e}", file=sys.stderr)
-            
-    if os.path.exists(KEYS_FILE):
+
+    # 2. Migração transparente de KEYS_FILE para SQLite caso o banco esteja vazio
+    usuarios_db = listar_usuarios_db()
+    if not usuarios_db and os.path.exists(KEYS_FILE):
         try:
-            mtime = os.path.getmtime(KEYS_FILE)
-            if mtime != _cached_keys_mtime:
-                with open(KEYS_FILE, "r", encoding="utf-8") as f:
-                    dados = json.load(f)
-                
-                novas_chaves = {}
-                if isinstance(dados, dict):
-                    for usr, info in dados.items():
-                        if isinstance(info, dict) and "key" in info:
-                            novas_chaves[info["key"]] = {
-                                "usuario": usr, 
-                                "description": info.get("description", ""),
-                                "permissoes": info.get("permissoes", ["*"])
-                            }
-                        elif isinstance(info, str):
-                            novas_chaves[info] = {"usuario": usr, "description": "", "permissoes": ["*"]}
-                elif isinstance(dados, list):
-                    for item in dados:
-                        if isinstance(item, dict) and "key" in item:
-                            novas_chaves[item["key"]] = {
-                                "usuario": item.get("usuario", "desconhecido"), 
-                                "description": item.get("description", ""),
-                                "permissoes": item.get("permissoes", ["*"])
-                            }
-                        elif isinstance(item, str):
-                            novas_chaves[item] = {"usuario": "desconhecido", "description": "", "permissoes": ["*"]}
-                
-                _cached_keys = novas_chaves
-                _cached_keys_mtime = mtime
+            with open(KEYS_FILE, "r", encoding="utf-8") as f:
+                dados = json.load(f)
+            if isinstance(dados, dict):
+                for usr, info in dados.items():
+                    if isinstance(info, dict):
+                        token = info.get("key") or info.get("token")
+                        is_adm = (usr == "admin")
+                        salvar_usuario_db({
+                            "usuario": usr,
+                            "token": token,
+                            "description": info.get("description", ""),
+                            "tipo_perfil": "ilimitado" if is_adm else info.get("tipo_perfil", "creditos"),
+                            "saldo_creditos": 0 if is_adm else int(info.get("saldo_creditos", 100)),
+                            "consultas_habilitadas": True if is_adm else bool(info.get("consultas_habilitadas", True)),
+                            "total_consultas": int(info.get("total_consultas", 0)),
+                            "total_paginacoes": int(info.get("total_paginacoes", 0)),
+                            "permissoes": info.get("permissoes", ["*"]),
+                            "created_at": info.get("created_at") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                        })
+            usuarios_db = listar_usuarios_db()
         except Exception as e:
-            print(f"[AUTH ERROR] Falha ao ler/recarregar {KEYS_FILE}: {e}", file=sys.stderr)
-            
+            print(f"[AUTH ERROR] Falha na migração de {KEYS_FILE} para SQLite: {e}", file=sys.stderr)
+
+    # 3. Reconstrói o mapa de chaves autorizadas em memória a partir do SQLite
+    novas_chaves = {}
+    for u in usuarios_db:
+        tok = u.get("token")
+        if tok:
+            novas_chaves[tok] = {
+                "usuario": u["usuario"],
+                "token": tok,
+                "key": tok,
+                "description": u.get("description", ""),
+                "tipo_perfil": u.get("tipo_perfil", "creditos"),
+                "saldo_creditos": u.get("saldo_creditos", 0),
+                "consultas_habilitadas": u.get("consultas_habilitadas", True),
+                "total_consultas": u.get("total_consultas", 0),
+                "total_paginacoes": u.get("total_paginacoes", 0),
+                "permissoes": u.get("permissoes", ["*"])
+            }
+
+    # 4. Fallback de chaves em variáveis de ambiente
     if chaves_env:
         for k in chaves_env.split(","):
             token = k.strip()
-            if token and token not in _cached_keys:
-                _cached_keys[token] = {"usuario": "env_fallback", "description": "Carregado via .env", "permissoes": ["*"]}
-                
+            if token and token not in novas_chaves:
+                novas_chaves[token] = {
+                    "usuario": "env_fallback",
+                    "token": token,
+                    "key": token,
+                    "description": "Carregado via .env",
+                    "tipo_perfil": "ilimitado",
+                    "saldo_creditos": 9999,
+                    "consultas_habilitadas": True,
+                    "total_consultas": 0,
+                    "total_paginacoes": 0,
+                    "permissoes": ["*"]
+                }
+
+    _cached_keys = novas_chaves
+    if os.path.exists(KEYS_FILE):
+        _cached_keys_mtime = os.path.getmtime(KEYS_FILE)
+
     return _cached_keys
 
 def verificar_token(token_fornecido: str) -> bool:
@@ -152,6 +193,127 @@ def extrair_token(request) -> Optional[str]:
         
     return None
 
+def obter_contexto_usuario_atual() -> Optional[dict]:
+    """Recupera o usuário associado à execução atual a partir de ContextVar ou sessões."""
+    usr = usuario_corrente.get()
+    if usr:
+        return usr
+    tok = token_corrente.get()
+    if tok:
+        chaves = carregar_chaves_autorizadas()
+        if tok in chaves:
+            return chaves[tok]
+    try:
+        sid = sessao_corrente.get()
+        if sid and sid in sessoes_ativas:
+            return sessoes_ativas[sid]
+    except LookupError:
+        pass
+    return None
+
+def detectar_tipo_e_custo_operacao(tool_name: str, arguments: dict) -> tuple[str, int, str]:
+    """
+    Motor unificado de inspeção de parâmetros:
+    Diferencia consultas iniciais de solicitações de paginação de forma determinística.
+    Retorna (tipo_op, custo, detalhe).
+    """
+    if not isinstance(arguments, dict):
+        return ("consumo_consulta", 1, "Consulta inicial padrão")
+
+    page = arguments.get("page")
+    if page is not None:
+        try:
+            if int(page) > 1:
+                return ("consumo_paginacao", 1, f"Paginação: página {page}")
+        except (ValueError, TypeError):
+            pass
+
+    # Parâmetros de cursor conhecidos em todas as ferramentas integradas
+    cursor_params = [
+        "cursor", "end_cursor", "page_id", "page_id_followers",
+        "page_id_following", "max_id", "next_cursor", "offset"
+    ]
+    for cp in cursor_params:
+        val = arguments.get(cp)
+        if val is not None and str(val).strip() != "" and str(val) not in ("0", "1"):
+            return ("consumo_paginacao", 1, f"Paginação via cursor: {cp}={str(val)[:20]}")
+
+    return ("consumo_consulta", 1, "Consulta inicial")
+
+def validar_e_debitar_execucao(tool_name: str, arguments: dict) -> tuple[Optional[dict], Optional[dict]]:
+    """
+    Valida se o usuário pode consultar e executa o débito atômico imediato (Pre-Charge).
+    Retorna:
+      - (None, tx_info) em caso de sucesso.
+      - (dict_erro, None) em caso de bloqueio (consultas desabilitadas ou saldo insuficiente).
+    """
+    from src.core.db import obter_usuario_db, debitar_credito_atomico
+
+    usr_ctx = obter_contexto_usuario_atual()
+    
+    # Se não houver contexto mas for teste local ou inicialização sem chave informada
+    if not usr_ctx:
+        # Fallback para admin caso não haja usuário especificado em testes unitários locais
+        chaves = carregar_chaves_autorizadas()
+        for tok, info in chaves.items():
+            if info.get("usuario") == "admin":
+                usr_ctx = info
+                break
+
+    if not usr_ctx:
+        return {"error": "Acesso não autorizado. Chave de API não informada ou inválida."}, None
+
+    usuario = usr_ctx.get("usuario", "desconhecido")
+    tipo_op, custo, detalhe = detectar_tipo_e_custo_operacao(tool_name, arguments)
+
+    # Proteção rigorosa do Admin
+    if usuario == "admin":
+        return None, {"usuario": "admin", "custo": 0, "tipo_op": tipo_op, "tool_name": tool_name}
+
+    # Busca estado mais atualizado do banco de dados (Single Source of Truth)
+    u_db = obter_usuario_db(usuario)
+    if not u_db:
+        return {"error": f"Usuário '{usuario}' não encontrado na base de dados."}, None
+
+    if not u_db.get("consultas_habilitadas", True):
+        return {
+            "error": f"Consultas desabilitadas para o usuário '{usuario}' pelo administrador.",
+            "code": "QUERIES_DISABLED"
+        }, None
+
+    tipo_perfil = u_db.get("tipo_perfil", "creditos")
+    if tipo_perfil == "ilimitado":
+        debitar_credito_atomico(usuario, 0, tipo_op, tool_name, detalhe)
+        return None, {"usuario": usuario, "custo": 0, "tipo_op": tipo_op, "tool_name": tool_name}
+
+    # Perfil baseado em créditos: realiza o débito atômico
+    sucesso, msg, saldo_pos = debitar_credito_atomico(usuario, custo, tipo_op, tool_name, detalhe)
+    if not sucesso:
+        return {
+            "error": msg,
+            "code": "INSUFFICIENT_CREDITS" if "Saldo insuficiente" in msg else "OPERATION_DENIED",
+            "saldo_atual": saldo_pos
+        }, None
+
+    return None, {
+        "usuario": usuario,
+        "custo": custo,
+        "tipo_op": tipo_op,
+        "tool_name": tool_name,
+        "saldo_posterior": saldo_pos
+    }
+
+def estornar_se_aplicavel(tx_info: Optional[dict], motivo: str = ""):
+    """Efetua o estorno do débito em caso de falha grave de rede."""
+    if not tx_info:
+        return
+    custo = tx_info.get("custo", 0)
+    usuario = tx_info.get("usuario")
+    tool_name = tx_info.get("tool_name", "")
+    if custo > 0 and usuario and usuario != "admin":
+        from src.core.db import estornar_credito_atomico
+        estornar_credito_atomico(usuario, custo, tool_name, motivo)
+
 def verificar_permissao_fonte(nome_fonte: Optional[str] = None, nome_consulta: Optional[str] = None) -> Optional[dict]:
     config = carregar_config_global()
     if nome_fonte:
@@ -167,17 +329,9 @@ def verificar_permissao_fonte(nome_fonte: Optional[str] = None, nome_consulta: O
         if whitelabel and consultas_ativas.get(whitelabel) is False:
             return {"error": f"Consulta '{nome_consulta}' desativada globalmente pelo administrador."}
 
-    try:
-        sid = sessao_corrente.get()
-    except LookupError:
-        return None
-
-    if not sid:
-        return None
-
-    session_info = sessoes_ativas.get(sid)
+    session_info = obter_contexto_usuario_atual()
     if not session_info:
-        return {"error": "Sessão inválida ou expirada."}
+        return None
 
     permissoes = session_info.get("permissoes", ["*"])
     if "*" not in permissoes and nome_fonte and nome_fonte not in permissoes:

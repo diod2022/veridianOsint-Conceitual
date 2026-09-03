@@ -20,13 +20,20 @@ from src.core.auth import (
     verificar_token,
     carregar_chaves_autorizadas,
     sessoes_ativas,
-    sessoes_autorizadas
+    sessoes_autorizadas,
+    usuario_corrente,
+    token_corrente,
+    sessao_corrente
 )
 from src.admin.routes import (
     admin_api_status,
     admin_api_config,
     admin_api_keys_add,
     admin_api_keys_delete,
+    admin_api_users_credits,
+    admin_api_users_toggle_query,
+    admin_api_users_profile,
+    admin_api_users_statement,
     admin_api_logs,
     admin_api_env_get,
     admin_api_env_post,
@@ -62,6 +69,16 @@ class LoggingReceiveStream:
             msg_obj = getattr(message, "root", message)
             method = getattr(msg_obj, "method", None)
             params = getattr(msg_obj, "params", None)
+            
+            # Injeta contexto do usuário atual para a task assíncrona
+            if self._session_id:
+                sid_str = str(self._session_id)
+                sess_info = sessoes_ativas.get(self._session_id) or sessoes_ativas.get(sid_str)
+                if sess_info:
+                    usuario_corrente.set(sess_info)
+                    token_corrente.set(self._token or sess_info.get("token"))
+                    sessao_corrente.set(sid_str)
+
             if method:
                 params_dict = None
                 if params:
@@ -144,6 +161,14 @@ async def run_sse_with_auth(self_mcp) -> None:
                     tool_name = params.get("name")
                     tool_args = params.get("arguments", {})
                     registrar_log_busca(None, token, method, params)
+
+                    # Injeta contexto do usuário autenticado antes de invocar a ferramenta
+                    chaves = carregar_chaves_autorizadas()
+                    usr_info = chaves.get(token)
+                    if usr_info:
+                        usuario_corrente.set(usr_info)
+                    token_corrente.set(token)
+
                     result = await self_mcp.call_tool(tool_name, tool_args)
                     result_json = [r.model_dump(mode="json", by_alias=True, exclude_none=True) for r in result]
                     response_data = {"jsonrpc": "2.0", "id": req_id, "result": {"content": result_json}}
@@ -249,6 +274,12 @@ async def run_sse_with_auth(self_mcp) -> None:
             response = JSONResponse({"error": "Unauthorized session."}, status_code=403)
             await response(scope, receive, send)
             return
+
+        sess_data = sessoes_ativas.get(session_id) or sessoes_ativas.get(session_id_param)
+        if sess_data:
+            token_corrente.set(sess_data.get("token"))
+            usuario_corrente.set(sess_data)
+            sessao_corrente.set(str(session_id))
             
         await sse.handle_post_message(scope, receive, send)
 
@@ -286,6 +317,10 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/config", endpoint=admin_api_config, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
+                Route("/admin/api/users/credits", endpoint=admin_api_users_credits, methods=["POST"]),
+                Route("/admin/api/users/toggle_query", endpoint=admin_api_users_toggle_query, methods=["POST"]),
+                Route("/admin/api/users/profile", endpoint=admin_api_users_profile, methods=["POST"]),
+                Route("/admin/api/users/statement", endpoint=admin_api_users_statement, methods=["GET"]),
                 Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
                 Route("/admin/api/env", endpoint=admin_api_env_get, methods=["GET"]),
                 Route("/admin/api/env", endpoint=admin_api_env_post, methods=["POST"]),
@@ -345,6 +380,10 @@ async def run_sse_with_auth(self_mcp) -> None:
                 Route("/admin/api/config", endpoint=admin_api_config, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_add, methods=["POST"]),
                 Route("/admin/api/keys", endpoint=admin_api_keys_delete, methods=["DELETE"]),
+                Route("/admin/api/users/credits", endpoint=admin_api_users_credits, methods=["POST"]),
+                Route("/admin/api/users/toggle_query", endpoint=admin_api_users_toggle_query, methods=["POST"]),
+                Route("/admin/api/users/profile", endpoint=admin_api_users_profile, methods=["POST"]),
+                Route("/admin/api/users/statement", endpoint=admin_api_users_statement, methods=["GET"]),
                 Route("/admin/api/logs", endpoint=admin_api_logs, methods=["GET"]),
                 Route("/admin/api/env", endpoint=admin_api_env_get, methods=["GET"]),
                 Route("/admin/api/env", endpoint=admin_api_env_post, methods=["POST"]),

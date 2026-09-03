@@ -8,7 +8,9 @@ from src.core.auth import (
     limpar_descricao_whitelabel,
     limpar_resultado_whitelabel,
     verificar_permissao_fonte,
-    carregar_config_global
+    carregar_config_global,
+    validar_e_debitar_execucao,
+    estornar_se_aplicavel
 )
 from mcp.types import Tool as MCPTool
 
@@ -65,8 +67,17 @@ def custom_tool(*args, **kwargs):
                 if permissao:
                     return permissao
             
-            result = await func(*func_args, **func_kwargs)
-            return limpar_resultado_whitelabel(result)
+            # Validação de consultas habilitadas e débito atômico de créditos (consulta vs paginação)
+            bloqueio_creditos, tx_info = validar_e_debitar_execucao(whitelabel_name, func_kwargs)
+            if bloqueio_creditos:
+                return bloqueio_creditos
+
+            try:
+                result = await func(*func_args, **func_kwargs)
+                return limpar_resultado_whitelabel(result)
+            except Exception as exc:
+                estornar_se_aplicavel(tx_info, f"Falha na chamada da ferramenta: {str(exc)[:150]}")
+                raise exc
 
         wrapper.__doc__ = limpar_descricao_whitelabel(func.__doc__)
         wrapper._orig_func_name = nome_funcao
