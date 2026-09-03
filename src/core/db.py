@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import time
+from typing import Optional, Any, Dict, List, Union, Tuple
 from src.core.config import DB_PATH
 
 def obter_conexao_db():
