@@ -232,3 +232,62 @@ async def buscar_email_perfil(profile_url: str, skip_smtp: bool = False) -> dict
             return salvar_cache_universal(cache_key, response.json())
         except Exception as e:
             return {"error": f"Erro ao buscar e-mail do perfil no LinkedIn: {str(e)}"}
+
+async def ver_comentarios_usuario(profile_url: str, page: int = 1) -> dict:
+    """Recupera os comentários feitos por um usuário específico no LinkedIn."""
+    token = _get_token()
+    if not token:
+        return {"error": "HARVEST_API_TOKEN não configurado no .env"}
+        
+    parsed = urllib.parse.urlparse(profile_url)
+    perfil_id = parsed.path.strip("/").split("/")[-1] if "/" in parsed.path else "alvo"
+    cache_key = f"li_profile_comments_{perfil_id}_p{page}"
+    
+    cache_hit = checar_cache_universal(cache_key)
+    if cache_hit:
+        return cache_hit
+
+    params = {"profile": profile_url, "page": page}
+    
+    async with get_semaphore("social"):
+        try:
+            response = await resilient_request(
+                "GET",
+                "https://api.harvest-api.com/linkedin/profile-comments",
+                headers=_get_headers(),
+                params=params
+            )
+            response.raise_for_status()
+            return salvar_cache_universal(cache_key, response.json())
+        except Exception as e:
+            return {"error": f"Erro ao buscar comentários do perfil na Harvest API: {str(e)}"}
+
+async def ver_reacoes_usuario(profile_url: str, page: int = 1) -> dict:
+    """Recupera as reações (curtidas) realizadas por um usuário específico no LinkedIn."""
+    token = _get_token()
+    if not token:
+        return {"error": "HARVEST_API_TOKEN não configurado no .env"}
+        
+    parsed = urllib.parse.urlparse(profile_url)
+    perfil_id = parsed.path.strip("/").split("/")[-1] if "/" in parsed.path else "alvo"
+    cache_key = f"li_profile_reactions_{perfil_id}_p{page}"
+    
+    cache_hit = checar_cache_universal(cache_key)
+    if cache_hit:
+        return cache_hit
+
+    params = {"profile": profile_url, "page": page}
+    
+    async with get_semaphore("social"):
+        try:
+            response = await resilient_request(
+                "GET",
+                "https://api.harvest-api.com/linkedin/profile-reactions",
+                headers=_get_headers(),
+                params=params
+            )
+            response.raise_for_status()
+            return salvar_cache_universal(cache_key, response.json())
+        except Exception as e:
+            return {"error": f"Erro ao buscar reações do perfil na Harvest API: {str(e)}"}
+

@@ -156,6 +156,28 @@ async def linkedin_ver_posts_usuario(profile_url: str, posted_limit: Optional[st
     return await linkedin.ver_posts_usuario(profile_url, posted_limit, page)
 
 @mcp.tool()
+async def linkedin_ver_comentarios_usuario(profile_url: str, page: int = 1) -> dict:
+    """
+    Recupera a lista de comentários efetuados por um usuário específico no LinkedIn.
+    
+    Args:
+        profile_url: A URL completa do perfil do LinkedIn.
+        page: Opcional. Número da página.
+    """
+    return await linkedin.ver_comentarios_usuario(profile_url, page)
+
+@mcp.tool()
+async def linkedin_ver_reacoes_usuario(profile_url: str, page: int = 1) -> dict:
+    """
+    Recupera a lista de reações e curtidas efetuadas por um usuário específico no LinkedIn.
+    
+    Args:
+        profile_url: A URL completa do perfil do LinkedIn.
+        page: Opcional. Número da página.
+    """
+    return await linkedin.ver_reacoes_usuario(profile_url, page)
+
+@mcp.tool()
 async def linkedin_buscar_email_perfil(profile_url: str, skip_smtp: bool = False) -> dict:
     """
     Tenta localizar e validar os endereços de e-mail atrelados a um perfil do LinkedIn
@@ -168,6 +190,7 @@ async def linkedin_buscar_email_perfil(profile_url: str, skip_smtp: bool = False
     return await linkedin.buscar_email_perfil(profile_url, skip_smtp)
 
 # --- TikTok ---
+
 @mcp.tool()
 async def tiktok_buscar_perfil(handle: str) -> dict:
     """
