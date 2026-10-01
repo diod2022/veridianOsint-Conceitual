@@ -445,6 +445,8 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
         return "veridian_buscar_google"
     if nome_funcao == "serper_buscar_avaliacoes_empresa":
         return "veridian_buscar_avaliacoes_empresa"
+    if nome_funcao == "serper_buscar_avaliacoes_produto":
+        return "veridian_buscar_avaliacoes_produto"
     if nome_funcao == "serper_buscar_reviews_por_email":
         return "veridian_buscar_reviews_por_email"
     if nome_funcao == "wayback_consultar_disponibilidade":

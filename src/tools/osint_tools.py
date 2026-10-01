@@ -100,21 +100,64 @@ async def serper_buscar_google(query: str) -> dict:
 @mcp.tool()
 async def serper_buscar_avaliacoes_empresa(
     empresa_ou_local: str,
+    cid: Optional[str] = None,
+    place_id: Optional[str] = None,
+    fid: Optional[str] = None,
+    sort_by: str = "newest",
+    next_page_token: Optional[str] = None,
     termo_filtro: Optional[str] = None,
-    ordenacao: str = "newest",
-    pagina: int = 1
+    gl: str = "br",
+    hl: str = "pt-br"
 ) -> dict:
     """
-    Busca avaliações (reviews) de estabelecimentos e empresas no Google Maps através do Serper.dev.
-    Localiza o estabelecimento (Places), obtém o CID e recupera as avaliações com notas, texto, autor e réplica.
+    Busca avaliações (reviews) de estabelecimentos e empresas no Google Maps através do Serper.dev,
+    seguindo rigorosamente a especificação do Serper Playground (https://serper.dev/playground).
     
     Args:
-        empresa_ou_local: Nome da empresa/local (ex: 'Hospital Albert Einstein Morumbi') ou CID numérico direto.
-        termo_filtro: Termo opcional para filtrar apenas reviews com certas palavras (ex: nome de médico, reclamação, 'péssimo').
-        ordenacao: 'newest' (mais recentes), 'highestRating' (melhores notas), 'lowestRating' (piores notas/reclamações).
-        pagina: Número da página (padrão 1).
+        empresa_ou_local: Nome da empresa/local para resolução automática no Maps ou identificador direto.
+        cid: Opcional. Google Customer ID / CID numérico direto do local.
+        place_id: Opcional. Google Place ID.
+        fid: Opcional. Google Feature ID.
+        sort_by: 'newest' (mais recentes), 'mostRelevant' (mais relevantes), 'highestRating' (melhores notas), 'lowestRating' (piores notas).
+        next_page_token: Opcional. Token para recuperar a próxima página de avaliações.
+        termo_filtro: Opcional. Palavra-chave para filtrar comentários específicos.
+        gl: Código do país (padrão 'br').
+        hl: Idioma das avaliações (padrão 'pt-br').
     """
-    return await web_osint.serper_buscar_avaliacoes_empresa(empresa_ou_local, termo_filtro, ordenacao, pagina)
+    return await web_osint.serper_buscar_avaliacoes_empresa(
+        empresa_ou_local=empresa_ou_local,
+        cid=cid,
+        place_id=place_id,
+        fid=fid,
+        sort_by=sort_by,
+        next_page_token=next_page_token,
+        termo_filtro=termo_filtro,
+        gl=gl,
+        hl=hl
+    )
+
+@mcp.tool()
+async def serper_buscar_avaliacoes_produto(
+    produto_ou_id: str,
+    next_page_token: Optional[str] = None,
+    gl: str = "br",
+    hl: str = "pt-br"
+) -> dict:
+    """
+    Busca avaliações de produtos (Product Reviews) via Serper.dev conforme especificado no Serper Playground.
+    
+    Args:
+        produto_ou_id: ID do produto no Google Shopping ou nome/modelo do produto a pesquisar.
+        next_page_token: Opcional. Token para a próxima página de avaliações.
+        gl: País (padrão 'br').
+        hl: Idioma (padrão 'pt-br').
+    """
+    return await web_osint.serper_buscar_avaliacoes_produto(
+        produto_ou_id=produto_ou_id,
+        next_page_token=next_page_token,
+        gl=gl,
+        hl=hl
+    )
 
 @mcp.tool()
 async def serper_buscar_reviews_por_email(

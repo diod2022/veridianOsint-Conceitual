@@ -278,19 +278,29 @@ async def serper_buscar_google(query: str) -> dict:
 
 async def serper_buscar_avaliacoes_empresa(
     empresa_ou_local: str,
+    cid: Optional[str] = None,
+    place_id: Optional[str] = None,
+    fid: Optional[str] = None,
+    sort_by: str = "newest",
+    next_page_token: Optional[str] = None,
     termo_filtro: Optional[str] = None,
-    ordenacao: str = "newest",
-    pagina: int = 1
+    gl: str = "br",
+    hl: str = "pt-br"
 ) -> dict:
     """
-    Busca avaliações (reviews) de estabelecimentos e empresas no Google Maps através do Serper.dev.
-    Localiza o estabelecimento (Places), obtém o CID e recupera as avaliações com notas, texto, autor e réplica.
+    Busca avaliações (reviews) de estabelecimentos e empresas no Google Maps através do Serper.dev,
+    seguindo rigorosamente a especificação do Serper Playground (https://serper.dev/playground).
     
     Args:
-        empresa_ou_local: Nome da empresa/local (ex: 'Hospital Albert Einstein Morumbi') ou CID numérico direto.
-        termo_filtro: Termo opcional para filtrar apenas reviews com certas palavras (ex: nome de médico, reclamação, 'péssimo').
-        ordenacao: 'newest' (mais recentes), 'highestRating' (melhores notas), 'lowestRating' (piores notas/reclamações).
-        pagina: Número da página (padrão 1).
+        empresa_ou_local: Nome da empresa/local para resolução automática ou identificador direto.
+        cid: Opcional. Google Customer ID / CID do local.
+        place_id: Opcional. Google Place ID.
+        fid: Opcional. Google Feature ID.
+        sort_by: 'newest' (mais recentes), 'mostRelevant' (mais relevantes), 'highestRating' (melhores notas), 'lowestRating' (piores notas).
+        next_page_token: Opcional. Token para recuperar a próxima página de avaliações.
+        termo_filtro: Opcional. Palavra-chave para filtrar menções dentro dos comentários.
+        gl: Código do país (padrão 'br').
+        hl: Idioma das avaliações (padrão 'pt-br').
     """
     api_key = os.environ.get("SERPER_API_KEY", "")
     if not api_key:
@@ -299,7 +309,8 @@ async def serper_buscar_avaliacoes_empresa(
     termo_limpo = empresa_ou_local.strip()
     cache_id = termo_limpo.replace(" ", "_").replace("/", "_").replace(":", "_").lower()
     filtro_id = termo_filtro.replace(" ", "_").lower() if termo_filtro else "all"
-    cache_key = f"serper_reviews_{cache_id}_{filtro_id}_{ordenacao}_p{pagina}"
+    token_id = next_page_token[:10] if next_page_token else "p1"
+    cache_key = f"serper_reviews_{cache_id}_{filtro_id}_{sort_by}_{token_id}"
 
     cache_hit = checar_cache_universal(cache_key)
     if cache_hit:
@@ -313,52 +324,62 @@ async def serper_buscar_avaliacoes_empresa(
     async with get_semaphore("web"):
         try:
             place_info = {}
-            cid = None
+            target_cid = cid
+            target_place_id = place_id
+            target_fid = fid
 
-            # Se for apenas dígitos com 15+ caracteres, assume ser o CID diretamente
-            if termo_limpo.isdigit() and len(termo_limpo) >= 15:
-                cid = termo_limpo
-            else:
-                # 1. Localiza o estabelecimento via Google Places
-                url_places = "https://google.serper.dev/places"
-                resp_places = await resilient_request(
-                    "POST",
-                    url_places,
-                    json={"q": termo_limpo, "gl": "br", "hl": "pt-br"},
-                    headers=headers
-                )
-                if resp_places.status_code != 200:
-                    return {"error": f"Erro ao buscar local no Google Places (HTTP {resp_places.status_code}): {resp_places.text}"}
+            # Se nenhum identificador foi passado diretamente, tenta inferir ou resolver
+            if not target_cid and not target_place_id and not target_fid:
+                if termo_limpo.isdigit() and len(termo_limpo) >= 15:
+                    target_cid = termo_limpo
+                else:
+                    # 1. Localiza o estabelecimento via Google Places
+                    url_places = "https://google.serper.dev/places"
+                    resp_places = await resilient_request(
+                        "POST",
+                        url_places,
+                        json={"q": termo_limpo, "gl": gl, "hl": hl},
+                        headers=headers
+                    )
+                    if resp_places.status_code != 200:
+                        return {"error": f"Erro ao buscar local no Google Places (HTTP {resp_places.status_code}): {resp_places.text}"}
 
-                places_data = resp_places.json().get("places", [])
-                if not places_data:
-                    return {"error": f"Nenhum estabelecimento encontrado no Google Maps para '{termo_limpo}'."}
+                    places_data = resp_places.json().get("places", [])
+                    if not places_data:
+                        return {"error": f"Nenhum estabelecimento encontrado no Google Maps para '{termo_limpo}'."}
 
-                top_place = places_data[0]
-                cid = top_place.get("cid")
-                place_info = {
-                    "titulo": top_place.get("title"),
-                    "endereco": top_place.get("address"),
-                    "categoria": top_place.get("category"),
-                    "rating_geral": top_place.get("rating"),
-                    "total_avaliacoes": top_place.get("ratingCount"),
-                    "telefone": top_place.get("phoneNumber"),
-                    "website": top_place.get("website"),
-                    "cid": cid
-                }
+                    top_place = places_data[0]
+                    target_cid = top_place.get("cid")
+                    target_place_id = top_place.get("placeId")
+                    place_info = {
+                        "titulo": top_place.get("title"),
+                        "endereco": top_place.get("address"),
+                        "categoria": top_place.get("category"),
+                        "rating_geral": top_place.get("rating"),
+                        "total_avaliacoes": top_place.get("ratingCount"),
+                        "telefone": top_place.get("phoneNumber"),
+                        "website": top_place.get("website"),
+                        "cid": target_cid
+                    }
 
-            if not cid:
-                return {"error": f"Não foi possível obter o identificador (CID) do estabelecimento '{termo_limpo}'."}
+            if not target_cid and not target_place_id and not target_fid:
+                return {"error": f"Não foi possível obter CID ou Place ID para '{termo_limpo}'."}
 
-            # 2. Busca as avaliações no endpoint /reviews
+            # 2. Busca as avaliações no endpoint /reviews conforme o Playground
             url_reviews = "https://google.serper.dev/reviews"
             payload_rev = {
-                "cid": str(cid),
-                "gl": "br",
-                "hl": "pt-br",
-                "sort": ordenacao,
-                "page": pagina
+                "gl": gl,
+                "hl": hl,
+                "sortBy": sort_by
             }
+            if target_cid:
+                payload_rev["cid"] = str(target_cid)
+            if target_place_id:
+                payload_rev["placeId"] = str(target_place_id)
+            if target_fid:
+                payload_rev["fid"] = str(target_fid)
+            if next_page_token:
+                payload_rev["nextPageToken"] = next_page_token
             if termo_filtro:
                 payload_rev["q"] = termo_filtro
 
@@ -369,7 +390,7 @@ async def serper_buscar_avaliacoes_empresa(
                 headers=headers
             )
             if resp_rev.status_code != 200:
-                return {"error": f"Erro ao consultar reviews no Google (HTTP {resp_rev.status_code}): {resp_rev.text}"}
+                return {"error": f"Erro ao consultar reviews no Serper (HTTP {resp_rev.status_code}): {resp_rev.text}"}
 
             rev_json = resp_rev.json()
             raw_reviews = rev_json.get("reviews", [])
@@ -390,10 +411,10 @@ async def serper_buscar_avaliacoes_empresa(
 
             resultado = {
                 "estabelecimento": place_info,
+                "sortBy": sort_by,
                 "termo_filtro": termo_filtro,
-                "ordenacao": ordenacao,
-                "pagina": pagina,
                 "total_reviews_pagina": len(reviews_processados),
+                "nextPageToken": rev_json.get("nextPageToken"),
                 "tem_proxima_pagina": bool(rev_json.get("nextPageToken")),
                 "reviews": reviews_processados
             }
@@ -401,7 +422,60 @@ async def serper_buscar_avaliacoes_empresa(
             return salvar_cache_universal(cache_key, resultado)
 
         except Exception as e:
-            return {"error": f"Falha na consulta de avaliações do Google: {str(e)}"}
+            return {"error": f"Falha na consulta de avaliações do Google (Serper Playground): {str(e)}"}
+
+async def serper_buscar_avaliacoes_produto(
+    produto_ou_id: str,
+    next_page_token: Optional[str] = None,
+    gl: str = "br",
+    hl: str = "pt-br"
+) -> dict:
+    """
+    Busca avaliações de produtos (Product Reviews) via Serper.dev conforme especificado no Serper Playground.
+    
+    Args:
+        produto_ou_id: ID do produto no Google Shopping ou nome do produto a ser pesquisado.
+        next_page_token: Opcional. Token para a próxima página de avaliações.
+        gl: País (padrão 'br').
+        hl: Idioma (padrão 'pt-br').
+    """
+    api_key = os.environ.get("SERPER_API_KEY", "")
+    if not api_key:
+        return {"error": "Erro: Chave SERPER_API_KEY não configurada no .env"}
+
+    termo_limpo = produto_ou_id.strip()
+    token_id = next_page_token[:10] if next_page_token else "p1"
+    cache_id = termo_limpo.replace(" ", "_").lower()
+    cache_key = f"serper_product_reviews_{cache_id}_{token_id}"
+
+    cache_hit = checar_cache_universal(cache_key)
+    if cache_hit:
+        return cache_hit
+
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "productId": termo_limpo,
+        "gl": gl,
+        "hl": hl
+    }
+    if next_page_token:
+        payload["nextPageToken"] = next_page_token
+
+    async with get_semaphore("web"):
+        try:
+            url = "https://google.serper.dev/product-reviews"
+            resp = await resilient_request("POST", url, json=payload, headers=headers)
+            if resp.status_code != 200:
+                return {"error": f"Erro na API de Product Reviews (HTTP {resp.status_code}): {resp.text}"}
+
+            data = resp.json()
+            return salvar_cache_universal(cache_key, data)
+        except Exception as e:
+            return {"error": f"Falha na consulta de avaliações de produto: {str(e)}"}
 
 async def serper_buscar_reviews_por_email(
     email: str,
