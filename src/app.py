@@ -51,6 +51,8 @@ def custom_tool(*args, **kwargs):
             nome_fonte = "serper"
         elif nome_funcao.startswith("wayback_"):
             nome_fonte = "wayback"
+        elif nome_funcao.startswith("deltafox_"):
+            nome_fonte = "deltafox"
 
         # Mascara o nome da ferramenta dinamicamente
         whitelabel_name = obter_nome_whitelabel(nome_funcao)
@@ -134,6 +136,7 @@ async def custom_list_tools() -> list[MCPTool]:
                 ("serper_", "serper"),
                 ("wayback_", "wayback"),
                 ("biometria_", "biometria"),
+                ("deltafox_", "deltafox"),
             ]:
                 if orig_name.startswith(prefix):
                     source_name = fonte

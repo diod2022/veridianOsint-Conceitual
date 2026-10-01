@@ -4,6 +4,8 @@ import httpx
 from typing import Optional, Dict, Any, List
 from src.core.config import TAVILY_API_KEY, FIRECRAWL_API_KEY, SERPER_API_KEY
 from src.core.http_client import resilient_request, get_semaphore
+from src.core.cache import salvar_cache_universal, checar_cache_universal
+from src.core.security import normalizar_email
 
 async def tavily_buscar_web(query: str, search_depth: str = "basic") -> str:
     api_key = os.environ.get("TAVILY_API_KEY", "")
@@ -273,6 +275,251 @@ async def serper_buscar_google(query: str) -> dict:
             }
         except Exception as e:
             return {"error": f"Falha na consulta ao Google: {str(e)}"}
+
+async def serper_buscar_avaliacoes_empresa(
+    empresa_ou_local: str,
+    termo_filtro: Optional[str] = None,
+    ordenacao: str = "newest",
+    pagina: int = 1
+) -> dict:
+    """
+    Busca avaliações (reviews) de estabelecimentos e empresas no Google Maps através do Serper.dev.
+    Localiza o estabelecimento (Places), obtém o CID e recupera as avaliações com notas, texto, autor e réplica.
+    
+    Args:
+        empresa_ou_local: Nome da empresa/local (ex: 'Hospital Albert Einstein Morumbi') ou CID numérico direto.
+        termo_filtro: Termo opcional para filtrar apenas reviews com certas palavras (ex: nome de médico, reclamação, 'péssimo').
+        ordenacao: 'newest' (mais recentes), 'highestRating' (melhores notas), 'lowestRating' (piores notas/reclamações).
+        pagina: Número da página (padrão 1).
+    """
+    api_key = os.environ.get("SERPER_API_KEY", "")
+    if not api_key:
+        return {"error": "Erro: Chave SERPER_API_KEY não configurada no .env"}
+
+    termo_limpo = empresa_ou_local.strip()
+    cache_id = termo_limpo.replace(" ", "_").replace("/", "_").replace(":", "_").lower()
+    filtro_id = termo_filtro.replace(" ", "_").lower() if termo_filtro else "all"
+    cache_key = f"serper_reviews_{cache_id}_{filtro_id}_{ordenacao}_p{pagina}"
+
+    cache_hit = checar_cache_universal(cache_key)
+    if cache_hit:
+        return cache_hit
+
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/json"
+    }
+
+    async with get_semaphore("web"):
+        try:
+            place_info = {}
+            cid = None
+
+            # Se for apenas dígitos com 15+ caracteres, assume ser o CID diretamente
+            if termo_limpo.isdigit() and len(termo_limpo) >= 15:
+                cid = termo_limpo
+            else:
+                # 1. Localiza o estabelecimento via Google Places
+                url_places = "https://google.serper.dev/places"
+                resp_places = await resilient_request(
+                    "POST",
+                    url_places,
+                    json={"q": termo_limpo, "gl": "br", "hl": "pt-br"},
+                    headers=headers
+                )
+                if resp_places.status_code != 200:
+                    return {"error": f"Erro ao buscar local no Google Places (HTTP {resp_places.status_code}): {resp_places.text}"}
+
+                places_data = resp_places.json().get("places", [])
+                if not places_data:
+                    return {"error": f"Nenhum estabelecimento encontrado no Google Maps para '{termo_limpo}'."}
+
+                top_place = places_data[0]
+                cid = top_place.get("cid")
+                place_info = {
+                    "titulo": top_place.get("title"),
+                    "endereco": top_place.get("address"),
+                    "categoria": top_place.get("category"),
+                    "rating_geral": top_place.get("rating"),
+                    "total_avaliacoes": top_place.get("ratingCount"),
+                    "telefone": top_place.get("phoneNumber"),
+                    "website": top_place.get("website"),
+                    "cid": cid
+                }
+
+            if not cid:
+                return {"error": f"Não foi possível obter o identificador (CID) do estabelecimento '{termo_limpo}'."}
+
+            # 2. Busca as avaliações no endpoint /reviews
+            url_reviews = "https://google.serper.dev/reviews"
+            payload_rev = {
+                "cid": str(cid),
+                "gl": "br",
+                "hl": "pt-br",
+                "sort": ordenacao,
+                "page": pagina
+            }
+            if termo_filtro:
+                payload_rev["q"] = termo_filtro
+
+            resp_rev = await resilient_request(
+                "POST",
+                url_reviews,
+                json=payload_rev,
+                headers=headers
+            )
+            if resp_rev.status_code != 200:
+                return {"error": f"Erro ao consultar reviews no Google (HTTP {resp_rev.status_code}): {resp_rev.text}"}
+
+            rev_json = resp_rev.json()
+            raw_reviews = rev_json.get("reviews", [])
+            reviews_processados = []
+
+            for r in raw_reviews:
+                user_info = r.get("user", {})
+                reviews_processados.append({
+                    "autor": user_info.get("name"),
+                    "link_perfil": user_info.get("link"),
+                    "foto_perfil": user_info.get("thumbnail"),
+                    "estrelas": r.get("rating"),
+                    "data_relativa": r.get("date"),
+                    "texto": r.get("snippet"),
+                    "likes": r.get("likes"),
+                    "resposta_empresa": r.get("response", {}).get("snippet") if r.get("response") else None
+                })
+
+            resultado = {
+                "estabelecimento": place_info,
+                "termo_filtro": termo_filtro,
+                "ordenacao": ordenacao,
+                "pagina": pagina,
+                "total_reviews_pagina": len(reviews_processados),
+                "tem_proxima_pagina": bool(rev_json.get("nextPageToken")),
+                "reviews": reviews_processados
+            }
+
+            return salvar_cache_universal(cache_key, resultado)
+
+        except Exception as e:
+            return {"error": f"Falha na consulta de avaliações do Google: {str(e)}"}
+
+async def serper_buscar_reviews_por_email(
+    email: str,
+    incluir_username: bool = True
+) -> dict:
+    """
+    Realiza varredura investigativa multivetorial para localizar avaliações, reclamações e depoimentos
+    associados a um endereço de e-mail (e seu username) em portais de consumo, Google Maps e web.
+    
+    Args:
+        email: O endereço de e-mail do alvo a ser investigado.
+        incluir_username: Se True, também pesquisa o identificador/usuário do e-mail em portais de reclamação.
+    """
+    api_key = os.environ.get("SERPER_API_KEY", "")
+    if not api_key:
+        return {"error": "Erro: Chave SERPER_API_KEY não configurada no .env"}
+
+    email_limpo = normalizar_email(email)
+    if not email_limpo or "@" not in email_limpo:
+        return {"error": f"E-mail inválido para busca de reviews: '{email}'."}
+
+    username = email_limpo.split("@")[0]
+    cache_id = email_limpo.replace("@", "_at_").replace(".", "_")
+    cache_key = f"serper_email_reviews_{cache_id}"
+
+    cache_hit = checar_cache_universal(cache_key)
+    if cache_hit:
+        return cache_hit
+
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/json"
+    }
+
+    # Vetores direcionados de busca OSINT por reputação e consumo
+    vetores_busca = [
+        {"categoria": "Google Maps Contribuições", "query": f'site:google.com/maps/contrib "{username}"'},
+        {"categoria": "Google Maps Menções", "query": f'"{email_limpo}" site:google.com/maps'},
+        {"categoria": "Reclame Aqui (E-mail)", "query": f'site:reclameaqui.com.br "{email_limpo}"'},
+        {"categoria": "Trustpilot", "query": f'site:trustpilot.com "{email_limpo}"'},
+        {"categoria": "Consumidor.gov", "query": f'site:consumidor.gov.br "{email_limpo}"'},
+        {"categoria": "Glassdoor / Avaliações Corporativas", "query": f'site:glassdoor.com.br "{email_limpo}"'},
+        {"categoria": "Avaliações & Reclamações Gerais Web", "query": f'"{email_limpo}" (avaliação OR avaliou OR review OR reclamação OR "minha experiência")'}
+    ]
+
+    if incluir_username and len(username) >= 5:
+        vetores_busca.append({
+            "categoria": "Reclame Aqui (Usuário)",
+            "query": f'site:reclameaqui.com.br "{username}"'
+        })
+
+    url = "https://google.serper.dev/search"
+
+    async def consultar_vetor(vetor):
+        try:
+            payload = {"q": vetor["query"], "gl": "br", "hl": "pt-br"}
+            resp = await resilient_request("POST", url, json=payload, headers=headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                achados = []
+                for item in data.get("organic", []):
+                    achados.append({
+                        "titulo": item.get("title"),
+                        "url": item.get("link"),
+                        "resumo": item.get("snippet"),
+                        "data": item.get("date")
+                    })
+                return {
+                    "categoria": vetor["categoria"],
+                    "query": vetor["query"],
+                    "total": len(achados),
+                    "resultados": achados
+                }
+            return {
+                "categoria": vetor["categoria"],
+                "query": vetor["query"],
+                "total": 0,
+                "resultados": []
+            }
+        except Exception as exc:
+            return {
+                "categoria": vetor["categoria"],
+                "query": vetor["query"],
+                "total": 0,
+                "erro": str(exc),
+                "resultados": []
+            }
+
+    async with get_semaphore("web"):
+        tarefas = [consultar_vetor(v) for v in vetores_busca]
+        varredura = await asyncio.gather(*tarefas)
+
+    # Consolidação e deduplicação de resultados encontrados
+    links_vistos = set()
+    achados_consolidados = []
+
+    for grupo in varredura:
+        for item in grupo.get("resultados", []):
+            url_item = item.get("url")
+            if url_item and url_item not in links_vistos:
+                links_vistos.add(url_item)
+                achados_consolidados.append({
+                    "plataforma": grupo.get("categoria"),
+                    "titulo": item.get("titulo"),
+                    "url": url_item,
+                    "resumo": item.get("resumo"),
+                    "data": item.get("data")
+                })
+
+    resultado_final = {
+        "email_alvo": email_limpo,
+        "username_pesquisado": username,
+        "total_registros_unicos": len(achados_consolidados),
+        "achados": achados_consolidados,
+        "detalhamento_por_vetor": varredura
+    }
+
+    return salvar_cache_universal(cache_key, resultado_final)
 
 async def wayback_consultar_disponibilidade(url_alvo: str, timestamp: Optional[str] = None) -> dict:
     url = "https://archive.org/wayback/available"

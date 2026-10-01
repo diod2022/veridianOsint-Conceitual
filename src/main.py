@@ -1,5 +1,11 @@
 import os
 import sys
+
+# Garante que a raiz do projeto esteja no sys.path mesmo em execução direta
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 import anyio
 from src.app import mcp
 import src.tools

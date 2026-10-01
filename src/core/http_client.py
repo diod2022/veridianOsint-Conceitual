@@ -20,7 +20,8 @@ _provider_semaphores: Dict[str, asyncio.Semaphore] = {
     "social": asyncio.Semaphore(4),
     "lighthouse": asyncio.Semaphore(3),
     "whois": asyncio.Semaphore(5),
-    "web": asyncio.Semaphore(5)
+    "web": asyncio.Semaphore(5),
+    "deltafox": asyncio.Semaphore(3)
 }
 
 def get_semaphore(provider: str) -> asyncio.Semaphore:

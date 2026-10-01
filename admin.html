@@ -1370,10 +1370,16 @@
             "firecrawl": "Extração de Sites (Veridian)",
             "serper": "Busca Estruturada & Dorks (Veridian)",
             "wayback": "Histórico de Páginas Web (Veridian)",
-            "biometria": "Biometria & Visão Facial (Veridian)"
+            "biometria": "Biometria & Visão Facial (Veridian)",
+            "deltafox": "Veículos & Condutores (Veridian)"
         };
 
         const CONSULTAS_POR_FONTE = {
+            "deltafox": [
+                "deltafox_cnh_prontuario", "deltafox_veiculo_restricoes_renajud",
+                "deltafox_veiculo_endereco_proprietario", "deltafox_frota_veiculos",
+                "deltafox_veiculo_historico_crv", "deltafox_servicos_disponiveis"
+            ],
             "biometria": ["biometria_comparar_faces", "biometria_detectar_faces"],
             "bigdata": [
                 "bigdata_cpf_dados_basicos", "bigdata_cpf_telefones", "bigdata_cpf_emails",
@@ -1403,7 +1409,10 @@
             "escavador": ["escavador_buscar_processos_oab"],
             "tavily": ["tavily_buscar_web"],
             "firecrawl": ["firecrawl_raspar_pagina"],
-            "serper": ["serper_buscar_web_dorks", "serper_buscar_google"],
+            "serper": [
+                "serper_buscar_web_dorks", "serper_buscar_google",
+                "serper_buscar_avaliacoes_empresa", "serper_buscar_reviews_por_email"
+            ],
             "wayback": ["wayback_consultar_disponibilidade", "wayback_listar_imagens", "wayback_listar_snapshots"]
         };
 
@@ -1466,11 +1475,19 @@
             "firecrawl_raspar_pagina": "Firecrawl - Raspagem de Web",
             "serper_buscar_web_dorks": "Google Dorks OSINT",
             "serper_buscar_google": "Google Search Direto",
+            "serper_buscar_avaliacoes_empresa": "Google - Avaliações & Reviews de Empresa",
+            "serper_buscar_reviews_por_email": "OSINT - Varredura de Reviews por E-mail",
             "wayback_consultar_disponibilidade": "Wayback - Histórico Web",
             "wayback_listar_imagens": "Wayback - Imagens Históricas",
             "wayback_listar_snapshots": "Wayback - Snapshots de URL",
             "biometria_comparar_faces": "Biometria - Comparar Faces",
-            "biometria_detectar_faces": "Biometria - Detectar Rostos"
+            "biometria_detectar_faces": "Biometria - Detectar Rostos",
+            "deltafox_cnh_prontuario": "DeltaFox - Prontuário CNH / RENACH",
+            "deltafox_veiculo_restricoes_renajud": "DeltaFox - Restrições RENAJUD",
+            "deltafox_veiculo_endereco_proprietario": "DeltaFox - Proprietário & Endereço Veicular",
+            "deltafox_frota_veiculos": "DeltaFox - Frota de Veículos (CPF/CNPJ)",
+            "deltafox_veiculo_historico_crv": "DeltaFox - Histórico de CRV",
+            "deltafox_servicos_disponiveis": "DeltaFox - Status dos Serviços"
         };
 
         // Estado Global
@@ -2174,7 +2191,9 @@
             "WHOISXML_API_KEY": "WhoisXML — Domain API Key",
             "SERPER_API_KEY": "Serper — Google Dorks Key",
             "TAVILY_API_KEY": "Tavily — Web Search Key",
-            "FIRECRAWL_API_KEY": "Firecrawl — Web Scraping Key"
+            "FIRECRAWL_API_KEY": "Firecrawl — Web Scraping Key",
+            "DELTAFOX_TOKEN": "DeltaFox — Token Acesso Geral (Veículos/CNH)",
+            "DELTAFOX_BASE_URL": "DeltaFox — Base URL API"
         };
 
         async function carregarEnv() {

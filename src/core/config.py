@@ -41,6 +41,8 @@ SOCIAVAULT_API_KEY = os.environ.get("SOCIAVAULT_API_KEY", "")
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
 FIRECRAWL_API_KEY = os.environ.get("FIRECRAWL_API_KEY", "")
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
+DELTAFOX_TOKEN = os.environ.get("DELTAFOX_TOKEN", "")
+DELTAFOX_BASE_URL = os.environ.get("DELTAFOX_BASE_URL", "https://api.deltaid.api.br")
 
 def get_bigdata_token() -> str:
     return os.environ.get("BIGDATA_TOKEN") or os.environ.get("BIGDATA_ACCESS_TOKEN", "")

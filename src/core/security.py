@@ -129,6 +129,19 @@ def normalizar_oab(oab_numero: str, oab_estado: str = "") -> Tuple[str, str]:
     num = so_digitos(raw).lstrip("0")
     return num, uf
 
+def normalizar_placa(placa: Union[str, int]) -> str:
+    """Normaliza placa veicular (antiga ou Mercosul) removendo traços e espaços, em maiúsculas."""
+    if not placa:
+        return ""
+    return re.sub(r"[^A-Za-z0-9]", "", str(placa)).strip().upper()
+
+def validar_placa(placa: Union[str, int]) -> bool:
+    """Valida se a placa possui formato brasileiro válido (antigo AAA9999 ou Mercosul AAA9A99)."""
+    p = normalizar_placa(placa)
+    if len(p) != 7:
+        return False
+    return bool(re.match(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$", p))
+
 def validar_url_segura_ssrf(url: str) -> Tuple[bool, str]:
     """
     Valida se a URL é segura para requisições externas (proteção contra SSRF).

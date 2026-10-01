@@ -33,7 +33,8 @@ def carregar_config_global() -> dict:
             "tavily": True,
             "firecrawl": True,
             "serper": True,
-            "wayback": True
+            "wayback": True,
+            "deltafox": True
         },
         "consultas_ativas": {}
     }
@@ -346,7 +347,7 @@ def verificar_permissao_fonte(nome_fonte: Optional[str] = None, nome_consulta: O
 # SISTEMA DE WHITE-LABELING (MASCARAMENTO DE FORNECEDORES)
 # ==============================================================================
 def obter_nome_whitelabel(nome_funcao: str) -> str:
-    for prefixo in ["whois_", "csint_", "bigdata_", "unitfour_", "instagram_", "tiktok_", "linkedin_", "lighthouse_", "escavador_", "investigador_", "biometria_"]:
+    for prefixo in ["whois_", "csint_", "bigdata_", "unitfour_", "instagram_", "tiktok_", "linkedin_", "lighthouse_", "escavador_", "investigador_", "biometria_", "deltafox_"]:
         if nome_funcao.startswith(prefixo):
             sub_nome = nome_funcao[len(prefixo):]
             if prefixo == "csint_" and sub_nome == "busca_universal":
@@ -419,6 +420,18 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
                 sub_nome = "reconhecimento_facial_amplo"
             elif prefixo == "lighthouse_" and sub_nome == "image_geolocation":
                 sub_nome = "geolocalizacao_imagem"
+            elif prefixo == "deltafox_" and sub_nome == "cnh_prontuario":
+                sub_nome = "consultar_cnh_prontuario"
+            elif prefixo == "deltafox_" and sub_nome == "veiculo_restricoes_renajud":
+                sub_nome = "consultar_veiculo_renajud"
+            elif prefixo == "deltafox_" and sub_nome == "veiculo_endereco_proprietario":
+                sub_nome = "consultar_veiculo_proprietario"
+            elif prefixo == "deltafox_" and sub_nome == "frota_veiculos":
+                sub_nome = "consultar_frota_veiculos"
+            elif prefixo == "deltafox_" and sub_nome == "veiculo_historico_crv":
+                sub_nome = "consultar_veiculo_historico_crv"
+            elif prefixo == "deltafox_" and sub_nome == "servicos_disponiveis":
+                sub_nome = "servicos_veiculares_disponiveis"
                 
             return f"veridian_{sub_nome}"
             
@@ -430,6 +443,10 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
         return "veridian_pesquisa_dorks"
     if nome_funcao == "serper_buscar_google":
         return "veridian_buscar_google"
+    if nome_funcao == "serper_buscar_avaliacoes_empresa":
+        return "veridian_buscar_avaliacoes_empresa"
+    if nome_funcao == "serper_buscar_reviews_por_email":
+        return "veridian_buscar_reviews_por_email"
     if nome_funcao == "wayback_consultar_disponibilidade":
         return "veridian_pesquisa_historica_web"
     if nome_funcao == "wayback_listar_imagens":
@@ -467,6 +484,10 @@ def limpar_descricao_whitelabel(docstring: str) -> str:
         "Wayback Machine": "Veridian Histórico",
         "Wayback": "Veridian Histórico",
         "Internet Archive": "Veridian Histórico",
+        "DeltaFox": "Veridian",
+        "deltafox": "veridian",
+        "DeltaID": "Veridian",
+        "deltaid": "veridian",
         "bigdata_consultar_cpf": "veridian_consultar_cadastro_cpf",
         "unitfour_consultar_cpf": "veridian_consultar_dados_cadastrais_cpf",
         "unitfour_pessoas_ligadas": "veridian_ver_parentes_e_socios_cpf",
@@ -507,7 +528,11 @@ def limpar_resultado_whitelabel(result: Any) -> Any:
         "Serper": "Veridian",
         "Wayback Machine": "Veridian Histórico",
         "Wayback": "Veridian Histórico",
-        "Internet Archive": "Veridian Histórico"
+        "Internet Archive": "Veridian Histórico",
+        "DeltaFox": "Veridian",
+        "deltafox": "Veridian",
+        "DeltaID": "Veridian",
+        "deltaid": "Veridian"
     }
     
     def processar(val):

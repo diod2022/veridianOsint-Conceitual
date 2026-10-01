@@ -98,6 +98,40 @@ async def serper_buscar_google(query: str) -> dict:
     return await web_osint.serper_buscar_google(query)
 
 @mcp.tool()
+async def serper_buscar_avaliacoes_empresa(
+    empresa_ou_local: str,
+    termo_filtro: Optional[str] = None,
+    ordenacao: str = "newest",
+    pagina: int = 1
+) -> dict:
+    """
+    Busca avaliações (reviews) de estabelecimentos e empresas no Google Maps através do Serper.dev.
+    Localiza o estabelecimento (Places), obtém o CID e recupera as avaliações com notas, texto, autor e réplica.
+    
+    Args:
+        empresa_ou_local: Nome da empresa/local (ex: 'Hospital Albert Einstein Morumbi') ou CID numérico direto.
+        termo_filtro: Termo opcional para filtrar apenas reviews com certas palavras (ex: nome de médico, reclamação, 'péssimo').
+        ordenacao: 'newest' (mais recentes), 'highestRating' (melhores notas), 'lowestRating' (piores notas/reclamações).
+        pagina: Número da página (padrão 1).
+    """
+    return await web_osint.serper_buscar_avaliacoes_empresa(empresa_ou_local, termo_filtro, ordenacao, pagina)
+
+@mcp.tool()
+async def serper_buscar_reviews_por_email(
+    email: str,
+    incluir_username: bool = True
+) -> dict:
+    """
+    Realiza varredura investigativa multivetorial para localizar avaliações, reclamações e depoimentos
+    associados a um endereço de e-mail (e seu username) em portais de consumo, Google Maps e web.
+    
+    Args:
+        email: O endereço de e-mail do alvo a ser investigado.
+        incluir_username: Se True, também pesquisa o identificador/usuário do e-mail em portais de reclamação.
+    """
+    return await web_osint.serper_buscar_reviews_por_email(email, incluir_username)
+
+@mcp.tool()
 async def wayback_consultar_disponibilidade(url_alvo: str, timestamp: Optional[str] = None) -> dict:
     """
     Verifica se uma URL possui capturas salvas no histórico do Wayback Machine (Internet Archive).
