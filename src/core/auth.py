@@ -34,7 +34,8 @@ def carregar_config_global() -> dict:
             "firecrawl": True,
             "serper": True,
             "wayback": True,
-            "deltafox": True
+            "deltafox": True,
+            "ghunt": True
         },
         "consultas_ativas": {}
     }
@@ -455,6 +456,14 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
         return "veridian_listar_imagens_historicas"
     if nome_funcao == "wayback_listar_snapshots":
         return "veridian_listar_snapshots_historicos"
+    if nome_funcao == "ghunt_investigar_email_google":
+        return "veridian_investigar_email_google"
+    if nome_funcao == "ghunt_investigar_gaia_google":
+        return "veridian_investigar_gaia_google"
+    if nome_funcao == "ghunt_autenticar_google":
+        return "veridian_autenticar_google_osint"
+    if nome_funcao == "ghunt_status_autenticacao":
+        return "veridian_status_google_osint"
         
     if nome_funcao.startswith("veridian_"):
         return nome_funcao
@@ -490,6 +499,8 @@ def limpar_descricao_whitelabel(docstring: str) -> str:
         "deltafox": "veridian",
         "DeltaID": "Veridian",
         "deltaid": "veridian",
+        "GHunt": "Veridian",
+        "ghunt": "veridian",
         "bigdata_consultar_cpf": "veridian_consultar_cadastro_cpf",
         "unitfour_consultar_cpf": "veridian_consultar_dados_cadastrais_cpf",
         "unitfour_pessoas_ligadas": "veridian_ver_parentes_e_socios_cpf",
@@ -534,7 +545,9 @@ def limpar_resultado_whitelabel(result: Any) -> Any:
         "DeltaFox": "Veridian",
         "deltafox": "Veridian",
         "DeltaID": "Veridian",
-        "deltaid": "Veridian"
+        "deltaid": "Veridian",
+        "GHunt": "Veridian",
+        "ghunt": "veridian"
     }
     
     def processar(val):

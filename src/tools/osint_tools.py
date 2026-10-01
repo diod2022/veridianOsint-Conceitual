@@ -1,6 +1,6 @@
 from typing import Union, Optional
 from src.app import mcp
-from src.providers import whois, csint, web_osint
+from src.providers import whois, csint, web_osint, ghunt_provider
 
 @mcp.tool()
 async def whois_consultar(target: str, ignore_raw_text: bool = True, hard_refresh: bool = False) -> dict:
@@ -207,3 +207,49 @@ async def wayback_listar_snapshots(url_alvo: str, limite: int = 100, apenas_muda
         apenas_mudancas: Se True, remove duplicidades onde o conteúdo não sofreu alteração.
     """
     return await web_osint.wayback_listar_snapshots(url_alvo, limite, apenas_mudancas)
+
+# ==============================================================================
+# FERRAMENTAS GOOGLE OSINT (GHUNT: CONTA GOOGLE, GAIA ID & MAPS REVIEWS)
+# ==============================================================================
+
+@mcp.tool()
+async def ghunt_investigar_email_google(email: str) -> dict:
+    """
+    Investiga um e-mail no ecossistema Google via GHunt (Google OSINT).
+    Descobre o GAIA ID, nome completo, foto de perfil, data da última edição,
+    serviços ativos e extrai a lista completa de avaliações (reviews) e fotos deixadas pelo usuário no Google Maps.
+    
+    Args:
+        email: O endereço de e-mail do alvo (ex: usuario@gmail.com).
+    """
+    return await ghunt_provider.investigar_email_google(email)
+
+@mcp.tool()
+async def ghunt_investigar_gaia_google(gaia_id: str) -> dict:
+    """
+    Investiga diretamente um Gaia ID do Google (identificador numérico de 21 dígitos).
+    Extrai as avaliações no Google Maps, locais frequentados, fotos e perfil público associado.
+    
+    Args:
+        gaia_id: O identificador Gaia ID numérico do usuário Google (21 dígitos).
+    """
+    return await ghunt_provider.investigar_gaia_id(gaia_id)
+
+@mcp.tool()
+async def ghunt_autenticar_google(codigo_base64_ou_token: str) -> dict:
+    """
+    Configura e valida as credenciais de sessão do Google OSINT (GHunt).
+    Aceita o código Base64 exportado pela extensão oficial 'GHunt Companion' ou tokens diretos oauth2_4/ / aas_et/.
+    
+    Args:
+        codigo_base64_ou_token: Código Base64 gerado pela extensão GHunt Companion ou token de autenticação.
+    """
+    return await ghunt_provider.autenticar_google(codigo_base64_ou_token)
+
+@mcp.tool()
+def ghunt_status_autenticacao() -> dict:
+    """
+    Verifica o status atual da sessão de autenticação do Google OSINT (GHunt).
+    Retorna se o sistema está pronto para realizar buscas de reviews e perfis no Google Maps.
+    """
+    return ghunt_provider.verificar_status_autenticacao()
