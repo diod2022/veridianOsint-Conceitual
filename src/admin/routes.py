@@ -566,6 +566,23 @@ async def admin_api_env_get(request: Request):
                         env_dict[k.strip()] = v.strip()
         except Exception as e:
             return JSONResponse({"error": f"Failed to read .env: {str(e)}"}, status_code=500)
+
+    defaults_ekyc = {
+        "EKYCPRO_API_KEY": os.environ.get("EKYCPRO_API_KEY", ""),
+        "EKYCPRO_BASE_URL": os.environ.get("EKYCPRO_BASE_URL", "https://api.ekycpro.com"),
+        "EKYCPRO_COMBO_TELEFONE": os.environ.get(
+            "EKYCPRO_COMBO_TELEFONE",
+            "ws,ws_avatar,ws_business,instagram,facebook,telegram,threads,twitter,viber"
+        ),
+        "EKYCPRO_COMBO_EMAIL": os.environ.get(
+            "EKYCPRO_COMBO_EMAIL",
+            "instagram_email,facebook_email,twitter_email,twitter_profile,email_avatar"
+        ),
+    }
+    for k, default_val in defaults_ekyc.items():
+        if k not in env_dict:
+            env_dict[k] = default_val
+
     return JSONResponse({"status": "success", "env": env_dict})
 
 async def admin_api_env_post(request: Request):
@@ -605,6 +622,8 @@ async def admin_api_env_post(request: Request):
         with open(ENV_PATH, "w", encoding="utf-8") as f:
             f.writelines(lines)
         
+        for k, v in new_env_data.items():
+            os.environ[str(k).strip()] = str(v).strip()
         load_dotenv(ENV_PATH, override=True)
         return JSONResponse({"status": "success", "message": "Variáveis de ambiente (.env) atualizadas e recarregadas com sucesso!"})
     except Exception as e:

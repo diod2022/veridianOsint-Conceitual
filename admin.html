@@ -2216,10 +2216,16 @@
             "FIRECRAWL_API_KEY": "Firecrawl — Web Scraping Key",
             "DELTAFOX_TOKEN": "DeltaFox — Token Acesso Geral (Veículos/CNH)",
             "DELTAFOX_BASE_URL": "DeltaFox — Base URL API",
-            "EKYCPRO_API_KEY": "Presença Digital — API Key",
-            "EKYCPRO_BASE_URL": "Presença Digital — Base URL API",
-            "EKYCPRO_COMBO_TELEFONE": "Presença Digital — Pacote Padrão Telefone",
-            "EKYCPRO_COMBO_EMAIL": "Presença Digital — Pacote Padrão E-mail"
+            "EKYCPRO_API_KEY": "eKYC Pro (Presença Digital) — API Key",
+            "EKYCPRO_BASE_URL": "eKYC Pro (Presença Digital) — Base URL API",
+            "EKYCPRO_COMBO_TELEFONE": "eKYC Pro (Presença Digital) — Pacote Padrão Telefone",
+            "EKYCPRO_COMBO_EMAIL": "eKYC Pro (Presença Digital) — Pacote Padrão E-mail"
+        };
+
+        const VALORES_PADRAO_ENV = {
+            "EKYCPRO_BASE_URL": "https://api.ekycpro.com",
+            "EKYCPRO_COMBO_TELEFONE": "ws,ws_avatar,ws_business,instagram,facebook,telegram,threads,twitter,viber",
+            "EKYCPRO_COMBO_EMAIL": "instagram_email,facebook_email,twitter_email,twitter_profile,email_avatar"
         };
 
         async function carregarEnv() {
@@ -2238,7 +2244,14 @@
             if (!container) return;
             container.innerHTML = '';
 
-            Object.entries(envObj).forEach(([key, val]) => {
+            const mergedEnv = { ... envObj };
+            Object.keys(LABEL_CHAVES_ENV).forEach(k => {
+                if (!(k in mergedEnv)) {
+                    mergedEnv[k] = VALORES_PADRAO_ENV[k] || '';
+                }
+            });
+
+            Object.entries(mergedEnv).forEach(([key, val]) => {
                 const labelText = LABEL_CHAVES_ENV[key] || key;
                 const hasVal = val && val.trim().length > 0;
                 const div = document.createElement('div');
