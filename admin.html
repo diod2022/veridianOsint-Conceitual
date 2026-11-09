@@ -1372,10 +1372,16 @@
             "wayback": "Histórico de Páginas Web (Veridian)",
             "biometria": "Biometria & Visão Facial (Veridian)",
             "deltafox": "Veículos & Condutores (Veridian)",
-            "ghunt": "Google OSINT & Maps Reviews (Veridian)"
+            "ghunt": "Google OSINT & Maps Reviews (Veridian)",
+            "ekycpro": "Presença Digital em Redes & Mensageiros (Veridian)"
         };
 
         const CONSULTAS_POR_FONTE = {
+            "ekycpro": [
+                "ekycpro_verificar_telefone_plataformas", "ekycpro_verificar_email_plataformas",
+                "ekycpro_perfil_twitter_por_email", "ekycpro_verificar_servico",
+                "ekycpro_listar_servicos"
+            ],
             "ghunt": [
                 "ghunt_investigar_email_google", "ghunt_investigar_gaia_google",
                 "ghunt_autenticar_google", "ghunt_status_autenticacao"
@@ -1498,7 +1504,12 @@
             "deltafox_veiculo_endereco_proprietario": "DeltaFox - Proprietário & Endereço Veicular",
             "deltafox_frota_veiculos": "DeltaFox - Frota de Veículos (CPF/CNPJ)",
             "deltafox_veiculo_historico_crv": "DeltaFox - Histórico de CRV",
-            "deltafox_servicos_disponiveis": "DeltaFox - Status dos Serviços"
+            "deltafox_servicos_disponiveis": "DeltaFox - Status dos Serviços",
+            "ekycpro_verificar_telefone_plataformas": "Presença Digital - Verificar Telefone em Redes/Mensageiros",
+            "ekycpro_verificar_email_plataformas": "Presença Digital - Verificar E-mail em Redes/Plataformas",
+            "ekycpro_perfil_twitter_por_email": "Presença Digital - Perfil Twitter/X por E-mail",
+            "ekycpro_verificar_servico": "Presença Digital - Verificar Plataforma Individual",
+            "ekycpro_listar_servicos": "Presença Digital - Listar Plataformas Verificáveis"
         };
 
         // Estado Global
@@ -2204,7 +2215,11 @@
             "TAVILY_API_KEY": "Tavily — Web Search Key",
             "FIRECRAWL_API_KEY": "Firecrawl — Web Scraping Key",
             "DELTAFOX_TOKEN": "DeltaFox — Token Acesso Geral (Veículos/CNH)",
-            "DELTAFOX_BASE_URL": "DeltaFox — Base URL API"
+            "DELTAFOX_BASE_URL": "DeltaFox — Base URL API",
+            "EKYCPRO_API_KEY": "Presença Digital — API Key",
+            "EKYCPRO_BASE_URL": "Presença Digital — Base URL API",
+            "EKYCPRO_COMBO_TELEFONE": "Presença Digital — Pacote Padrão Telefone",
+            "EKYCPRO_COMBO_EMAIL": "Presença Digital — Pacote Padrão E-mail"
         };
 
         async function carregarEnv() {

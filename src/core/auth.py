@@ -35,7 +35,8 @@ def carregar_config_global() -> dict:
             "serper": True,
             "wayback": True,
             "deltafox": True,
-            "ghunt": True
+            "ghunt": True,
+            "ekycpro": True
         },
         "consultas_ativas": {}
     }
@@ -348,7 +349,7 @@ def verificar_permissao_fonte(nome_fonte: Optional[str] = None, nome_consulta: O
 # SISTEMA DE WHITE-LABELING (MASCARAMENTO DE FORNECEDORES)
 # ==============================================================================
 def obter_nome_whitelabel(nome_funcao: str) -> str:
-    for prefixo in ["whois_", "csint_", "bigdata_", "unitfour_", "instagram_", "tiktok_", "linkedin_", "lighthouse_", "escavador_", "investigador_", "biometria_", "deltafox_"]:
+    for prefixo in ["whois_", "csint_", "bigdata_", "unitfour_", "instagram_", "tiktok_", "linkedin_", "lighthouse_", "escavador_", "investigador_", "biometria_", "deltafox_", "ekycpro_"]:
         if nome_funcao.startswith(prefixo):
             sub_nome = nome_funcao[len(prefixo):]
             if prefixo == "csint_" and sub_nome == "busca_universal":
@@ -433,6 +434,16 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
                 sub_nome = "consultar_veiculo_historico_crv"
             elif prefixo == "deltafox_" and sub_nome == "servicos_disponiveis":
                 sub_nome = "servicos_veiculares_disponiveis"
+            elif prefixo == "ekycpro_" and sub_nome == "verificar_telefone_plataformas":
+                sub_nome = "verificar_presenca_telefone"
+            elif prefixo == "ekycpro_" and sub_nome == "verificar_email_plataformas":
+                sub_nome = "verificar_presenca_email"
+            elif prefixo == "ekycpro_" and sub_nome == "perfil_twitter_por_email":
+                sub_nome = "perfil_twitter_por_email"
+            elif prefixo == "ekycpro_" and sub_nome == "verificar_servico":
+                sub_nome = "verificar_plataforma"
+            elif prefixo == "ekycpro_" and sub_nome == "listar_servicos":
+                sub_nome = "listar_plataformas_verificaveis"
                 
             return f"veridian_{sub_nome}"
             
@@ -501,6 +512,10 @@ def limpar_descricao_whitelabel(docstring: str) -> str:
         "deltaid": "veridian",
         "GHunt": "Veridian",
         "ghunt": "veridian",
+        "eKYC Pro": "Veridian",
+        "eKYCPro": "Veridian",
+        "EkycPro": "Veridian",
+        "ekycpro": "Veridian",
         "bigdata_consultar_cpf": "veridian_consultar_cadastro_cpf",
         "unitfour_consultar_cpf": "veridian_consultar_dados_cadastrais_cpf",
         "unitfour_pessoas_ligadas": "veridian_ver_parentes_e_socios_cpf",
@@ -547,7 +562,11 @@ def limpar_resultado_whitelabel(result: Any) -> Any:
         "DeltaID": "Veridian",
         "deltaid": "Veridian",
         "GHunt": "Veridian",
-        "ghunt": "veridian"
+        "ghunt": "veridian",
+        "eKYC Pro": "Veridian",
+        "eKYCPro": "Veridian",
+        "EkycPro": "Veridian",
+        "ekycpro": "Veridian"
     }
     
     def processar(val):

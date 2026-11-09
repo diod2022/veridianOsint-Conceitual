@@ -44,6 +44,17 @@ SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
 DELTAFOX_TOKEN = os.environ.get("DELTAFOX_TOKEN", "")
 DELTAFOX_BASE_URL = os.environ.get("DELTAFOX_BASE_URL", "https://api.deltaid.api.br")
 
+EKYCPRO_API_KEY = os.environ.get("EKYCPRO_API_KEY", "")
+EKYCPRO_BASE_URL = os.environ.get("EKYCPRO_BASE_URL", "https://api.ekycpro.com")
+EKYCPRO_COMBO_TELEFONE = os.environ.get(
+    "EKYCPRO_COMBO_TELEFONE",
+    "ws,ws_avatar,ws_business,instagram,facebook,telegram,threads,twitter,viber"
+)
+EKYCPRO_COMBO_EMAIL = os.environ.get(
+    "EKYCPRO_COMBO_EMAIL",
+    "instagram_email,facebook_email,twitter_email,twitter_profile,email_avatar"
+)
+
 def get_bigdata_token() -> str:
     return os.environ.get("BIGDATA_TOKEN") or os.environ.get("BIGDATA_ACCESS_TOKEN", "")
 
