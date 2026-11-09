@@ -8,8 +8,8 @@ from src.providers import ekycpro
 
 @mcp.tool()
 async def ekycpro_verificar_telefone_plataformas(
-    telefone: str,
-    servicos: Optional[List[str]] = None
+    telefone: Union[str, int],
+    servicos: Optional[Union[List[str], str]] = None
 ) -> dict:
     """
     Verifica em lote se um número de telefone possui conta vinculada em redes sociais e mensageiros.
@@ -34,7 +34,7 @@ async def ekycpro_verificar_telefone_plataformas(
 @mcp.tool()
 async def ekycpro_verificar_email_plataformas(
     email: str,
-    servicos: Optional[List[str]] = None
+    servicos: Optional[Union[List[str], str]] = None
 ) -> dict:
     """
     Verifica em lote se um endereço de e-mail possui conta ou perfil vinculado em redes sociais e provedores.
@@ -74,7 +74,7 @@ async def ekycpro_perfil_twitter_por_email(email: str) -> dict:
 
 
 @mcp.tool()
-async def ekycpro_verificar_servico(identificador: str, servico: str) -> dict:
+async def ekycpro_verificar_servico(identificador: Union[str, int], servico: str) -> dict:
     """
     Verifica individualmente uma única plataforma de presença digital para um telefone ou endereço de e-mail.
     Aceita qualquer código do catálogo Veridian compatível com o tipo de identificador informado.
