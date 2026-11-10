@@ -422,6 +422,14 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
                 sub_nome = "reconhecimento_facial_amplo"
             elif prefixo == "lighthouse_" and sub_nome == "image_geolocation":
                 sub_nome = "geolocalizacao_imagem"
+            elif prefixo == "lighthouse_" and sub_nome == "google_email_info":
+                sub_nome = "google_conta_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "google_maps_reviews":
+                sub_nome = "google_maps_reviews_por_id"
+            elif prefixo == "lighthouse_" and sub_nome == "google_maps_photos":
+                sub_nome = "google_maps_fotos_por_id"
+            elif prefixo == "lighthouse_" and sub_nome == "google_maps_por_email":
+                sub_nome = "google_maps_reviews_por_email"
             elif prefixo == "deltafox_" and sub_nome == "cnh_prontuario":
                 sub_nome = "consultar_cnh_prontuario"
             elif prefixo == "deltafox_" and sub_nome == "veiculo_restricoes_renajud":
@@ -496,6 +504,8 @@ def limpar_descricao_whitelabel(docstring: str) -> str:
         "Harvest API": "Veridian",
         "Harvest": "Veridian",
         "Lighthouse": "Veridian",
+        "Lampyre": "Veridian",
+        "lampyre": "Veridian",
         "WhoisXML API": "Veridian",
         "WhoisXML": "Veridian",
         "Escavador": "Veridian",
@@ -547,6 +557,8 @@ def limpar_resultado_whitelabel(result: Any) -> Any:
         "Harvest API": "Veridian",
         "Harvest": "Veridian",
         "Lighthouse": "Veridian",
+        "Lampyre": "Veridian",
+        "lampyre": "Veridian",
         "WhoisXML API": "Veridian",
         "WhoisXML": "Veridian",
         "whoisxml": "Veridian",

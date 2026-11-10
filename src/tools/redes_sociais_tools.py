@@ -345,3 +345,50 @@ async def lighthouse_image_geolocation(photo_url: Optional[str] = None, photo_b6
     Deduz a geolocalização estimada de uma foto através de inteligência artificial geoespacial via Lampyre.
     """
     return await lighthouse.image_geolocation(photo_url, photo_b64, photo_fileid)
+
+@mcp.tool()
+async def lighthouse_google_email_info(email: str) -> dict:
+    """
+    Descobre o ID da conta Google (google_profile_uid / GAIA ID de 21 dígitos), nome completo,
+    foto de perfil e data da última atualização a partir de um endereço de e-mail.
+
+    Args:
+        email: Endereço de e-mail a consultar (ex: usuario@gmail.com).
+    """
+    return await lighthouse.google_email_info(email)
+
+@mcp.tool()
+async def lighthouse_google_maps_reviews(google_profile_uid: Union[str, int]) -> dict:
+    """
+    Obtém as avaliações (reviews) de estabelecimentos e locais no Google Maps
+    (nome do local, endereço, coordenadas GPS, nota, comentário e data da visita)
+    a partir do ID da conta Google (google_profile_uid / GAIA ID).
+
+    Args:
+        google_profile_uid: ID numérico da conta Google (21 dígitos, ex: '114547400629082890034').
+    """
+    return await lighthouse.google_maps_reviews(google_profile_uid)
+
+@mcp.tool()
+async def lighthouse_google_maps_photos(google_profile_uid: Union[str, int]) -> dict:
+    """
+    Obtém as fotos publicadas pelo usuário em estabelecimentos e locais do Google Maps
+    (local, endereço, coordenadas GPS, data e URL da foto) a partir do ID da conta Google.
+
+    Args:
+        google_profile_uid: ID numérico da conta Google (21 dígitos, ex: '114547400629082890034').
+    """
+    return await lighthouse.google_maps_photos(google_profile_uid)
+
+@mcp.tool()
+async def lighthouse_google_maps_por_email(email: str, incluir_fotos: bool = False) -> dict:
+    """
+    Consulta completa em uma chamada: descobre o ID da conta Google (google_profile_uid / GAIA ID)
+    pelo e-mail e extrai automaticamente todas as avaliações (reviews) de locais no Google Maps
+    (e opcionalmente as fotos publicadas em estabelecimentos).
+
+    Args:
+        email: Endereço de e-mail a investigar (ex: usuario@gmail.com).
+        incluir_fotos: Se True, também consulta as fotos publicadas pelo alvo no Google Maps.
+    """
+    return await lighthouse.google_maps_por_email(email, incluir_fotos)
