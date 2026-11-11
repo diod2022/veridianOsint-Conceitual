@@ -392,3 +392,15 @@ async def lighthouse_google_maps_por_email(email: str, incluir_fotos: bool = Fal
         incluir_fotos: Se True, também consulta as fotos publicadas pelo alvo no Google Maps.
     """
     return await lighthouse.google_maps_por_email(email, incluir_fotos)
+
+@mcp.tool()
+async def lighthouse_duolingo_email_info(email: str) -> dict:
+    """
+    Verifica se um endereço de e-mail possui conta no Duolingo e extrai dados de inteligência:
+    ID do perfil, nome completo, @username (pivô para outras redes), foto de perfil (avatar_url),
+    idioma estudado, data de criação da conta e URL do perfil público.
+
+    Args:
+        email: Endereço de e-mail a investigar (ex: usuario@gmail.com).
+    """
+    return await lighthouse.duolingo_email_info(email)

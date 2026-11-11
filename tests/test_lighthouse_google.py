@@ -151,11 +151,59 @@ async def test_google_maps_por_email_fluxo_completo():
 
 
 @pytest.mark.asyncio
+async def test_duolingo_email_info():
+    with respx.mock(assert_all_called=True) as mock_http:
+        mock_http.post("https://api.lighthouse.lampyre.io/api/1.0/tasks/email_duolingo_v1").mock(
+            return_value=httpx.Response(201, json={"task_id": "t-duo", "job_name": "email_duolingo_v1"})
+        )
+        mock_http.get(
+            "https://api.lighthouse.lampyre.io/api/1.0/tasks/email_duolingo_v1/t-duo?token=lpr_test_key_123"
+        ).mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "task_status": 0,
+                    "result": {
+                        "result": [
+                            {
+                                "input": {"email": "aluno@gmail.com"},
+                                "output": [
+                                    {
+                                        "exists": True,
+                                        "duolingo_profile_uid": "987654321",
+                                        "fullname": "Carlos Aluno",
+                                        "username": "carlos_duo99",
+                                        "avatar_url": "https://simg-ssl.duolingo.com/avatars/987654321/large",
+                                        "avatar_fileid": "duo_file_1",
+                                        "learning_language": "en",
+                                        "created": 1650000000,
+                                        "url": "https://www.duolingo.com/profile/carlos_duo99"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            )
+        )
+
+        res = await lighthouse.duolingo_email_info("Aluno@Gmail.com")
+        assert res["status"] == "sucesso"
+        assert res["encontrado"] is True
+        assert res["duolingo_profile_uid"] == "987654321"
+        assert res["nome_completo"] == "Carlos Aluno"
+        assert res["username"] == "carlos_duo99"
+        assert res["foto_perfil_url"] == "https://simg-ssl.duolingo.com/avatars/987654321/large"
+        assert res["idioma_estudado"] == "en"
+
+
+@pytest.mark.asyncio
 async def test_whitelabel_google_lighthouse_tools():
     assert auth.obter_nome_whitelabel("lighthouse_google_email_info") == "veridian_google_conta_por_email"
     assert auth.obter_nome_whitelabel("lighthouse_google_maps_reviews") == "veridian_google_maps_reviews_por_id"
     assert auth.obter_nome_whitelabel("lighthouse_google_maps_photos") == "veridian_google_maps_fotos_por_id"
     assert auth.obter_nome_whitelabel("lighthouse_google_maps_por_email") == "veridian_google_maps_reviews_por_email"
+    assert auth.obter_nome_whitelabel("lighthouse_duolingo_email_info") == "veridian_duolingo_por_email"
 
     tools = await mcp.list_tools()
     nomes = {t.name for t in tools}
@@ -163,3 +211,4 @@ async def test_whitelabel_google_lighthouse_tools():
     assert "veridian_google_maps_reviews_por_id" in nomes
     assert "veridian_google_maps_fotos_por_id" in nomes
     assert "veridian_google_maps_reviews_por_email" in nomes
+    assert "veridian_duolingo_por_email" in nomes

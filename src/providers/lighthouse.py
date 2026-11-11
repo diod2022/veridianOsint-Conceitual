@@ -479,3 +479,52 @@ async def google_maps_por_email(email: str, incluir_fotos: bool = False) -> dict
             resultado["erro_maps_photos"] = photos_resp["error"]
 
     return resultado
+
+# ==============================================================================
+# DUOLINGO OSINT (LAMPYRE API 1.0)
+# ==============================================================================
+
+async def duolingo_email_info(email: str) -> dict:
+    """
+    Consulta um e-mail no Duolingo (email_duolingo_v1) para extrair existência de conta,
+    ID do perfil (duolingo_profile_uid), nome completo, @username, foto de perfil,
+    idioma estudado, data de criação e URL do perfil.
+    """
+    em = normalizar_email(email)
+    if not em or "@" not in em:
+        return {"error": f"E-mail inválido para consulta Duolingo: '{email}'."}
+
+    email_clean = em.replace("@", "_at_").replace(".", "_")
+    chave_cache = f"lighthouse_duolingo_email_{email_clean}"
+
+    resp = await async_executar_tarefa_lighthouse(
+        job_name="email_duolingo_v1",
+        task_info={"email": em},
+        chave_cache=chave_cache,
+        retornar_bruto=True
+    )
+    if "error" in resp:
+        return resp
+
+    outputs = _extrair_outputs_lighthouse(resp.get("result", {}))
+    primeiro = outputs[0] if outputs else {}
+    duolingo_uid = primeiro.get("duolingo_profile_uid")
+    existe = primeiro.get("exists")
+    encontrado = bool(existe) if existe is not None else bool(duolingo_uid or primeiro.get("username"))
+
+    return {
+        "status": "sucesso",
+        "email": em,
+        "encontrado": encontrado,
+        "duolingo_profile_uid": str(duolingo_uid) if duolingo_uid else None,
+        "nome_completo": primeiro.get("fullname") or None,
+        "username": primeiro.get("username") or None,
+        "foto_perfil_url": primeiro.get("avatar_url") or None,
+        "foto_perfil_fileid": primeiro.get("avatar_fileid") or None,
+        "idioma_estudado": primeiro.get("learning_language") or None,
+        "criado_em_unix": primeiro.get("created"),
+        "perfil_url": primeiro.get("url") or None,
+        "perfis_encontrados": outputs,
+        "cache_id": resp.get("cache_id", chave_cache),
+        "do_cache": bool(resp.get("_do_cache", False))
+    }

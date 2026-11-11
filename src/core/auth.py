@@ -430,6 +430,8 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
                 sub_nome = "google_maps_fotos_por_id"
             elif prefixo == "lighthouse_" and sub_nome == "google_maps_por_email":
                 sub_nome = "google_maps_reviews_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "duolingo_email_info":
+                sub_nome = "duolingo_por_email"
             elif prefixo == "deltafox_" and sub_nome == "cnh_prontuario":
                 sub_nome = "consultar_cnh_prontuario"
             elif prefixo == "deltafox_" and sub_nome == "veiculo_restricoes_renajud":
