@@ -432,6 +432,30 @@ def obter_nome_whitelabel(nome_funcao: str) -> str:
                 sub_nome = "google_maps_reviews_por_email"
             elif prefixo == "lighthouse_" and sub_nome == "duolingo_email_info":
                 sub_nome = "duolingo_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "gravatar_email_info":
+                sub_nome = "gravatar_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "avatarapi_email_info":
+                sub_nome = "avatar_agregado_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "strava_email_info":
+                sub_nome = "strava_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "vivino_email_info":
+                sub_nome = "vivino_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "deezer_email_info":
+                sub_nome = "deezer_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "trello_email_info":
+                sub_nome = "trello_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "notion_email_info":
+                sub_nome = "notion_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "github_email_info":
+                sub_nome = "github_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "foursquare_email_info":
+                sub_nome = "foursquare_por_email"
+            elif prefixo == "lighthouse_" and sub_nome == "foursquare_phone_info":
+                sub_nome = "foursquare_por_telefone"
+            elif prefixo == "lighthouse_" and sub_nome == "telegram_phone_info":
+                sub_nome = "telegram_por_telefone"
+            elif prefixo == "lighthouse_" and sub_nome == "telegram_username_info":
+                sub_nome = "telegram_por_username"
             elif prefixo == "deltafox_" and sub_nome == "cnh_prontuario":
                 sub_nome = "consultar_cnh_prontuario"
             elif prefixo == "deltafox_" and sub_nome == "veiculo_restricoes_renajud":

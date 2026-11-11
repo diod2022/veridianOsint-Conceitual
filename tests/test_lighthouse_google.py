@@ -198,17 +198,110 @@ async def test_duolingo_email_info():
 
 
 @pytest.mark.asyncio
+async def test_novos_endpoints_avatar_lighthouse():
+    with respx.mock(assert_all_called=True) as mock_http:
+        mock_http.post("https://api.lighthouse.lampyre.io/api/1.0/tasks/email_strava_v1").mock(
+            return_value=httpx.Response(201, json={"task_id": "t-strava", "job_name": "email_strava_v1"})
+        )
+        mock_http.get(
+            "https://api.lighthouse.lampyre.io/api/1.0/tasks/email_strava_v1/t-strava?token=lpr_test_key_123"
+        ).mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "task_status": 0,
+                    "result": {
+                        "result": [
+                            {
+                                "input": {"email": "atleta@gmail.com"},
+                                "output": [
+                                    {
+                                        "strava_profile_uid": "554433",
+                                        "firstname": "Pedro",
+                                        "lastname": "Atleta",
+                                        "username": "pedro_run",
+                                        "city": "Curitiba",
+                                        "avatar_url": "https://dgalywyr863hv.cloudfront.net/pictures/athletes/554433.jpg",
+                                        "strava_profile_url": "https://www.strava.com/athletes/554433"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            )
+        )
+
+        mock_http.post("https://api.lighthouse.lampyre.io/api/1.0/tasks/phone_telegram_v1").mock(
+            return_value=httpx.Response(201, json={"task_id": "t-tg", "job_name": "phone_telegram_v1"})
+        )
+        mock_http.get(
+            "https://api.lighthouse.lampyre.io/api/1.0/tasks/phone_telegram_v1/t-tg?token=lpr_test_key_123"
+        ).mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "task_status": 0,
+                    "result": {
+                        "result": [
+                            {
+                                "input": {"phone": "+5511999998888"},
+                                "output": [
+                                    {
+                                        "telegram_profile_uid": "77889900",
+                                        "firstname": "Pedro",
+                                        "lastname": "TG",
+                                        "username": "pedrotg",
+                                        "bio": "SP",
+                                        "avatar_fileid": "tg_avatar_file_99"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            )
+        )
+
+        res_strava = await lighthouse.strava_email_info("atleta@gmail.com")
+        assert res_strava["encontrado"] is True
+        assert res_strava["nome_completo"] == "Pedro Atleta"
+        assert res_strava["foto_perfil_url"].startswith("https://")
+        assert res_strava["dados_perfil"]["city"] == "Curitiba"
+
+        res_tg = await lighthouse.telegram_phone_info("(11) 99999-8888")
+        assert res_tg["encontrado"] is True
+        assert res_tg["telefone"] == "+5511999998888"
+        assert res_tg["profile_uid"] == "77889900"
+        assert res_tg["username"] == "pedrotg"
+        assert res_tg["foto_perfil_fileid"] == "tg_avatar_file_99"
+
+
+@pytest.mark.asyncio
 async def test_whitelabel_google_lighthouse_tools():
-    assert auth.obter_nome_whitelabel("lighthouse_google_email_info") == "veridian_google_conta_por_email"
-    assert auth.obter_nome_whitelabel("lighthouse_google_maps_reviews") == "veridian_google_maps_reviews_por_id"
-    assert auth.obter_nome_whitelabel("lighthouse_google_maps_photos") == "veridian_google_maps_fotos_por_id"
-    assert auth.obter_nome_whitelabel("lighthouse_google_maps_por_email") == "veridian_google_maps_reviews_por_email"
-    assert auth.obter_nome_whitelabel("lighthouse_duolingo_email_info") == "veridian_duolingo_por_email"
+    esperados = {
+        "lighthouse_google_email_info": "veridian_google_conta_por_email",
+        "lighthouse_google_maps_reviews": "veridian_google_maps_reviews_por_id",
+        "lighthouse_google_maps_photos": "veridian_google_maps_fotos_por_id",
+        "lighthouse_google_maps_por_email": "veridian_google_maps_reviews_por_email",
+        "lighthouse_duolingo_email_info": "veridian_duolingo_por_email",
+        "lighthouse_gravatar_email_info": "veridian_gravatar_por_email",
+        "lighthouse_avatarapi_email_info": "veridian_avatar_agregado_por_email",
+        "lighthouse_strava_email_info": "veridian_strava_por_email",
+        "lighthouse_vivino_email_info": "veridian_vivino_por_email",
+        "lighthouse_deezer_email_info": "veridian_deezer_por_email",
+        "lighthouse_trello_email_info": "veridian_trello_por_email",
+        "lighthouse_notion_email_info": "veridian_notion_por_email",
+        "lighthouse_github_email_info": "veridian_github_por_email",
+        "lighthouse_foursquare_email_info": "veridian_foursquare_por_email",
+        "lighthouse_foursquare_phone_info": "veridian_foursquare_por_telefone",
+        "lighthouse_telegram_phone_info": "veridian_telegram_por_telefone",
+        "lighthouse_telegram_username_info": "veridian_telegram_por_username",
+    }
+    for fn, publico in esperados.items():
+        assert auth.obter_nome_whitelabel(fn) == publico
 
     tools = await mcp.list_tools()
     nomes = {t.name for t in tools}
-    assert "veridian_google_conta_por_email" in nomes
-    assert "veridian_google_maps_reviews_por_id" in nomes
-    assert "veridian_google_maps_fotos_por_id" in nomes
-    assert "veridian_google_maps_reviews_por_email" in nomes
-    assert "veridian_duolingo_por_email" in nomes
+    for publico in esperados.values():
+        assert publico in nomes

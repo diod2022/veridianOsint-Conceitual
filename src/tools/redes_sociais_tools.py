@@ -404,3 +404,135 @@ async def lighthouse_duolingo_email_info(email: str) -> dict:
         email: Endereço de e-mail a investigar (ex: usuario@gmail.com).
     """
     return await lighthouse.duolingo_email_info(email)
+
+@mcp.tool()
+async def lighthouse_gravatar_email_info(email: str) -> dict:
+    """
+    Consulta um e-mail no Gravatar para extrair foto de perfil global (avatar_url),
+    nome completo, @username, biografia, localização e contas vinculadas (LinkedIn, Facebook, Twitter, Skype).
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.gravatar_email_info(email)
+
+@mcp.tool()
+async def lighthouse_avatarapi_email_info(email: str) -> dict:
+    """
+    Consulta agregada de foto de perfil por e-mail em múltiplos provedores (Google, Microsoft, Gravatar, Yahoo, Skype),
+    retornando foto de perfil (avatar_url), nome completo, cidade, país e a fonte onde a foto foi encontrada.
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.avatarapi_email_info(email)
+
+@mcp.tool()
+async def lighthouse_strava_email_info(email: str) -> dict:
+    """
+    Verifica se um e-mail possui conta no aplicativo esportivo Strava e extrai foto de perfil (avatar_url),
+    nome, sobrenome, @username, cidade, ID do perfil e URL pública.
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.strava_email_info(email)
+
+@mcp.tool()
+async def lighthouse_vivino_email_info(email: str) -> dict:
+    """
+    Verifica se um e-mail possui conta no aplicativo Vivino e extrai foto de perfil (avatar_url),
+    nome completo, @username, número de seguidores/avaliações e URL do perfil.
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.vivino_email_info(email)
+
+@mcp.tool()
+async def lighthouse_deezer_email_info(email: str) -> dict:
+    """
+    Verifica se um e-mail possui conta no Deezer e extrai foto de perfil (avatar_url),
+    nickname (screen_name), data de nascimento, gênero, país e URL do perfil.
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.deezer_email_info(email)
+
+@mcp.tool()
+async def lighthouse_trello_email_info(email: str) -> dict:
+    """
+    Verifica se um e-mail possui conta no Trello e extrai foto de perfil (avatar_url),
+    nome completo, @username, biografia, quadros públicos (boards) e organizações.
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.trello_email_info(email)
+
+@mcp.tool()
+async def lighthouse_notion_email_info(email: str) -> dict:
+    """
+    Verifica se um e-mail possui conta no Notion e extrai foto de perfil (photo_url),
+    nome completo e identificador único do usuário (notion_uid).
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.notion_email_info(email)
+
+@mcp.tool()
+async def lighthouse_github_email_info(email: str) -> dict:
+    """
+    Verifica se um e-mail possui conta no GitHub e extrai foto de perfil (avatar_url),
+    nome completo, @username, empresa, localização, biografia e organizações.
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.github_email_info(email)
+
+@mcp.tool()
+async def lighthouse_foursquare_email_info(email: str) -> dict:
+    """
+    Verifica se um e-mail possui conta no Foursquare/Swarm e extrai foto de perfil (avatar_url),
+    nome completo, cidade, coordenadas, biografia e contas de redes sociais vinculadas.
+
+    Args:
+        email: Endereço de e-mail a investigar.
+    """
+    return await lighthouse.foursquare_email_info(email)
+
+@mcp.tool()
+async def lighthouse_foursquare_phone_info(phone: Union[str, int]) -> dict:
+    """
+    Verifica se um número de telefone possui conta no Foursquare/Swarm e extrai foto de perfil (avatar_url),
+    nome completo, cidade, coordenadas, biografia e redes sociais vinculadas.
+
+    Args:
+        phone: Número de telefone (com DDD; aceita formato brasileiro ou E.164).
+    """
+    return await lighthouse.foursquare_phone_info(phone)
+
+@mcp.tool()
+async def lighthouse_telegram_phone_info(phone: Union[str, int]) -> dict:
+    """
+    Busca o perfil do Telegram vinculado a um número de telefone e extrai o ID numérico (telegram_profile_uid),
+    nome, sobrenome, @username, biografia, data de nascimento, último acesso e foto de perfil (avatar_fileid).
+
+    Args:
+        phone: Número de telefone (com DDD; aceita formato brasileiro ou E.164).
+    """
+    return await lighthouse.telegram_phone_info(phone)
+
+@mcp.tool()
+async def lighthouse_telegram_username_info(username: str) -> dict:
+    """
+    Consulta um @username do Telegram e extrai o ID numérico da conta (telegram_profile_uid),
+    nome, sobrenome, telefone (se público), status de verificação e foto de perfil (avatar_fileid).
+
+    Args:
+        username: Nome de usuário do Telegram (com ou sem @).
+    """
+    return await lighthouse.telegram_username_info(username)

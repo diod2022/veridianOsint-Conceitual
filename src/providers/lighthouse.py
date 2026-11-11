@@ -528,3 +528,190 @@ async def duolingo_email_info(email: str) -> dict:
         "cache_id": resp.get("cache_id", chave_cache),
         "do_cache": bool(resp.get("_do_cache", False))
     }
+
+# ==============================================================================
+# AVATARES, FOTOS DE PERFIL E ENRIQUECIMENTO DE CONTAS (LAMPYRE API 1.0)
+# ==============================================================================
+
+def _normalizar_telefone_e164_lighthouse(telefone: Union[str, int]) -> Optional[str]:
+    """Converte telefone para formato E.164 (+5511999998888) exigido pelos endpoints phone_* da Lampyre."""
+    bruto = str(telefone or "").strip()
+    if not bruto:
+        return None
+    tem_mais = bruto.startswith("+")
+    apenas_digitos = "".join(ch for ch in bruto if ch.isdigit())
+    if not apenas_digitos:
+        return None
+    if not tem_mais and apenas_digitos.startswith("00"):
+        apenas_digitos = apenas_digitos[2:]
+        tem_mais = True
+    if not tem_mais:
+        if len(apenas_digitos) in (11, 12) and apenas_digitos.startswith("0"):
+            apenas_digitos = apenas_digitos[1:]
+        if len(apenas_digitos) in (10, 11):
+            apenas_digitos = "55" + apenas_digitos
+    if len(apenas_digitos) < 8 or len(apenas_digitos) > 15:
+        return None
+    return f"+{apenas_digitos}"
+
+def _montar_resposta_perfil_lighthouse(
+    plataforma: str,
+    chave_id: str,
+    valor_id: str,
+    resp: dict,
+    chave_cache: str
+) -> dict:
+    if "error" in resp:
+        return resp
+    outputs = _extrair_outputs_lighthouse(resp.get("result", {}))
+    primeiro = outputs[0] if outputs else {}
+    existe = primeiro.get("exists")
+    encontrado = bool(existe) if existe is not None else bool(outputs)
+
+    nome = primeiro.get("fullname")
+    if not nome:
+        partes_nome = [primeiro.get("firstname"), primeiro.get("lastname")]
+        nome = " ".join(str(p).strip() for p in partes_nome if p).strip() or None
+
+    username = (
+        primeiro.get("username")
+        or primeiro.get("screen_name")
+        or primeiro.get("login")
+        or None
+    )
+    foto_url = primeiro.get("avatar_url") or primeiro.get("photo_url") or None
+    foto_fileid = primeiro.get("avatar_fileid") or primeiro.get("photo_fileid") or None
+
+    url_perfil = (
+        primeiro.get("url")
+        or primeiro.get("gravatar_profile_url")
+        or primeiro.get("strava_profile_url")
+        or primeiro.get("vivino_profile_url")
+        or primeiro.get("deezer_profile_url")
+        or primeiro.get("trello_profile_url")
+        or primeiro.get("github_profile_url")
+        or primeiro.get("foursquare_profile_url")
+        or None
+    )
+
+    uid_plataforma = (
+        primeiro.get("strava_profile_uid")
+        or primeiro.get("vivino_profile_uid")
+        or primeiro.get("deezer_profile_uid")
+        or primeiro.get("trello_uid")
+        or primeiro.get("notion_uid")
+        or primeiro.get("foursquare_profile_uid")
+        or primeiro.get("telegram_profile_uid")
+        or None
+    )
+
+    return {
+        "status": "sucesso",
+        "plataforma": plataforma,
+        chave_id: valor_id,
+        "encontrado": encontrado,
+        "profile_uid": str(uid_plataforma) if uid_plataforma else None,
+        "nome_completo": nome,
+        "username": username,
+        "foto_perfil_url": foto_url,
+        "foto_perfil_fileid": foto_fileid,
+        "perfil_url": url_perfil,
+        "dados_perfil": primeiro,
+        "perfis_encontrados": outputs,
+        "cache_id": resp.get("cache_id", chave_cache),
+        "do_cache": bool(resp.get("_do_cache", False))
+    }
+
+async def _consultar_email_plataforma_lighthouse(email: str, job_name: str, slug_cache: str, nome_plataforma: str) -> dict:
+    em = normalizar_email(email)
+    if not em or "@" not in em:
+        return {"error": f"E-mail inválido para consulta {nome_plataforma}: '{email}'."}
+    email_clean = em.replace("@", "_at_").replace(".", "_")
+    chave_cache = f"lighthouse_{slug_cache}_email_{email_clean}"
+    resp = await async_executar_tarefa_lighthouse(
+        job_name=job_name,
+        task_info={"email": em},
+        chave_cache=chave_cache,
+        retornar_bruto=True
+    )
+    return _montar_resposta_perfil_lighthouse(nome_plataforma, "email", em, resp, chave_cache)
+
+async def gravatar_email_info(email: str) -> dict:
+    """Extrai foto de perfil global, nome, username, bio, localização e redes vinculadas no Gravatar (email_gravatar_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_gravatar_v1", "gravatar", "Gravatar")
+
+async def avatarapi_email_info(email: str) -> dict:
+    """Consulta o agregador AvatarAPI por e-mail para extrair foto de perfil, nome, cidade e fonte (email_avatarapi_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_avatarapi_v1", "avatarapi", "AvatarAPI")
+
+async def strava_email_info(email: str) -> dict:
+    """Extrai foto de perfil, nome, sobrenome, username, cidade e ID de conta no Strava por e-mail (email_strava_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_strava_v1", "strava", "Strava")
+
+async def vivino_email_info(email: str) -> dict:
+    """Extrai foto de perfil, nome completo, username e estatísticas no Vivino por e-mail (email_vivino_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_vivino_v1", "vivino", "Vivino")
+
+async def deezer_email_info(email: str) -> dict:
+    """Extrai foto de perfil, nickname, data de nascimento, gênero e país no Deezer por e-mail (email_deezer_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_deezer_v1", "deezer", "Deezer")
+
+async def trello_email_info(email: str) -> dict:
+    """Extrai foto de perfil, nome completo, username, bio, quadros e organizações no Trello por e-mail (email_trello_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_trello_v1", "trello", "Trello")
+
+async def notion_email_info(email: str) -> dict:
+    """Extrai foto de perfil, nome completo e ID de usuário no Notion por e-mail (email_notion_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_notion_v1", "notion", "Notion")
+
+async def github_email_info(email: str) -> dict:
+    """Extrai foto de perfil, nome completo, username, empresa, localização e bio no GitHub por e-mail (email_github_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_github_v1", "github", "GitHub")
+
+async def foursquare_email_info(email: str) -> dict:
+    """Extrai foto de perfil, nome, cidade, coordenadas, bio e redes sociais no Foursquare por e-mail (email_foursquare_v1)."""
+    return await _consultar_email_plataforma_lighthouse(email, "email_foursquare_v1", "foursquare", "Foursquare")
+
+async def foursquare_phone_info(phone: Union[str, int]) -> dict:
+    """Extrai foto de perfil, nome, cidade, coordenadas e redes sociais no Foursquare por telefone (phone_foursquare_v1)."""
+    tel = _normalizar_telefone_e164_lighthouse(phone)
+    if not tel:
+        return {"error": f"Telefone inválido para consulta Foursquare: '{phone}'."}
+    tel_clean = tel.lstrip("+")
+    chave_cache = f"lighthouse_foursquare_phone_{tel_clean}"
+    resp = await async_executar_tarefa_lighthouse(
+        job_name="phone_foursquare_v1",
+        task_info={"phone": tel},
+        chave_cache=chave_cache,
+        retornar_bruto=True
+    )
+    return _montar_resposta_perfil_lighthouse("Foursquare", "telefone", tel, resp, chave_cache)
+
+async def telegram_phone_info(phone: Union[str, int]) -> dict:
+    """Extrai perfil completo do Telegram (ID numérico, nome, @username, bio, data de nascimento, visto por último e foto) por telefone (phone_telegram_v1)."""
+    tel = _normalizar_telefone_e164_lighthouse(phone)
+    if not tel:
+        return {"error": f"Telefone inválido para consulta Telegram: '{phone}'."}
+    tel_clean = tel.lstrip("+")
+    chave_cache = f"lighthouse_telegram_phone_{tel_clean}"
+    resp = await async_executar_tarefa_lighthouse(
+        job_name="phone_telegram_v1",
+        task_info={"phone": tel},
+        chave_cache=chave_cache,
+        retornar_bruto=True
+    )
+    return _montar_resposta_perfil_lighthouse("Telegram", "telefone", tel, resp, chave_cache)
+
+async def telegram_username_info(username: str) -> dict:
+    """Resolve um @username do Telegram para ID numérico (telegram_profile_uid), nome, telefone (se público) e foto (username_telegram_v1)."""
+    usr = str(username or "").strip().lstrip("@")
+    if not usr:
+        return {"error": "Username do Telegram não pode ser vazio."}
+    chave_cache = f"lighthouse_telegram_username_{usr.lower()}"
+    resp = await async_executar_tarefa_lighthouse(
+        job_name="username_telegram_v1",
+        task_info={"username": usr},
+        chave_cache=chave_cache,
+        retornar_bruto=True
+    )
+    return _montar_resposta_perfil_lighthouse("Telegram", "username", usr, resp, chave_cache)
